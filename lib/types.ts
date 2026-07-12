@@ -39,3 +39,56 @@ export interface CurrentTask {
   next: RoutineSlot | null;
   minutesLeft: number;
 }
+
+// 日志 checklist 项
+export interface ChecklistItem {
+  text: string;
+  checked: boolean;
+}
+
+// 日志能量数据
+export interface DailyEnergy {
+  sleep: string;
+  sleepOnTime: boolean | null;
+  exerciseDone: boolean | null;
+  exerciseNote: string;
+  energyMorning: number | null;
+  energyNoon: number | null;
+  energyEvening: number | null;
+  emotion: string;
+  familyQuality: number;
+}
+
+// 复盘段落
+export interface DailyReview {
+  good: string;
+  problems: string;
+  tomorrow: string;
+}
+
+// 完整的日志结构
+export interface DailyLog {
+  date: string;
+  plan: string;
+  checklist: ChecklistItem[];
+  energy: DailyEnergy;
+  review: DailyReview;
+}
+
+// 进度统计
+export interface ProgressInfo {
+  algorithmDone: number;
+  algorithmTotal: number;
+  algorithmPercent: number;
+  streakDays: number;
+  totalLogs: number;
+  latestLog: string;
+  weekHours: number;
+}
+
+// AI 分析结果
+export interface AIAnalysis {
+  summary: string;
+  patterns: string[];
+  suggestions: string[];
+}

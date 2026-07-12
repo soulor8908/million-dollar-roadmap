@@ -2,19 +2,24 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
+// 所有路径基于 __dirname，不依赖 cwd（修复原版相对路径 bug）
+const ROOT = path.join(__dirname, '..');
+
 const CONFIG = {
   apiKey: process.env.AI_API_KEY,
-  apiUrl: 'https://api.moonshot.cn/v1/chat/completions',
-  model: 'kimi-latest',
+  apiUrl: process.env.AI_API_URL || 'https://api.moonshot.cn/v1/chat/completions',
+  model: process.env.AI_MODEL || 'kimi-latest',
   weekRange: 7,
+  timeoutMs: 30000,      // 单次请求 30s 超时，避免 CI 挂死
+  maxRetries: 2,         // 失败重试次数（指数退避）
 };
 
 function getRecentLogs() {
-  const dailyDir = path.join(__dirname, '..', 'daily');
+  const dailyDir = path.join(ROOT, 'daily');
   if (!fs.existsSync(dailyDir)) return [];
 
   const files = fs.readdirSync(dailyDir)
-    .filter(f => f.endsWith('.md'))
+    .filter(f => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
     .sort()
     .slice(-CONFIG.weekRange);
 
@@ -25,7 +30,7 @@ function getRecentLogs() {
 }
 
 function getProgress() {
-  const progressFile = path.join(__dirname, '..', 'algorithm', 'progress.md');
+  const progressFile = path.join(ROOT, 'algorithm', 'progress.md');
   if (fs.existsSync(progressFile)) {
     return fs.readFileSync(progressFile, 'utf-8');
   }
@@ -41,8 +46,8 @@ function generatePrompt(logs, progress) {
 - 前端开发工程师，当前年薪392k，目标1000k
 - 有娃，工作日21:00下班，22:00到家陪娃到23:00，周末需陪娃
 - 每日可用学习时间：早起1h+通勤1.3h+午休1h+公司2h，周末约8h
-- 每周约19小时学习时间
-- 当前阶段：算法筑基 + 全栈学习 + 项目开发
+- 每周原始容量28.5h，计划目标≈20h（70%利用率）
+- 当前阶段：算法筑基 + 项目1（AI Code Review）主线开发
 
 ## 本周日志数据
 ${logsText}
@@ -84,25 +89,49 @@ ${progress}
 }
 
 async function callAI(prompt) {
-  const response = await axios.post(CONFIG.apiUrl, {
-    model: CONFIG.model,
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7,
-  }, {
-    headers: { 'Authorization': `Bearer ${CONFIG.apiKey}` }
-  });
+  if (!CONFIG.apiKey) {
+    throw new Error('AI_API_KEY 未设置：请在 GitHub Secrets 或本地 .env 配置 AI_API_KEY');
+  }
 
-  return response.data.choices[0].message.content;
+  let lastErr;
+  for (let attempt = 0; attempt <= CONFIG.maxRetries; attempt++) {
+    try {
+      const response = await axios.post(CONFIG.apiUrl, {
+        model: CONFIG.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+      }, {
+        headers: { 'Authorization': `Bearer ${CONFIG.apiKey}` },
+        timeout: CONFIG.timeoutMs,
+      });
+      return response.data.choices[0].message.content;
+    } catch (err) {
+      lastErr = err;
+      // 4xx 错误（除 429 外）不重试，请求本身有问题
+      const status = err.response && err.response.status;
+      if (status && status >= 400 && status < 500 && status !== 429) break;
+      if (attempt < CONFIG.maxRetries) {
+        const backoff = 1000 * Math.pow(2, attempt); // 1s, 2s
+        console.warn(`第 ${attempt + 1} 次调用失败（${status || err.code}），${backoff}ms 后重试...`);
+        await new Promise(r => setTimeout(r, backoff));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 function saveReview(content) {
+  // 用绝对路径写入，修复原版依赖 cwd 的 bug
+  const reviewsDir = path.join(ROOT, 'reviews', 'weekly');
+  fs.mkdirSync(reviewsDir, { recursive: true });
+
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - 7);
-  const filename = `reviews/weekly/${weekStart.toISOString().split('T')[0]}.md`;
+  const filename = path.join(reviewsDir, `${weekStart.toISOString().split('T')[0]}.md`);
 
-  fs.mkdirSync(path.dirname(filename), { recursive: true });
   fs.writeFileSync(filename, content);
-  console.log(`Review saved to ${filename}`);
+  console.log(`Review saved to ${path.relative(ROOT, filename)}`);
+  return filename;
 }
 
 async function main() {

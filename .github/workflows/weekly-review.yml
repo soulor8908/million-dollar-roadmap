@@ -24,6 +24,9 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: node scripts/ai-review.js
 
+      - name: Refresh README dashboard
+        run: node scripts/dashboard.js
+
       - name: Commit report
         run: |
           git config user.name "GitHub Actions"

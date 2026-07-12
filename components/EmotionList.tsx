@@ -10,6 +10,16 @@ import type { EmotionFile } from "@/lib/types";
 export function EmotionList() {
   const [files, setFiles] = useState<EmotionFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
     (async () => {
@@ -65,20 +75,53 @@ export function EmotionList() {
           {file.entries.length === 0 ? (
             <p className="text-xs text-gray-400">无记录</p>
           ) : (
-            file.entries.map((entry, i) => (
-              <div key={i} className="border-l-2 border-gray-200 pl-3 mb-2 last:mb-0">
-                <p className="text-sm">
-                  <span className="text-gray-400">{entry.time}</span>{" "}
-                  {entry.emoji} {entry.tag}
-                  {entry.dopamine !== "无" && (
-                    <span className="ml-2 text-xs bg-red-50 text-red-500 px-1 rounded">
-                      {entry.dopamine}
+            file.entries.map((entry, i) => {
+              const key = `${file.date}-${i}`;
+              const isOpen = expanded.has(key);
+              return (
+                <div
+                  key={i}
+                  onClick={() => toggle(key)}
+                  className="border-l-2 border-gray-200 pl-3 mb-2 last:mb-0 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
+                >
+                  <p className="text-sm flex items-center gap-1">
+                    <span className="text-gray-400">{entry.time}</span>
+                    {entry.emoji} {entry.tag}
+                    {entry.dopamine !== "无" && (
+                      <span className="ml-1 text-xs bg-red-50 text-red-500 px-1 rounded">
+                        {entry.dopamine}
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs text-gray-400">
+                      {isOpen ? "收起 ▲" : "详情 ▼"}
                     </span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{entry.trigger}</p>
+                  {isOpen && (
+                    <div className="mt-2 space-y-1 text-xs text-gray-600 border-t border-gray-100 pt-2">
+                      {entry.impact && entry.impact !== "—" && (
+                        <p>
+                          <span className="text-gray-400 mr-1">影响：</span>
+                          {entry.impact}
+                        </p>
+                      )}
+                      {entry.coping && entry.coping !== "—" && (
+                        <p>
+                          <span className="text-gray-400 mr-1">应对：</span>
+                          {entry.coping}
+                        </p>
+                      )}
+                      {entry.dopamine !== "无" && (
+                        <p>
+                          <span className="text-gray-400 mr-1">多巴胺干扰：</span>
+                          <span className="text-red-500">{entry.dopamine}</span>
+                        </p>
+                      )}
+                    </div>
                   )}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">{entry.trigger}</p>
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
         </div>
       ))}

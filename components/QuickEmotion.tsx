@@ -6,6 +6,7 @@ import { getEmoji, formatEmotionEntry, appendEntry } from "@/lib/emotion";
 import { loadToken } from "@/lib/storage";
 import { GitHubClient } from "@/lib/github";
 import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { chinaDateNow, chinaTimeNow } from "@/lib/time";
 
 const TAGS: EmotionTag[] = ["焦虑", "兴奋", "疲惫", "烦躁", "满足", "冲动", "平静", "沮丧"];
 const DOPAMINE: DopamineTrigger[] = ["无", "刷手机", "游戏", "短视频", "甜食"];
@@ -26,9 +27,8 @@ export function QuickEmotion() {
       if (!token) { setStatus("error"); return; }
       const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
 
-      const now = new Date();
-      const date = now.toISOString().split("T")[0];
-      const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const date = chinaDateNow();
+      const time = chinaTimeNow();
 
       const entry: EmotionEntry = {
         time,

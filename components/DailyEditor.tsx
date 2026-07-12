@@ -5,13 +5,14 @@ import { loadToken } from "@/lib/storage";
 import { GitHubClient } from "@/lib/github";
 import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
 import { parseDailyLog, toggleChecklistItem, createEmptyLog, formatDailyLog } from "@/lib/daily";
+import { chinaDateNow } from "@/lib/time";
 import type { DailyLog } from "@/lib/types";
 
 export function DailyEditor() {
   const [log, setLog] = useState<DailyLog | null>(null);
   const [rawContent, setRawContent] = useState("");
   const [sha, setSha] = useState<string | undefined>();
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(chinaDateNow());
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState("");

@@ -1,8 +1,9 @@
-# 🤖 项目1：AI辅助前端开发平台
+# 🤖 主线项目1：AI辅助前端开发平台
 
-> ⛄ **已冻结（2026-07-12）**：当前主线已切换为「AI 作战辅助系统」（见 [projects/ai-companion.md](ai-companion.md)）。
-> 本文档保留作为 AI 作战辅助系统完成后的候选项。
-> 解冻条件：AI 作战辅助系统核心功能上线并稳定运行 2 周。
+> 状态：🟢 已解冻，重新启动（2026-07-13）
+> 优先级：P0
+> 说明：原冻结条件「AI 作战辅助系统核心功能上线」已满足（见 [projects/ai-companion.md](ai-companion.md)，已完成并部署 Vercel）。
+> 开发方式：通过 Trae Work 进行，边做边学边优化。
 
 ## 项目定位
 结合OpenCode/GLM-5.1经验，打造"AI Code Review + 自动生成组件 + 性能诊断"的IDE插件/Web平台。

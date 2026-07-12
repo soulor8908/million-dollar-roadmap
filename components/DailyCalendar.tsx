@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { loadToken } from "@/lib/storage";
 import { GitHubClient } from "@/lib/github";
 import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { chinaTodayParts } from "@/lib/time";
 
 export function DailyCalendar({ onSelect }: { onSelect: (date: string) => void }) {
   const [loggedDates, setLoggedDates] = useState<Set<string>>(new Set());
@@ -30,12 +31,10 @@ export function DailyCalendar({ onSelect }: { onSelect: (date: string) => void }
 
   if (loading) return <p className="text-gray-400 text-xs">加载日历...</p>;
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const { year, month, day: todayDay } = chinaTodayParts();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayStr = now.toISOString().split("T")[0];
+  const todayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(todayDay).padStart(2, "0")}`;
 
   const cells: (string | null)[] = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);

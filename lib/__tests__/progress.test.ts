@@ -4,6 +4,7 @@ import {
   currentStreak,
   parseWeekHours,
 } from "../progress";
+import { chinaDateNow, chinaDateShift } from "../time";
 
 describe("progress", () => {
   it("parseAlgorithmProgress 解析 '当前: X/Y (Z%)'", () => {
@@ -26,14 +27,14 @@ describe("progress", () => {
   });
 
   it("currentStreak 从今天往回数连续天数", () => {
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const today = chinaDateNow();
+    const yesterday = chinaDateShift(today, -1);
     const dates = [yesterday, today];
     expect(currentStreak(dates)).toBe(2);
   });
 
   it("currentStreak 今天没记录则 0", () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const yesterday = chinaDateShift(chinaDateNow(), -1);
     expect(currentStreak([yesterday])).toBe(0);
   });
 

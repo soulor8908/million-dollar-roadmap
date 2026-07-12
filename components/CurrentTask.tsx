@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { parseRoutine, getCurrentTask } from "@/lib/routine";
+import { chinaTimeNow } from "@/lib/time";
 import type { CurrentTask as CurrentTaskType } from "@/lib/types";
 
 export function CurrentTask({ routineMarkdown }: { routineMarkdown: string }) {
@@ -10,10 +11,7 @@ export function CurrentTask({ routineMarkdown }: { routineMarkdown: string }) {
   useEffect(() => {
     const slots = parseRoutine(routineMarkdown);
     const update = () => {
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mm = String(now.getMinutes()).padStart(2, "0");
-      setTask(getCurrentTask(slots, `${hh}:${mm}`));
+      setTask(getCurrentTask(slots, chinaTimeNow()));
     };
     update();
     const timer = setInterval(update, 30000);

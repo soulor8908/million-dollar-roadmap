@@ -1,4 +1,5 @@
 import type { ProgressInfo } from "./types";
+import { chinaDateNow, chinaDateShift } from "./time";
 
 export function parseAlgorithmProgress(markdown: string): {
   done: number;
@@ -14,15 +15,11 @@ export function currentStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
   const set = new Set(dates);
   let streak = 0;
-  const d = new Date();
+  let current = chinaDateNow();
   for (;;) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const key = `${y}-${m}-${day}`;
-    if (set.has(key)) {
+    if (set.has(current)) {
       streak++;
-      d.setDate(d.getDate() - 1);
+      current = chinaDateShift(current, -1);
     } else {
       break;
     }

@@ -9,6 +9,7 @@ const items = [
   { href: "/rest", label: "休息", icon: "😴" },
   { href: "/daily", label: "日志", icon: "📝" },
   { href: "/progress", label: "进度", icon: "📊" },
+  { href: "/analyze", label: "分析", icon: "🧠" },
 ];
 
 export function Nav() {

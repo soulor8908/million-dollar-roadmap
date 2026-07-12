@@ -3,3 +3,7 @@ scripts/node_modules/
 .env
 *.log
 .DS_Store
+
+# Next.js
+.next/
+next-env.d.ts

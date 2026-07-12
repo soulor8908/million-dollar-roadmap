@@ -1,0 +1,10 @@
+{
+  "name": "作战辅助系统",
+  "short_name": "作战系统",
+  "description": "百万年薪作战系统的记录与提醒前端",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#f9fafb",
+  "icons": []
+}

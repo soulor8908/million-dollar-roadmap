@@ -1,0 +1,8 @@
+{
+  "name": "million-dollar-scripts",
+  "version": "1.0.0",
+  "description": "AI review scripts for million dollar roadmap",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

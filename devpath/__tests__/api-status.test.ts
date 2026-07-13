@@ -30,7 +30,9 @@ function makeRequest(body: unknown): Request {
 }
 
 describe("/api/status", () => {
-  beforeEach(() => vi.restoreAllMocks());
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("低能量 → learn 项数减少", async () => {
     const res = await POST(

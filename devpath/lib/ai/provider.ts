@@ -1,9 +1,14 @@
 // lib/ai/provider.ts
 // Vercel AI SDK Provider 配置
 // 支持 GLM / DeepSeek / MiMo / 自定义（均兼容 OpenAI 格式）
+// 默认 GLM 国内端点（零梯子可达）
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
+
+export type AIProvider = "glm" | "deepseek" | "mimo" | "custom";
+
+export const AI_PROVIDER: AIProvider = ((process.env.AI_PROVIDER as AIProvider) || "glm");
 
 interface ProviderConfig {
   baseURL: string;
@@ -47,19 +52,45 @@ function resolveConfig(): ProviderConfig {
       `未知的 AI_PROVIDER: ${provider}，请配置 AI_API_URL 和 AI_MODEL`
     );
   }
+
+  return { baseURL, model, apiKey };
+}
+
+let cachedModel: LanguageModel | null = null;
+
+/** 获取 AI 模型（带缓存） */
+export function getModel(): LanguageModel {
+  if (cachedModel) return cachedModel;
+  const { baseURL, model, apiKey } = resolveConfig();
   if (!apiKey) {
     throw new Error(
       "AI API Key 未配置：请设置 AI_API_KEY 或对应 provider 的 key 环境变量"
     );
   }
-
-  return { baseURL, model, apiKey };
+  const openai = createOpenAI({ baseURL, apiKey });
+  cachedModel = openai(model);
+  return cachedModel;
 }
 
+/** 检查是否配置了 AI Key */
+export function hasAIKey(): boolean {
+  const provider = (process.env.AI_PROVIDER || "glm").toLowerCase();
+  return Boolean(
+    process.env.AI_API_KEY ||
+      (provider === "glm" && process.env.GLM_API_KEY) ||
+      (provider === "deepseek" && process.env.DEEPSEEK_API_KEY) ||
+      (provider === "mimo" && process.env.MIMO_API_KEY)
+  );
+}
+
+/** 向后兼容：原 MVP 接口 */
 export function createAIProvider(): LanguageModel {
-  const { baseURL, model, apiKey } = resolveConfig();
-  const openai = createOpenAI({ baseURL, apiKey });
-  return openai(model);
+  return getModel();
+}
+
+/** 用于测试：重置缓存 */
+export function _resetModelCache(): void {
+  cachedModel = null;
 }
 
 export function getProviderInfo(): { provider: string; model: string; baseURL: string } {

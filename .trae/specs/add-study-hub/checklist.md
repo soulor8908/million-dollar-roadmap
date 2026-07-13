@@ -1,0 +1,27 @@
+- [x] `lib/types.ts` 新增 LeetCodeProblem / BackendWeek / StudyTab 类型
+- [x] `ProgressInfo` 扩展 algorithmTodayCount / algorithmIndependentCount / backendWeeksDone / backendWeeksTotal 字段
+- [x] `lib/algorithm.ts` 实现 parseLeetCodeChecklist 正确解析题目表格
+- [x] `lib/algorithm.ts` 实现 toggleProblem 在 `[ ]` ↔ `[x]` 间切换并填写字段
+- [x] `lib/algorithm.ts` 实现 getAlgorithmStats 计算完成/今日/独立统计
+- [x] `lib/__tests__/algorithm.test.ts` 至少 5 个测试用例全部通过
+- [x] `lib/backend.ts` 实现 parseBackendRoadmap 正确解析 Week/资料/产出
+- [x] `lib/backend.ts` 实现 toggleWeek 在周标题前加/移除 `[x]`
+- [x] `lib/__tests__/backend.test.ts` 至少 4 个测试用例全部通过
+- [x] `components/AlgorithmList.tsx` 按专题折叠展示，每题显示题号/标题/难度/完成状态
+- [x] 算法列表支持「只看未完成」筛选
+- [x] 算法列表打钩按钮点击区域 ≥44px
+- [x] `components/ProblemSheet.tsx` 从底部滑入，含日期/独立/耗时/备注字段
+- [x] ProblemSheet 默认日期为中国时区今天
+- [x] ProblemSheet 保存后调用 toggleProblem 写回 markdown
+- [x] `components/BackendRoadmap.tsx` 按 Month/Week 分组展示
+- [x] 后端路线卡片可展开看详情（学什么/资料/产出）
+- [x] 后端资料链接可点击新窗口打开
+- [x] 后端周次「标记完成」按钮调用 toggleWeek 写回 markdown
+- [x] `components/StudyTabs.tsx` 顶部三 Tab 平分宽度，当前高亮
+- [x] `app/progress/page.tsx` 用 StudyTabs 整合三个组件
+- [x] `ProgressDashboard.tsx` 新增「后端进度 N/24 周」卡片
+- [x] `components/Nav.tsx` 「进度」标签改为「学习」
+- [x] `app/progress/page.tsx` H1 改为「📚 学习中心」
+- [x] `npm test` 全部通过
+- [x] `npm run build` 无错误
+- [x] 移动端单手操作验证（打钩按钮、底部 sheet 拇指可达）

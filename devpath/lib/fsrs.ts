@@ -9,6 +9,7 @@ import {
   createEmptyCard,
   type Card,
   type State,
+  type Grade,
 } from "ts-fsrs";
 import { nanoid } from "nanoid";
 import type { ReviewCard, Rating as AppRating } from "./types";
@@ -91,6 +92,14 @@ export function createCard(
   };
 }
 
+// app Rating (1|2|3|4) → ts-fsrs Grade (排除 Rating.Manual) 映射
+const RATING_MAP: Record<AppRating, Grade> = {
+  1: Rating.Again,
+  2: Rating.Hard,
+  3: Rating.Good,
+  4: Rating.Easy,
+};
+
 export function rateCard(
   card: ReviewCard,
   rating: AppRating,
@@ -100,7 +109,7 @@ export function rateCard(
   const fsrsCard = toFsrsCard(card);
   const now = new Date();
   const result = f.repeat(fsrsCard, now);
-  const { card: updatedCard } = result[rating as Rating];
+  const { card: updatedCard } = result[RATING_MAP[rating]];
   return fromFsrsCard(updatedCard, card);
 }
 

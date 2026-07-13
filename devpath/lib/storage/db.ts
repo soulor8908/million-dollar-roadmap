@@ -27,6 +27,6 @@ export async function listKeys(prefix?: string): Promise<string[]> {
 
 export async function listItems<T>(prefix: string): Promise<T[]> {
   const matchedKeys = await listKeys(prefix);
-  const items = await Promise.all(matchedKeys.map((k) => get<T>(k)));
-  return items.filter((item): item is T => item !== undefined);
+  const items = await Promise.all(matchedKeys.map((k) => getItem<T>(k)));
+  return items.filter((item) => item !== undefined) as T[];
 }

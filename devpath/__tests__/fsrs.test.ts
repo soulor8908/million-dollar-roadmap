@@ -3,22 +3,23 @@ import { createCard, rateCard, getDueCards, getDueCount } from "../lib/fsrs";
 import type { ReviewCard } from "../lib/types";
 
 describe("fsrs", () => {
-  it("新卡片 due=今天，评分 Good 后 due 在未来", () => {
+  it("新卡片 due=今天，评分 Good 后 due 在未来且状态转换", () => {
     const card = createCard("plan1", "k1", "q1", "问题", "答案", "standard");
     const now = new Date();
     // 新卡片 due 是今天
     expect(new Date(card.due).getTime()).toBeLessThanOrEqual(now.getTime());
+    // 新卡片状态为 0 (New)
+    expect(card.state).toBe(0);
 
-    // 评分 Good
+    // 评分 Good (ts-fsrs v4: 新卡片 Good → Learning 状态, due ≈ now+10min)
     const rated = rateCard(card, 3, "standard");
-    // due 应该在未来（>= 明天）
     const ratedDue = new Date(rated.due);
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    expect(ratedDue.getTime()).toBeGreaterThanOrEqual(tomorrow.getTime());
+    // due 应在未来（大于 now）
+    expect(ratedDue.getTime()).toBeGreaterThan(now.getTime());
     // reps 应该 +1
     expect(rated.reps).toBe(card.reps + 1);
+    // 状态应从 New(0) 转为 Learning(1)
+    expect(rated.state).toBe(1);
   });
 
   it("评分 Again 后 stability 不大于 Good 评分", () => {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
   title: "devpath — AI 驱动的开发者成长 OS",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="bg-gray-50 text-gray-900 min-h-screen pb-16">
         {children}
+        <Nav />
       </body>
     </html>
   );

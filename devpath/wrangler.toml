@@ -1,16 +1,16 @@
 # wrangler.toml
-# Cloudflare Pages 本地开发 + KV binding 配置
-# 本地运行：npx wrangler pages dev out --kv KV
-# 部署：npx wrangler pages deploy out
+# Cloudflare Pages 配置
+# 部署：npx wrangler pages deploy .vercel/output/static --project-name=devpath
 
 name = "devpath"
-compatibility_date = "2026-07-13"
-pages_build_output_dir = "out"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+id = "086d793456e5425bacb04836da93ad9b"
+preview_id = "086d793456e5425bacb04836da93ad9b"
 
 [vars]
 PUBLIC_AUTH_TOKEN = "dev-token-change-in-prod"

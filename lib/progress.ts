@@ -1,5 +1,7 @@
 import type { ProgressInfo } from "./types";
 import { chinaDateNow, chinaDateShift } from "./time";
+import { parseLeetCodeChecklist, getAlgorithmStats } from "./algorithm";
+import { parseBackendRoadmap, getBackendStats } from "./backend";
 
 export function parseAlgorithmProgress(markdown: string): {
   done: number;
@@ -38,7 +40,11 @@ export function parseWeekHours(dailyContents: string[]): number {
 
 export function buildProgressInfo(
   progressMd: string,
-  dailyFiles: { name: string; content: string }[]
+  dailyFiles: { name: string; content: string }[],
+  options?: {
+    algorithmChecklistMd?: string;
+    backendRoadmapMd?: string;
+  }
 ): ProgressInfo {
   const algo = parseAlgorithmProgress(progressMd);
   const dates = dailyFiles
@@ -53,18 +59,48 @@ export function buildProgressInfo(
     .map((f) => f.content);
   const weekHours = parseWeekHours(recentContents);
 
+  let algorithmDone = algo.done;
+  let algorithmTotal = algo.total;
+  let algorithmPercent = algo.percent;
+  let algorithmTodayCount = 0;
+  let algorithmIndependentCount = 0;
+  let backendWeeksDone = 0;
+  let backendWeeksTotal = 24;
+
+  if (options?.algorithmChecklistMd) {
+    const problems = parseLeetCodeChecklist(options.algorithmChecklistMd);
+    if (problems.length > 0) {
+      const stats = getAlgorithmStats(problems);
+      // 用 checklist 的真实数据覆盖 progress.md 中的旧统计
+      algorithmDone = stats.done;
+      algorithmTotal = stats.total;
+      algorithmPercent =
+        stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+      algorithmTodayCount = stats.todayCount;
+      algorithmIndependentCount = stats.independentCount;
+    }
+  }
+
+  if (options?.backendRoadmapMd) {
+    const weeks = parseBackendRoadmap(options.backendRoadmapMd);
+    if (weeks.length > 0) {
+      const bstats = getBackendStats(weeks);
+      backendWeeksDone = bstats.done;
+      backendWeeksTotal = bstats.total;
+    }
+  }
+
   return {
-    algorithmDone: algo.done,
-    algorithmTotal: algo.total,
-    algorithmPercent: algo.percent,
+    algorithmDone,
+    algorithmTotal,
+    algorithmPercent,
     streakDays: streak,
     totalLogs: dailyFiles.length,
     latestLog: latest,
     weekHours,
-    // 占位：Task 7 替换为真实计算
-    algorithmTodayCount: 0,
-    algorithmIndependentCount: 0,
-    backendWeeksDone: 0,
-    backendWeeksTotal: 24,
+    algorithmTodayCount,
+    algorithmIndependentCount,
+    backendWeeksDone,
+    backendWeeksTotal,
   };
 }

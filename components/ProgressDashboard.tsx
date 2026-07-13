@@ -18,9 +18,11 @@ export function ProgressDashboard() {
       if (!token) { setLoading(false); setError("未登录"); return; }
       const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
-        const [progressFile, dailyNames] = await Promise.all([
+        const [progressFile, dailyNames, algoFile, backendFile] = await Promise.all([
           client.readFile("algorithm/progress.md"),
           client.listFiles("daily"),
+          client.readFile("algorithm/leetcode-checklist.md"),
+          client.readFile("backend/roadmap.md"),
         ]);
         const progressMd = progressFile?.content || "";
         const recentNames = dailyNames
@@ -33,7 +35,12 @@ export function ProgressDashboard() {
             return { name, content: f?.content || "" };
           })
         );
-        setInfo(buildProgressInfo(progressMd, dailyFiles));
+        setInfo(
+          buildProgressInfo(progressMd, dailyFiles, {
+            algorithmChecklistMd: algoFile?.content || "",
+            backendRoadmapMd: backendFile?.content || "",
+          })
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "加载失败");
       } finally {
@@ -54,6 +61,11 @@ export function ProgressDashboard() {
 
   const weekTarget = 23;
   const weekPercent = Math.min(100, Math.round((info.weekHours / weekTarget) * 100));
+
+  const backendPercent =
+    info.backendWeeksTotal > 0
+      ? Math.round((info.backendWeeksDone / info.backendWeeksTotal) * 100)
+      : 0;
 
   return (
     <div className="space-y-3">
@@ -93,6 +105,21 @@ export function ProgressDashboard() {
           />
         </div>
         <p className="text-xs text-gray-400 mt-1">{weekPercent}%</p>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 shadow-sm">
+        <p className="text-xs text-gray-500 mb-2">后端学习进度</p>
+        <div className="flex items-end gap-2">
+          <p className="text-2xl font-bold">{info.backendWeeksDone}</p>
+          <p className="text-sm text-gray-400">/ {info.backendWeeksTotal} 周</p>
+        </div>
+        <div className="bg-gray-100 rounded h-2 mt-2 overflow-hidden">
+          <div
+            className="bg-black h-2 transition-all"
+            style={{ width: `${backendPercent}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 mt-1">{backendPercent}%</p>
       </div>
 
       <div className="bg-white rounded-xl p-3 shadow-sm">

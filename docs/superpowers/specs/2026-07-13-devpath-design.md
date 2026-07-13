@@ -38,7 +38,7 @@
 
 ### 4 大核心亮点
 
-1. **AI 学习教练**：输入主题 → AI 拆知识树 → 生成面试题 → 排学习计划，用户可调顺序/内容/每日量
+1. **AI 学习教练**：输入主题 → AI 自主拆解知识树（数量不固定，按主题复杂度 5-30 个节点）→ 每个节点生成面试题 + 参考答案 → 排学习计划，用户可调顺序/内容/每日量
 2. **FSRS 遗忘曲线**：ts-fsrs 算法自动安排复习，比 Anki 的 SM-2 准 20%
 3. **能量感知调量**：每日状态评估 → AI 动态调整学习量（状态差减量/只复习）
 4. **公开学习主页**：可分享学习轨迹，热力图 + 雷达图 + 打卡，社交驱动坚持
@@ -56,6 +56,7 @@
   ├ /stats            数据可视化（热力图+雷达+周报）
   ├ /profile          公开主页设置
   ├ /u/[username]     公开学习主页（访客视角）
+  ├ /favorites        试题收藏夹（整份试题集 + 单题）
   ├ /settings         设置（AI key/每日量/FSRS/隐私）
   └ /onboarding       首次引导（3步）
 API 层（Next.js Route Handlers / Cloudflare Pages Functions）
@@ -63,7 +64,8 @@ API 层（Next.js Route Handlers / Cloudflare Pages Functions）
   ├ /api/review       FSRS 评分 + 重新排期
   ├ /api/status       状态评估 + AI 调量
   ├ /api/weekly       AI 周报生成
-  └ /api/public       公开主页读写（Cloudflare KV）
+  ├ /api/public       公开主页读写（Cloudflare KV）
+  └ /api/favorite     收藏操作（整份试题集/单题）
 引擎层（路径相对 /workspace/devpath/）
   ├ lib/ai/knowledge.ts    拆知识树（LLM + JSON Schema）
   ├ lib/ai/question.ts     生成面试题 + 参考答案
@@ -94,6 +96,7 @@ LLM 层（多 Provider）
 | `lib/storage/db.ts` | IndexedDB CRUD（idb-keyval 封装） | idb-keyval |
 | `lib/storage/github.ts` | GitHub 同步（复用现有） | GitHubClient |
 | `lib/storage/kv.ts` | Cloudflare KV 读写（公开主页） | Cloudflare KV |
+| `lib/favorite.ts` | 收藏管理（整份试题集 + 单题，IndexedDB） | idb-keyval |
 
 ## Tech Stack
 
@@ -146,10 +149,25 @@ interface Question {
   id: string;
   nodeId: string;
   question: string;
-  answer: string;                   // 200-400 字参考答案
+  answer: string;                   // 200-500 字参考答案（三段式）
   keyPoints: string[];
   followUps: string[];
   codeSnippet?: string;
+  favorited: boolean;               // 是否收藏单题
+  favoritedAt?: string;
+}
+
+// 试题集收藏（整份学习计划生成的试题）
+interface FavoriteDeck {
+  id: string;
+  planId: string;
+  topic: string;                    // 主题，如 "前端性能优化高频面试题"
+  questionIds: string[];            // 收藏的题目 id 列表
+  questionCount: number;
+  favoritedAt: string;
+  // 独立快照，不依赖原计划是否删除
+  questions: Question[];            // 完整题目副本（防止原计划删除后丢失）
+  knowledgeTree: KnowledgeNode[];   // 知识树快照
 }
 
 // 学习计划项
@@ -242,7 +260,7 @@ interface EnergyPattern {
 
 ## Core Flows
 
-### Flow 1: 知识树拆解（30 秒）
+### Flow 1: 知识树拆解（30-90 秒，按节点数）
 
 **输入**：用户输入主题 "前端性能优化高频面试题"
 
@@ -250,13 +268,14 @@ interface EnergyPattern {
 
 ```
 [System]
-你是技术学习专家。把用户给的学习主题拆解成 8-12 个知识节点。
+你是技术学习专家。把用户给的学习主题拆解成知识节点。
 要求：
 1. 每个节点是一个可独立学习的最小知识单元
 2. 标注节点间的依赖关系
 3. 评估难度 1-5
 4. 按面试出现频率排序
-5. 输出严格 JSON
+5. 节点数量由主题复杂度自行决定，不限制数量（简单主题 5-8 个，复杂主题可达 20-30 个）
+6. 输出严格 JSON
 
 [Schema]
 {
@@ -276,21 +295,21 @@ interface EnergyPattern {
 
 **降级**：失败重试 2 次，最终降级为预设模板（5 套常见主题：前端性能/React 基础/TypeScript/算法基础/系统设计）
 
-### Flow 2: 内容生成（30-60 秒，并行）
+### Flow 2: 内容生成（30-90 秒，并行）
 
-每个知识节点并行生成面试题：
+每个知识节点并行生成面试题 + 参考答案：
 
 ```typescript
 interface Question {
   question: string;        // "请解释 React 的 diff 算法，以及 key 属性的作用"
-  answer: string;          // 三段式：结论 → 展开 → 代码示例
+  answer: string;          // 三段式：结论 → 展开 → 代码示例（200-500 字）
   keyPoints: string[];
   followUps: string[];
   codeSnippet?: string;
 }
 ```
 
-**性能**：8 节点并行（Promise.all），总耗时 = 最慢的一个（约 10-15s），进度条 "3/8 已生成"
+**性能**：所有节点并行（Promise.all，分批 5 个一组避免限流），总耗时 = 最慢的一组，进度条 "3/N 已生成"
 
 **容错**：单个节点失败不影响其他，标记"待重试"
 
@@ -343,6 +362,23 @@ if (capacity > 1.5) → 建议加量 + 提醒别透支
 | 每日新内容数 | 设置页 1-5 个 | 影响每日分配 |
 | 复习节奏 | FSRS 参数切换 | 保守/标准/激进三种预设 |
 | 学习主题 | 叠加新主题 | 多计划并行，独立排期 |
+
+### 收藏功能（试题集 + 单题）
+
+| 操作 | 触发位置 | 行为 |
+|------|---------|------|
+| 收藏整份试题集 | 学习计划详情页顶部「⭐ 收藏这份试题」 | 创建 FavoriteDeck 快照（题目+知识树副本），原计划删除后收藏不丢 |
+| 取消收藏整份试题集 | 收藏夹列表 / 计划详情页 | 删除 FavoriteDeck |
+| 收藏单题 | 题目卡片右上角「⭐」按钮 | Question.favorited = true，记入收藏夹 |
+| 取消收藏单题 | 题目卡片 / 收藏夹 | Question.favorited = false |
+| 查看收藏 | 底部导航「我的」→「收藏夹」 | /favorites 页面，分两个 Tab：试题集 / 单题 |
+| 从收藏创建复习 | 收藏夹试题集 →「开始复习」 | 用 FavoriteDeck 的问题创建一组 FSRS 卡片 |
+| 从收藏创建新计划 | 收藏夹试题集 →「复制为新计划」 | 复用知识树，AI 不重新拆解 |
+
+**设计要点**：
+- FavoriteDeck 是独立快照，不依赖原 LearningPlan 存在
+- 单题收藏不创建快照，引用 Question.id，但收藏夹显示时从所有计划+快照中聚合
+- 收藏夹支持搜索 + 按主题/时间筛选
 
 ## Visualization
 

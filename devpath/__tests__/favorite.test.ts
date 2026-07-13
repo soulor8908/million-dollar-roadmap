@@ -124,8 +124,8 @@ describe("favorite (IndexedDB)", () => {
 
     const favorited = await listFavoritedQuestions();
     expect(favorited).toHaveLength(2);
-    expect(favorited.map((q) => q.id)).toContain("q1");
-    expect(favorited.map((q) => q.id)).toContain("q3");
+    expect(favorited.map((f) => f.question.id)).toContain("q1");
+    expect(favorited.map((f) => f.question.id)).toContain("q3");
   });
 
   it("无收藏题时返回空数组", async () => {

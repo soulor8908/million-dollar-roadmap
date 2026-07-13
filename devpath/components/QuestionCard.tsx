@@ -6,10 +6,13 @@ import type { Question } from "@/lib/types";
 interface Props {
   question: Question;
   onFavoriteToggle?: (questionId: string) => void;
+  onRegenerate?: (questionId: string) => void;
+  regenerating?: boolean;
 }
 
-export function QuestionCard({ question, onFavoriteToggle }: Props) {
+export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regenerating }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const isFailed = question.question === "生成失败，点击重试";
 
   return (
     <div className="border rounded-lg p-4 bg-white">
@@ -64,14 +67,29 @@ export function QuestionCard({ question, onFavoriteToggle }: Props) {
         </div>
       )}
 
-      {!expanded && question.answer && (
-        <button
-          onClick={() => setExpanded(true)}
-          className="text-xs text-blue-500 mt-1"
-        >
-          展开答案 ▼
-        </button>
-      )}
+      <div className="flex items-center gap-2 mt-2">
+        {!expanded && question.answer && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="text-xs text-blue-500"
+          >
+            展开答案 ▼
+          </button>
+        )}
+        {onRegenerate && (
+          <button
+            onClick={() => onRegenerate(question.id)}
+            disabled={regenerating}
+            className={`text-xs ml-auto px-2 py-1 rounded ${
+              isFailed
+                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"
+            } disabled:opacity-50`}
+          >
+            {regenerating ? "生成中..." : isFailed ? "🔄 重新生成" : "🔄 换一题"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { set } from "idb-keyval";
+import Link from "next/link";
+import { set, keys, get } from "idb-keyval";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan } from "@/lib/types";
 
@@ -20,6 +21,24 @@ export default function LearnPage() {
   const [error, setError] = useState("");
   const [dailyMinutes, setDailyMinutes] = useState(30);
   const [maxNewPerDay, setMaxNewPerDay] = useState(1);
+  const [history, setHistory] = useState<LearningPlan[]>([]);
+
+  // 加载历史计划
+  useEffect(() => {
+    (async () => {
+      const allKeys = await keys();
+      const planKeys = allKeys.filter(
+        (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.PLAN)
+      );
+      const plans = await Promise.all(
+        planKeys.map((k) => get<LearningPlan>(k))
+      );
+      const valid = plans
+        .filter((p): p is LearningPlan => p !== undefined)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setHistory(valid);
+    })();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,6 +147,33 @@ export default function LearnPage() {
           开始学习
         </button>
       </form>
+
+      {/* 历史计划 */}
+      {history.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-medium text-gray-500 mb-3">历史计划（{history.length}）</h2>
+          <div className="space-y-2">
+            {history.map((p) => (
+              <Link
+                key={p.id}
+                href={`/learn/${p.id}`}
+                className="block border rounded-lg p-3 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.topic}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {p.knowledgeTree.length} 知识点 · {p.questions.length} 题 ·{" "}
+                      {new Date(p.createdAt).toLocaleDateString("zh-CN")}
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-400 ml-2">查看 →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

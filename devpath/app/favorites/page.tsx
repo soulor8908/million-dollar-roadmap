@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { listFavoriteDecks, deleteFavoriteDeck, listFavoritedQuestions } from "@/lib/favorite";
+import Link from "next/link";
+import { listFavoriteDecks, deleteFavoriteDeck, listFavoritedQuestions, unfavorQuestion } from "@/lib/favorite";
 import { createCard } from "@/lib/fsrs";
 import { get, set } from "idb-keyval";
 import { KEY_PREFIXES } from "@/lib/types";
-import type { FavoriteDeck, Question, ReviewCard } from "@/lib/types";
+import type { FavoriteDeck } from "@/lib/types";
+import type { FavoritedQuestionWithPlan } from "@/lib/favorite";
 
 export default function FavoritesPage() {
   const [tab, setTab] = useState<"decks" | "questions">("decks");
   const [decks, setDecks] = useState<FavoriteDeck[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<FavoritedQuestionWithPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDeck, setExpandedDeck] = useState<string | null>(null);
 
@@ -25,8 +27,15 @@ export default function FavoritesPage() {
     loadData();
   }, []);
 
-  async function handleDeleteDeck(id: string) {
+  async function handleDeleteDeck(id: string, topic: string) {
+    if (!confirm(`确定删除试题集「${topic}」吗？此操作不可恢复。`)) return;
     await deleteFavoriteDeck(id);
+    await loadData();
+  }
+
+  async function handleUnfavorQuestion(planId: string, questionId: string, questionText: string) {
+    if (!confirm(`确定取消收藏这道题吗？\n\n${questionText.slice(0, 50)}${questionText.length > 50 ? "..." : ""}`)) return;
+    await unfavorQuestion(planId, questionId);
     await loadData();
   }
 
@@ -106,7 +115,7 @@ export default function FavoritesPage() {
                     {expandedDeck === deck.id ? "收起" : "查看题目"}
                   </button>
                   <button
-                    onClick={() => handleDeleteDeck(deck.id)}
+                    onClick={() => handleDeleteDeck(deck.id, deck.topic)}
                     className="px-3 py-1 bg-red-50 text-red-600 rounded text-xs font-medium hover:bg-red-100"
                   >
                     删除
@@ -134,9 +143,20 @@ export default function FavoritesPage() {
           {questions.length === 0 ? (
             <p className="text-center text-gray-400 py-8">还没有收藏的单题</p>
           ) : (
-            questions.map((q) => (
+            questions.map(({ question: q, planId, planTopic }) => (
               <div key={q.id} className="border rounded-lg p-3">
-                <p className="text-sm font-medium">{q.question}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{q.question}</p>
+                    <p className="text-xs text-gray-400 mt-1">来自：{planTopic}</p>
+                  </div>
+                  <button
+                    onClick={() => handleUnfavorQuestion(planId, q.id, q.question)}
+                    className="shrink-0 px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium hover:bg-red-100"
+                  >
+                    取消收藏
+                  </button>
+                </div>
                 {q.keyPoints.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {q.keyPoints.map((kp, i) => (
@@ -146,6 +166,12 @@ export default function FavoritesPage() {
                     ))}
                   </div>
                 )}
+                <Link
+                  href={`/learn/${planId}`}
+                  className="text-xs text-blue-500 mt-2 inline-block hover:underline"
+                >
+                  查看原计划 →
+                </Link>
               </div>
             ))
           )}

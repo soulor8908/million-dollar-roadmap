@@ -76,8 +76,14 @@ export async function deleteFavoriteDeck(id: string): Promise<void> {
   await del(KEY_PREFIXES.DECK + id);
 }
 
-// 从所有 plan 聚合 favorited 单题
-export async function listFavoritedQuestions(): Promise<Question[]> {
+// 从所有 plan 聚合 favorited 单题（带 planId 以便取消收藏）
+export interface FavoritedQuestionWithPlan {
+  question: Question;
+  planId: string;
+  planTopic: string;
+}
+
+export async function listFavoritedQuestions(): Promise<FavoritedQuestionWithPlan[]> {
   const allKeys = await keys();
   const planKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.PLAN)
@@ -85,12 +91,20 @@ export async function listFavoritedQuestions(): Promise<Question[]> {
   const plans = await Promise.all(
     planKeys.map((k) => get<LearningPlan>(k))
   );
-  const favorited: Question[] = [];
+  const favorited: FavoritedQuestionWithPlan[] = [];
   for (const plan of plans) {
     if (!plan) continue;
     for (const q of plan.questions) {
-      if (q.favorited) favorited.push(q);
+      if (q.favorited) favorited.push({ question: q, planId: plan.id, planTopic: plan.topic });
     }
   }
   return favorited;
+}
+
+// 取消单题收藏：找到对应 plan，翻转 favorited，写回
+export async function unfavorQuestion(planId: string, questionId: string): Promise<void> {
+  const plan = await get<LearningPlan>(KEY_PREFIXES.PLAN + planId);
+  if (!plan) return;
+  const updated = toggleQuestionInPlan(plan, questionId);
+  await set(KEY_PREFIXES.PLAN + planId, updated);
 }

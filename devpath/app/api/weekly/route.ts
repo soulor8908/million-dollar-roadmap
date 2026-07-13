@@ -7,7 +7,7 @@ import { setItem as dbSet } from "@/lib/storage/db";
 import { nanoid } from "nanoid";
 import type { LearnLog, ReviewLog, DailyStatus } from "@/lib/types";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 interface WeeklyRequestBody {
   weekStart: string;

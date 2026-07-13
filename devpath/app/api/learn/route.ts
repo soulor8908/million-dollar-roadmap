@@ -7,6 +7,8 @@ import { topoSort, allocateDaily } from "@/lib/schedule";
 import { nowISO } from "@/lib/time";
 import type { LearningPlan } from "@/lib/types";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

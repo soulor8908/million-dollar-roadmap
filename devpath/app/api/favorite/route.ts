@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildFavoriteDeck, toggleQuestionInPlan } from "@/lib/favorite";
 import type { LearningPlan } from "@/lib/types";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

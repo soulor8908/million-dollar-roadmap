@@ -9,6 +9,8 @@ import { rateCard } from "@/lib/fsrs";
 import { nowISO } from "@/lib/time";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

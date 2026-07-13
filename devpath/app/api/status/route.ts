@@ -7,7 +7,7 @@ import { enhanceAdjustment } from "@/lib/ai/status-enhance";
 import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
 import type { DailyStatus, ScheduleItem } from "@/lib/types";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 interface StatusRequestBody {
   date: string;

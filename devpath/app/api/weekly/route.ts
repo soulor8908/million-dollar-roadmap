@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { generateWeeklyReport } from "@/lib/ai/weekly-report";
+import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { setItem as dbSet } from "@/lib/storage/db";
 import { nanoid } from "nanoid";
 import type { LearnLog, ReviewLog, DailyStatus } from "@/lib/types";
@@ -17,6 +18,7 @@ interface WeeklyRequestBody {
 }
 
 export async function POST(req: Request) {
+  await initCloudflareEnv();
   let body: WeeklyRequestBody;
   try {
     body = (await req.json()) as WeeklyRequestBody;

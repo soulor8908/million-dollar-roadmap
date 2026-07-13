@@ -8,8 +8,6 @@ import type { LanguageModel } from "ai";
 
 export type AIProvider = "glm" | "deepseek" | "mimo" | "custom";
 
-export const AI_PROVIDER: AIProvider = ((process.env.AI_PROVIDER as AIProvider) || "glm");
-
 interface ProviderConfig {
   baseURL: string;
   model: string;
@@ -31,20 +29,48 @@ const PRESETS: Record<string, Omit<ProviderConfig, "apiKey">> = {
   },
 };
 
+// Cloudflare Pages 运行时环境变量访问
+// next-on-pages 构建时 process.env 被内联为字面量，运行时环境变量必须通过 getRequestContext 获取
+// 开发环境（next dev）走 process.env，生产环境（Cloudflare Pages）走 getRequestContext
+declare global {
+  // eslint-disable-next-line no-var
+  var __cloudflareEnv: Record<string, string> | undefined;
+}
+
+function getEnv(key: string): string | undefined {
+  // 1. 开发环境：process.env
+  const pe = process.env[key];
+  if (pe) return pe;
+  // 2. Cloudflare Pages 运行时：通过 getRequestContext 注入的 env
+  if (globalThis.__cloudflareEnv && globalThis.__cloudflareEnv[key]) {
+    return globalThis.__cloudflareEnv[key];
+  }
+  return undefined;
+}
+
+/** 由 API route 在请求时调用，注入 Cloudflare 运行时环境变量 */
+export function setCloudflareEnv(env: Record<string, unknown>): void {
+  const filtered: Record<string, string> = {};
+  for (const [k, v] of Object.entries(env)) {
+    if (typeof v === "string") filtered[k] = v;
+  }
+  globalThis.__cloudflareEnv = filtered;
+  // 重置缓存，让下次 getModel 重新读取
+  cachedModel = null;
+}
+
 function resolveConfig(): ProviderConfig {
-  const provider = (process.env.AI_PROVIDER || "glm").toLowerCase();
+  const provider = (getEnv("AI_PROVIDER") || "glm").toLowerCase();
   const preset = PRESETS[provider];
 
-  // 通用配置优先级最高
-  const baseURL = process.env.AI_API_URL || preset?.baseURL;
-  const model = process.env.AI_MODEL || preset?.model;
+  const baseURL = getEnv("AI_API_URL") || preset?.baseURL;
+  const model = getEnv("AI_MODEL") || preset?.model;
 
-  // API Key：通用 > provider 专用
   const apiKey =
-    process.env.AI_API_KEY ||
-    (provider === "glm" && process.env.GLM_API_KEY) ||
-    (provider === "deepseek" && process.env.DEEPSEEK_API_KEY) ||
-    (provider === "mimo" && process.env.MIMO_API_KEY) ||
+    getEnv("AI_API_KEY") ||
+    (provider === "glm" && getEnv("GLM_API_KEY")) ||
+    (provider === "deepseek" && getEnv("DEEPSEEK_API_KEY")) ||
+    (provider === "mimo" && getEnv("MIMO_API_KEY")) ||
     "";
 
   if (!baseURL || !model) {
@@ -74,12 +100,12 @@ export function getModel(): LanguageModel {
 
 /** 检查是否配置了 AI Key */
 export function hasAIKey(): boolean {
-  const provider = (process.env.AI_PROVIDER || "glm").toLowerCase();
+  const provider = (getEnv("AI_PROVIDER") || "glm").toLowerCase();
   return Boolean(
-    process.env.AI_API_KEY ||
-      (provider === "glm" && process.env.GLM_API_KEY) ||
-      (provider === "deepseek" && process.env.DEEPSEEK_API_KEY) ||
-      (provider === "mimo" && process.env.MIMO_API_KEY)
+    getEnv("AI_API_KEY") ||
+      (provider === "glm" && getEnv("GLM_API_KEY")) ||
+      (provider === "deepseek" && getEnv("DEEPSEEK_API_KEY")) ||
+      (provider === "mimo" && getEnv("MIMO_API_KEY"))
   );
 }
 
@@ -94,11 +120,11 @@ export function _resetModelCache(): void {
 }
 
 export function getProviderInfo(): { provider: string; model: string; baseURL: string } {
-  const provider = (process.env.AI_PROVIDER || "glm").toLowerCase();
+  const provider = (getEnv("AI_PROVIDER") || "glm").toLowerCase();
   const preset = PRESETS[provider];
   return {
     provider,
-    model: process.env.AI_MODEL || preset?.model || "unknown",
-    baseURL: process.env.AI_API_URL || preset?.baseURL || "unknown",
+    model: getEnv("AI_MODEL") || preset?.model || "unknown",
+    baseURL: getEnv("AI_API_URL") || preset?.baseURL || "unknown",
   };
 }

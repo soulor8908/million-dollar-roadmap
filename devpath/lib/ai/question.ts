@@ -50,12 +50,13 @@ async function generateOne(node: KnowledgeNode): Promise<Question> {
       codeSnippet: result.object.codeSnippet,
       favorited: false,
     };
-  } catch {
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e);
     return {
       id: nanoid(),
       nodeId: node.id,
       question: "生成失败，点击重试",
-      answer: "",
+      answer: `[ERROR] ${errMsg}`,
       keyPoints: [],
       followUps: [],
       favorited: false,

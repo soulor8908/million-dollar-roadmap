@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { adjustDailyLoad, detectEnhanceTrigger } from "@/lib/status";
 import { enhanceAdjustment } from "@/lib/ai/status-enhance";
+import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
 import type { DailyStatus, ScheduleItem } from "@/lib/types";
 
@@ -18,6 +19,7 @@ interface StatusRequestBody {
 }
 
 export async function POST(req: Request) {
+  await initCloudflareEnv();
   let body: StatusRequestBody;
   try {
     body = (await req.json()) as StatusRequestBody;

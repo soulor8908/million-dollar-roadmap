@@ -6,12 +6,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { rateCard } from "@/lib/fsrs";
+import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { nowISO } from "@/lib/time";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
+  await initCloudflareEnv();
   try {
     const body = await req.json();
     const { card, rating, mode = "standard" } = body as {

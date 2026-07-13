@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { decomposeKnowledge } from "@/lib/ai/knowledge";
 import { generateQuestions } from "@/lib/ai/question";
+import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { topoSort, allocateDaily } from "@/lib/schedule";
 import { nowISO } from "@/lib/time";
 import type { LearningPlan } from "@/lib/types";
@@ -10,6 +11,7 @@ import type { LearningPlan } from "@/lib/types";
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
+  await initCloudflareEnv();
   try {
     const body = await req.json();
     const { topic, dailyMinutes = 30, maxNewPerDay = 1 } = body as {

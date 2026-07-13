@@ -64,7 +64,7 @@ describe("question", () => {
     expect(questions).toHaveLength(3);
     expect(questions[0].question).toBe("题1");
     expect(questions[1].question).toBe("生成失败，点击重试");
-    expect(questions[1].answer).toBe("");
+    expect(questions[1].answer).toBe("[ERROR] AI 失败");
     expect(questions[2].question).toBe("题3");
   });
 

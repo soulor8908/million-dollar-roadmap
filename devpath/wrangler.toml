@@ -14,3 +14,5 @@ preview_id = "086d793456e5425bacb04836da93ad9b"
 
 [vars]
 PUBLIC_AUTH_TOKEN = "dev-token-change-in-prod"
+AI_PROVIDER = "deepseek"
+# DEEPSEEK_API_KEY 通过 `wrangler pages secret put DEEPSEEK_API_KEY --project-name=devpath` 上传

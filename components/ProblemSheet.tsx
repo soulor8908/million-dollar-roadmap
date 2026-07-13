@@ -53,11 +53,11 @@ export function ProblemSheet({ problem, onClose, onSave }: ProblemSheetProps) {
       {/* 半透明遮罩 */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/40 z-40"
+        className="fixed inset-0 bg-black/40 z-[55]"
       />
-      {/* bottom sheet */}
+      {/* bottom sheet，z-index 高于 Nav(z-50) 以避免按钮被遮挡 */}
       <div
-        className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl p-4 max-h-[70vh] overflow-y-auto z-50"
+        className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl p-4 max-h-[70vh] overflow-y-auto z-[60]"
         style={{
           transform: mounted ? "translateY(0)" : "translateY(100%)",
           transition: "transform 0.2s ease-out",

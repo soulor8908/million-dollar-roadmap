@@ -205,6 +205,77 @@
     font-size: 13px; font-weight: 600; color: var(--text2);
     text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px;
   }
+
+  /* 学习中心子 Tab */
+  .subtabs { display: flex; gap: 0; margin-bottom: 12px; background: #f0f0f2; border-radius: 12px; padding: 3px; }
+  .subtab {
+    flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: 600;
+    color: var(--text2); border-radius: 9px; cursor: pointer; transition: all .2s;
+    min-height: 44px; display: flex; align-items: center; justify-content: center;
+  }
+  .subtab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .subpage { display: none; }
+  .subpage.active { display: block; }
+
+  /* 底部 sheet */
+  .sheet-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .sheet-mask.show { opacity: 1; pointer-events: auto; }
+  .bottom-sheet {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+    width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0;
+    padding: 16px 16px 32px; z-index: 301; max-height: 85vh; overflow-y: auto;
+    transition: transform .3s cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  .bottom-sheet.show { transform: translateX(-50%) translateY(0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
+
+  /* 算法题难度色块 */
+  .diff-tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .diff-简单 { background: #e3ffe3; color: var(--green); }
+  .diff-中等 { background: #fff0e0; color: var(--orange); }
+  .diff-困难 { background: #ffe3e8; color: var(--red); }
+
+  /* 算法题目行 */
+  .algo-item {
+    display: flex; align-items: center; gap: 8px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer; min-height: 44px;
+  }
+  .algo-item:last-child { border: none; }
+  .algo-item .pnum { font-size: 12px; color: var(--text2); width: 36px; flex-shrink: 0; font-family: monospace; }
+  .algo-item .ptitle { flex: 1; font-size: 14px; }
+  .algo-item .toggle {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+  }
+  .algo-item.done .toggle { background: var(--green); border-color: var(--green); color: #fff; }
+  .algo-item.done .ptitle { color: var(--text2); }
+
+  /* 专题分组 */
+  .algo-group { margin-bottom: 10px; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .algo-group-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; cursor: pointer; font-weight: 600; font-size: 14px; min-height: 44px;
+  }
+  .algo-group-body { display: none; padding: 0 14px; }
+  .algo-group.open .algo-group-body { display: block; }
+  .algo-group-arrow { transition: transform .2s; color: var(--text2); font-size: 11px; }
+  .algo-group.open .algo-group-arrow { transform: rotate(90deg); }
+
+  /* 后端周卡片 */
+  .week-card { border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 8px; overflow: hidden; background: var(--card); }
+  .week-card.done { border-color: var(--green); }
+  .week-card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; cursor: pointer; min-height: 44px;
+  }
+  .week-card-body { display: none; padding: 0 14px 14px; font-size: 13px; }
+  .week-card.open .week-card-body { display: block; }
+  .week-card .week-num { font-size: 11px; color: var(--text2); }
+  .week-card .week-title { font-weight: 600; font-size: 14px; margin-top: 2px; }
+  .resource-link { color: var(--blue); text-decoration: none; }
 </style>
 </head>
 <body>
@@ -370,45 +441,95 @@
   <button class="btn" onclick="saveDaily()">保存日志</button>
 </div>
 
-<!-- 进度查看 -->
+<!-- 学习中心 -->
 <div class="page" id="page-progress">
-  <h1>📊 进度查看</h1>
+  <h1>📚 学习中心</h1>
 
-  <div class="card">
-    <div class="label">算法进度</div>
-    <div class="value"><span id="algo-done">12</span><span style="font-size:16px;color:var(--text2)">/200</span></div>
-    <div class="bar"><div class="bar-fill" id="algo-bar" style="width:6%"></div></div>
-    <div style="font-size:11px;color:var(--text2);margin-top:4px" id="algo-percent">6%</div>
+  <div class="subtabs">
+    <div class="subtab active" data-subtab="algo">算法</div>
+    <div class="subtab" data-subtab="backend">后端</div>
+    <div class="subtab" data-subtab="stats">统计</div>
   </div>
 
-  <div class="grid2">
-    <div class="card stat">
-      <div class="num" id="streak">3</div>
-      <div class="desc">连续打卡（天）</div>
+  <!-- 算法子 Tab -->
+  <div class="subpage active" id="subpage-algo">
+    <div class="card">
+      <div class="row">
+        <div>
+          <div class="label">已完成</div>
+          <div class="value"><span id="algo-done-count">0</span><span style="font-size:16px;color:var(--text2)">/15</span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">今日</div>
+          <div class="value" id="algo-today-count">0</div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:10px"><div class="bar-fill" id="algo-progress-bar" style="width:0%"></div></div>
     </div>
-    <div class="card stat">
-      <div class="num" id="total-logs">5</div>
-      <div class="desc">累计日志（篇）</div>
+
+    <div class="card">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-height:44px;cursor:pointer">
+        <input type="checkbox" id="algo-filter" style="width:auto"> 只看未完成
+      </label>
     </div>
+
+    <div id="algo-groups"></div>
   </div>
 
-  <div class="card">
-    <div class="label">本周学习时长</div>
-    <div class="row">
-      <div class="value"><span id="week-hours">18.5</span><span style="font-size:14px;color:var(--text2)">/ 23h</span></div>
-      <span class="badge badge-green" id="week-percent">80%</span>
+  <!-- 后端子 Tab -->
+  <div class="subpage" id="subpage-backend">
+    <div class="card">
+      <div class="label">后端学习进度</div>
+      <div class="value"><span id="backend-done-count">0</span><span style="font-size:16px;color:var(--text2)">/24 周</span></div>
+      <div class="bar" style="margin-top:6px"><div class="bar-fill" id="backend-progress-bar" style="width:0%"></div></div>
     </div>
-    <div class="bar"><div class="bar-fill" id="week-bar" style="width:80%"></div></div>
+    <div id="backend-months"></div>
   </div>
 
-  <div class="card">
-    <div class="label">最近日志</div>
-    <div style="font-size:14px;font-weight:600" id="latest-log">2026-07-13</div>
-  </div>
+  <!-- 统计子 Tab -->
+  <div class="subpage" id="subpage-stats">
+    <div class="card">
+      <div class="label">算法总进度</div>
+      <div class="value"><span id="algo-done">12</span><span style="font-size:16px;color:var(--text2)">/200</span></div>
+      <div class="bar"><div class="bar-fill" id="algo-bar" style="width:6%"></div></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px" id="algo-percent">6%</div>
+    </div>
 
-  <div class="card">
-    <div class="label">本月日历</div>
-    <div class="calendar" id="calendar"></div>
+    <div class="card">
+      <div class="label">后端学习进度</div>
+      <div class="value"><span id="backend-stat-done">0</span><span style="font-size:16px;color:var(--text2)">/24 周</span></div>
+      <div class="bar"><div class="bar-fill" id="backend-stat-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card stat">
+        <div class="num" id="streak">3</div>
+        <div class="desc">连续打卡（天）</div>
+      </div>
+      <div class="card stat">
+        <div class="num" id="total-logs">5</div>
+        <div class="desc">累计日志（篇）</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">本周学习时长</div>
+      <div class="row">
+        <div class="value"><span id="week-hours">18.5</span><span style="font-size:14px;color:var(--text2)">/ 23h</span></div>
+        <span class="badge badge-green" id="week-percent">80%</span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="week-bar" style="width:80%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="label">最近日志</div>
+      <div style="font-size:14px;font-weight:600" id="latest-log">2026-07-13</div>
+    </div>
+
+    <div class="card">
+      <div class="label">本月日历</div>
+      <div class="calendar" id="calendar"></div>
+    </div>
   </div>
 </div>
 
@@ -430,11 +551,44 @@
   <div class="nav-item" data-page="emotion"><span class="icon">📖</span>情绪</div>
   <div class="nav-item" data-page="rest"><span class="icon">😴</span>休息</div>
   <div class="nav-item" data-page="daily"><span class="icon">📝</span>日志</div>
-  <div class="nav-item" data-page="progress"><span class="icon">📊</span>进度</div>
+  <div class="nav-item" data-page="progress"><span class="icon">📚</span>学习</div>
   <div class="nav-item" data-page="analyze"><span class="icon">🧠</span>分析</div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 算法记录底部 sheet -->
+<div class="sheet-mask" id="sheet-mask" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <h2 id="sheet-title" style="margin-bottom:12px">记录题目</h2>
+  <div class="card" style="margin-bottom:12px">
+    <div class="label">完成日期</div>
+    <input type="date" id="sheet-date">
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="label">是否独立完成</div>
+    <div class="pill-row" id="sheet-independent">
+      <span class="pill active" data-v="✅">✅ 独立完成</span>
+      <span class="pill" data-v="⚠️">⚠️ 看提示</span>
+      <span class="pill" data-v="❌">❌ 看题解</span>
+    </div>
+  </div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="label">耗时（分钟）</div>
+      <input id="sheet-cost" type="number" min="0" placeholder="25">
+    </div>
+    <div class="card">
+      <div class="label">备注</div>
+      <input id="sheet-note" placeholder="可选">
+    </div>
+  </div>
+  <div class="grid2">
+    <button class="btn outline" onclick="closeSheet()">取消</button>
+    <button class="btn" onclick="saveProblem()">保存</button>
+  </div>
+</div>
 
 <script>
 // ============ 数据存储 ============
@@ -501,7 +655,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     item.classList.add('active');
     document.getElementById('page-' + page).classList.add('active');
-    if (page === 'progress') renderCalendar();
+    if (page === 'progress') { renderCalendar(); renderAlgo(); renderBackend(); }
     if (page === 'emotion') renderEmotions();
   });
 });
@@ -935,6 +1089,244 @@ function toast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
+
+// ============ 学习中心：算法刷题 + 后端路线 ============
+const leetcodeProblems = [
+  { id: 1, number: "1", title: "两数之和", difficulty: "简单", category: "数组与字符串", completed: false },
+  { id: 2, number: "49", title: "字母异位词分组", difficulty: "简单", category: "数组与字符串", completed: false },
+  { id: 3, number: "128", title: "最长连续序列", difficulty: "中等", category: "数组与字符串", completed: true, date: "2026-07-12", independent: "✅", cost: "25" },
+  { id: 4, number: "21", title: "合并两个有序链表", difficulty: "简单", category: "链表", completed: false },
+  { id: 5, number: "206", title: "反转链表", difficulty: "简单", category: "链表", completed: false },
+  { id: 6, number: "141", title: "环形链表", difficulty: "简单", category: "链表", completed: true, date: "2026-07-13", independent: "⚠️", cost: "18" },
+  { id: 7, number: "20", title: "有效的括号", difficulty: "简单", category: "栈与队列", completed: false },
+  { id: 8, number: "155", title: "最小栈", difficulty: "中等", category: "栈与队列", completed: false },
+  { id: 9, number: "94", title: "中序遍历", difficulty: "简单", category: "二叉树", completed: false },
+  { id: 10, number: "104", title: "二叉树最大深度", difficulty: "简单", category: "二叉树", completed: false },
+  { id: 11, number: "46", title: "全排列", difficulty: "中等", category: "回溯", completed: false },
+  { id: 12, number: "78", title: "子集", difficulty: "中等", category: "回溯", completed: false },
+  { id: 13, number: "70", title: "爬楼梯", difficulty: "简单", category: "动态规划", completed: true, date: "2026-07-13", independent: "✅", cost: "5" },
+  { id: 14, number: "198", title: "打家劫舍", difficulty: "中等", category: "动态规划", completed: false },
+  { id: 15, number: "200", title: "岛屿数量", difficulty: "中等", category: "图论", completed: false },
+];
+
+const backendWeeks = [
+  { week: 1, month: 1, title: "语法基础 + 工具链", completed: true, days: ["Day 1-2: 变量、类型", "Day 3: 函数", "Day 4: 结构体"], resources: [{label: "A Tour of Go", url: "https://go.dev/tour/welcome/list"}, {label: "Go by Example", url: "https://gobyexample.com/"}], output: "backend/demos/week1-hello/" },
+  { week: 2, month: 1, title: "集合类型 + 接口", completed: false, days: ["Day 1-2: 数组、切片", "Day 3: map", "Day 4: 接口"], resources: [{label: "Go 语言圣经", url: "https://gopl-zh.com/"}], output: "backend/demos/week2-student-cli/" },
+  { week: 3, month: 1, title: "错误处理 + 测试", completed: false, days: ["Day 1-2: error/panic", "Day 3: 单元测试", "Day 4: benchmark"], resources: [{label: "Go Testing", url: "https://pkg.go.dev/testing"}], output: "backend/demos/week3-tests/" },
+  { week: 4, month: 1, title: "goroutine + channel", completed: false, days: ["Day 1-2: goroutine", "Day 3: channel", "Day 4: select"], resources: [{label: "Go 并发编程", url: "https://gobyexample.com/goroutines"}], output: "backend/demos/week4-concurrency/" },
+  { week: 5, month: 2, title: "HTTP 服务 + 路由", completed: false, days: ["Day 1-2: net/http", "Day 3: chi/gin", "Day 4: 中间件"], resources: [{label: "Gin 文档", url: "https://gin-gonic.com/"}], output: "backend/demos/week5-http/" },
+  { week: 6, month: 2, title: "数据库 + ORM", completed: false, days: ["Day 1-2: database/sql", "Day 3: GORM", "Day 4: 迁移"], resources: [{label: "GORM 指南", url: "https://gorm.io/zh_CN/docs/"}], output: "backend/demos/week6-db/" },
+  { week: 7, month: 2, title: "Redis + 缓存", completed: false, days: ["Day 1-2: redis 基础", "Day 3: 缓存策略", "Day 4: 分布式锁"], resources: [{label: "Redis 最佳实践", url: "https://redis.io/docs/"}], output: "backend/demos/week7-redis/" },
+  { week: 8, month: 2, title: "项目实战：TODO API", completed: false, days: ["Day 1-2: 设计 API", "Day 3: 实现", "Day 4: 部署"], resources: [{label: "RESTful API 设计", url: "https://restfulapi.net/"}], output: "backend/demos/week8-todo-api/" },
+];
+
+// localStorage 读取（raw key，不带前缀）
+let leetcodeData = (() => {
+  try { return JSON.parse(localStorage.getItem('demo_leetcode')) || {}; } catch { return {}; }
+})();
+let backendData = (() => {
+  try { return JSON.parse(localStorage.getItem('demo_backend')) || {}; } catch { return {}; }
+})();
+
+// 首次加载：用 mock 的 completed 字段作为初始种子
+if (Object.keys(leetcodeData).length === 0) {
+  leetcodeProblems.forEach(p => {
+    if (p.completed) {
+      leetcodeData[p.id] = { date: p.date, independent: p.independent, cost: String(p.cost || ''), note: '' };
+    }
+  });
+  localStorage.setItem('demo_leetcode', JSON.stringify(leetcodeData));
+}
+if (Object.keys(backendData).length === 0) {
+  backendWeeks.forEach(w => { if (w.completed) backendData[w.week] = true; });
+  localStorage.setItem('demo_backend', JSON.stringify(backendData));
+}
+function saveLeetcode() { localStorage.setItem('demo_leetcode', JSON.stringify(leetcodeData)); }
+function saveBackend() { localStorage.setItem('demo_backend', JSON.stringify(backendData)); }
+
+// ---- 子 Tab 切换 ----
+document.querySelectorAll('.subtab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.subtab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.subpage').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('subpage-' + t.dataset.subtab).classList.add('active');
+    if (t.dataset.subtab === 'stats') renderCalendar();
+    if (t.dataset.subtab === 'algo') renderAlgo();
+    if (t.dataset.subtab === 'backend') renderBackend();
+  });
+});
+
+// ---- 算法渲染 ----
+function renderAlgo() {
+  const onlyUndone = document.getElementById('algo-filter').checked;
+  const groups = {};
+  leetcodeProblems.forEach(p => {
+    const done = !!leetcodeData[p.id];
+    if (onlyUndone && done) return;
+    if (!groups[p.category]) groups[p.category] = [];
+    groups[p.category].push(p);
+  });
+
+  const doneCount = leetcodeProblems.filter(p => leetcodeData[p.id]).length;
+  const today = fmtDate(chinaNow());
+  const todayCount = leetcodeProblems.filter(p => leetcodeData[p.id] && leetcodeData[p.id].date === today).length;
+  document.getElementById('algo-done-count').textContent = doneCount;
+  document.getElementById('algo-today-count').textContent = todayCount;
+  document.getElementById('algo-progress-bar').style.width = (doneCount / leetcodeProblems.length * 100) + '%';
+
+  const el = document.getElementById('algo-groups');
+  const entries = Object.entries(groups);
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="card"><p style="font-size:13px;color:var(--text2)">没有未完成的题目 🎉</p></div>';
+    return;
+  }
+  el.innerHTML = entries.map(([cat, items]) => {
+    const doneInGroup = items.filter(p => leetcodeData[p.id]).length;
+    return `
+      <div class="algo-group">
+        <div class="algo-group-head" onclick="this.parentElement.classList.toggle('open')">
+          <span>${cat} <span style="font-size:11px;color:var(--text2);font-weight:400">${doneInGroup}/${items.length}</span></span>
+          <span class="algo-group-arrow">▶</span>
+        </div>
+        <div class="algo-group-body">
+          ${items.map(p => {
+            const d = leetcodeData[p.id];
+            return `
+              <div class="algo-item ${d ? 'done' : ''}" onclick="onAlgoClick(${p.id})">
+                <span class="pnum">#${p.number}</span>
+                <span class="ptitle">${p.title}</span>
+                <span class="diff-tag diff-${p.difficulty}">${p.difficulty}</span>
+                <span class="toggle">${d ? '✓' : '○'}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- 算法：点击题目 ----
+let currentProblemId = null;
+let sheetIndependent = '✅';
+document.querySelectorAll('#sheet-independent .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#sheet-independent .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    sheetIndependent = p.dataset.v;
+  });
+});
+
+function onAlgoClick(id) {
+  const prob = leetcodeProblems.find(p => p.id === id);
+  if (leetcodeData[id]) {
+    if (confirm(`取消「${prob.title}」的完成记录？`)) {
+      delete leetcodeData[id];
+      saveLeetcode();
+      renderAlgo();
+      toast('已取消完成');
+    }
+  } else {
+    currentProblemId = id;
+    document.getElementById('sheet-title').textContent = `#${prob.number} ${prob.title}`;
+    document.getElementById('sheet-date').value = fmtDate(chinaNow());
+    document.getElementById('sheet-cost').value = '';
+    document.getElementById('sheet-note').value = '';
+    sheetIndependent = '✅';
+    document.querySelectorAll('#sheet-independent .pill').forEach(x => x.classList.remove('active'));
+    const def = document.querySelector('#sheet-independent .pill[data-v="✅"]');
+    if (def) def.classList.add('active');
+    openSheet();
+  }
+}
+
+function openSheet() {
+  document.getElementById('sheet-mask').classList.add('show');
+  document.getElementById('sheet').classList.add('show');
+}
+function closeSheet() {
+  document.getElementById('sheet-mask').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+}
+
+function saveProblem() {
+  if (currentProblemId == null) return;
+  const date = document.getElementById('sheet-date').value || fmtDate(chinaNow());
+  const cost = document.getElementById('sheet-cost').value || '';
+  const note = document.getElementById('sheet-note').value || '';
+  leetcodeData[currentProblemId] = { date, independent: sheetIndependent, cost, note };
+  saveLeetcode();
+  closeSheet();
+  renderAlgo();
+  toast('✓ 已完成');
+}
+
+document.getElementById('algo-filter').addEventListener('change', renderAlgo);
+renderAlgo();
+
+// ---- 后端渲染 ----
+function renderBackend() {
+  const doneCount = backendWeeks.filter(w => backendData[w.week]).length;
+  const pct = (doneCount / 24 * 100);
+  document.getElementById('backend-done-count').textContent = doneCount;
+  document.getElementById('backend-progress-bar').style.width = pct + '%';
+  document.getElementById('backend-stat-done').textContent = doneCount;
+  document.getElementById('backend-stat-bar').style.width = pct + '%';
+
+  const months = {};
+  backendWeeks.forEach(w => {
+    if (!months[w.month]) months[w.month] = [];
+    months[w.month].push(w);
+  });
+
+  const el = document.getElementById('backend-months');
+  el.innerHTML = Object.entries(months).map(([m, weeks]) => {
+    const doneInMonth = weeks.filter(w => backendData[w.week]).length;
+    return `
+      <div class="section-title">Month ${m} <span style="color:var(--text2);font-weight:400">${doneInMonth}/${weeks.length}</span></div>
+      ${weeks.map(w => {
+        const done = !!backendData[w.week];
+        return `
+          <div class="week-card ${done ? 'done' : ''}">
+            <div class="week-card-head" onclick="this.parentElement.classList.toggle('open')">
+              <div>
+                <div class="week-num">Week ${w.week}</div>
+                <div class="week-title">${w.title}</div>
+              </div>
+              <span class="badge ${done ? 'badge-green' : 'badge-gray'}">${done ? '已完成' : '展开 ▾'}</span>
+            </div>
+            <div class="week-card-body">
+              <div style="margin:10px 0 6px;font-weight:600">学什么</div>
+              ${w.days.map(d => `<div style="color:var(--text2);padding:2px 0">• ${d}</div>`).join('')}
+              <div style="margin:10px 0 6px;font-weight:600">资料</div>
+              ${w.resources.map(r => `<div style="padding:2px 0"><a href="${r.url}" target="_blank" rel="noopener" class="resource-link">${r.label} ↗</a></div>`).join('')}
+              <div style="margin:10px 0 6px;font-weight:600">产出</div>
+              <div style="color:var(--text2);font-family:monospace">${w.output}</div>
+              <button class="btn ${done ? 'outline' : ''}" style="margin-top:14px" onclick="toggleBackend(${w.week})">${done ? '取消完成' : '标记完成'}</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }).join('');
+}
+
+function toggleBackend(week) {
+  if (backendData[week]) {
+    delete backendData[week];
+    saveBackend();
+    renderBackend();
+    toast('已取消完成');
+  } else {
+    backendData[week] = true;
+    saveBackend();
+    renderBackend();
+    toast('✓ 已标记完成');
+  }
+}
+
+renderBackend();
 </script>
 </body>
 </html>

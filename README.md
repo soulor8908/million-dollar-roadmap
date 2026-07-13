@@ -1,7 +1,7 @@
 # million-dollar-roadmap
 百万年薪计划 · 个人作战系统
 
-> 本 README 由 `scripts/dashboard.js` 自动生成，请勿手动编辑。最后更新：2026-07-12
+> 本 README 由 `scripts/dashboard.js` 自动生成，请勿手动编辑。最后更新：2026-07-13
 
 ## 📊 进度仪表盘
 
@@ -11,13 +11,13 @@
 | 连续打卡 | 0 天 |
 | 累计日志 | 1 篇 |
 | 最近日志 | 2026-07-13 |
-| 当前主线 | 项目1 · AI 辅助前端开发平台（已解冻，Trae Work 开发） |
+| 当前主线 | AI 作战辅助系统（已上线）+ 算法筑基 + 项目1（Trae Work） |
 
 ## 🎯 当前聚焦
 
-- **算法筑基**：8 题/周（深度优先，每题写思路 + 错题本）
-- **项目1**：AI 辅助前端开发平台（已解冻，通过 Trae Work 开发，每周 ≥2 次真实代码 commit）
-- **AI 作战辅助系统**：已完成并上线，转入维护（边使用边优化）
+- **算法筑基**：200 题 checklist（深度优先，每题写思路 + 错题本）
+- **AI 作战辅助系统**：已上线，持续维护（边使用边优化）
+- **项目1**：AI Code Review，通过 Trae Work 推进（每周 ≥2 次真实代码 commit）
 - **每周输出**：1 篇技术拆解（teach to learn），存 `blog/`
 - **红线**：陪娃时间 0 侵占
 
@@ -37,6 +37,8 @@ daily/        每日作战日志（YYYY-MM-DD.md）
 algorithm/    刷题进度 + 错题本
 projects/     项目文档（项目1 进行中，2/3 已冻结）
 backend/      后端学习路线（降级，按需学习）
+emotion/      情绪笔记数据（GitHub markdown 存储）
+demo/         单文件 HTML 演示
 interview/    面试准备
 schedule/     作息安排
 scripts/      dashboard.js 仪表盘 + ai-review.js 周报

@@ -48,9 +48,10 @@
 
 **同一时间只跑一条主线。深度复利，广度腐烂。**
 
-- 当前主线：**项目1 · AI 辅助前端开发平台**（见 [projects/ai-code-review.md](projects/ai-code-review.md)）+ **算法筑基**。
+- 当前主线：**AI 作战辅助系统**（已上线，持续优化）+ **算法筑基** + **项目1 · AI Code Review**（Trae Work 推进，已解冻，见 [projects/ai-code-review.md](projects/ai-code-review.md)）。
 - 「AI 作战辅助系统」已完成并上线（见 [projects/ai-companion.md](projects/ai-companion.md)），转入维护状态，边使用边优化。
 - 项目1 开发方式：通过 **Trae Work** 进行，边做边学边优化。
+- 项目1 已解冻：AI 作战辅助系统已完成核心功能并上线（原冻结条件已满足）。
 - 项目2/3 继续冻结。
 - 后端 Go 学习降级为「项目需要时再学」，不单独排期。
 - 任何新想法先进 `ideas/` 暂存区，不立即开新坑。

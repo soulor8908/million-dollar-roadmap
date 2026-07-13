@@ -84,6 +84,10 @@ export interface ProgressInfo {
   totalLogs: number;
   latestLog: string;
   weekHours: number;
+  algorithmTodayCount: number;
+  algorithmIndependentCount: number;
+  backendWeeksDone: number;
+  backendWeeksTotal: number;
 }
 
 // AI 分析结果
@@ -92,3 +96,33 @@ export interface AIAnalysis {
   patterns: string[];
   suggestions: string[];
 }
+
+// LeetCode 题目（来自 algorithm/leetcode-checklist.md）
+export interface LeetCodeProblem {
+  id: number;          // 序号 1-200
+  completed: boolean;  // [x] 为 true
+  number: string;      // LeetCode 题号（如 "1"、"128"）
+  title: string;       // 题目标题
+  difficulty: "简单" | "中等" | "困难";
+  date: string;        // 完成日期 YYYY-MM-DD，未完成为空
+  independent: "✅" | "⚠️" | "❌" | "";  // 独立程度
+  cost: string;        // 耗时（分钟），未完成为空
+  note: string;        // 备注
+  phase: number;       // 1/2/3
+  category: string;    // 专题（如 "数组与字符串"）
+}
+
+// 后端学习路线一周（来自 backend/roadmap.md）
+export interface BackendWeek {
+  month: number;       // 1-6
+  weekIndex: number;   // 1-24
+  title: string;       // 如 "语法基础 + 工具链"
+  completed: boolean;
+  summary: string;     // 学习要点摘要
+  resources: { label: string; url: string }[];  // 资料链接
+  output: string;      // 产出 demo 路径
+  days: string[];      // Day 1-7 拆解内容
+}
+
+// 学习中心 Tab
+export type StudyTab = "algorithm" | "backend" | "stats";

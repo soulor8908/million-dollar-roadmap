@@ -9,7 +9,7 @@ const items = [
   { href: "/emotion", label: "情绪", icon: "📖" },
   { href: "/rest", label: "休息", icon: "😴" },
   { href: "/daily", label: "日志", icon: "📝" },
-  { href: "/progress", label: "进度", icon: "📊" },
+  { href: "/progress", label: "学习", icon: "📊" },
   { href: "/analyze", label: "分析", icon: "🧠" },
 ];
 

@@ -61,5 +61,10 @@ export function buildProgressInfo(
     totalLogs: dailyFiles.length,
     latestLog: latest,
     weekHours,
+    // 占位：Task 7 替换为真实计算
+    algorithmTodayCount: 0,
+    algorithmIndependentCount: 0,
+    backendWeeksDone: 0,
+    backendWeeksTotal: 24,
   };
 }

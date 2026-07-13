@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { ActivityCalendar } from "react-activity-calendar";
-import { getMany, keys } from "@/lib/storage/db";
+import { listItems } from "@/lib/storage/db";
 import type { ReviewLog, LearnLog } from "@/lib/types";
 
 interface DayData {
@@ -45,8 +45,9 @@ export function Heatmap({ data, weeks = 12 }: Props) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const allKeys = await keys("log:");
-      const logs = await getMany<(ReviewLog & { duration?: number }) | LearnLog>(allKeys);
+      const learnLogs = await listItems<LearnLog>("learn_log:");
+      const reviewLogs = await listItems<ReviewLog>("review_log:");
+      const logs: ((ReviewLog & { duration?: number }) | LearnLog)[] = [...learnLogs, ...reviewLogs];
       if (cancelled) return;
       const byDate = new Map<string, number>();
       for (const log of logs) {

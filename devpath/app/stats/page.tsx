@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Heatmap } from "@/components/Heatmap";
 import { RadarChart } from "@/components/RadarChart";
 import { WeeklyReport } from "@/components/WeeklyReport";
-import { keys, getMany } from "@/lib/storage/db";
+import { listItems } from "@/lib/storage/db";
 import type { KnowledgeNode, ReviewCard, ReviewLog, LearnLog, DailyStatus, LearningPlan } from "@/lib/types";
 
 type Tab = "heatmap" | "radar" | "weekly";
@@ -24,26 +24,19 @@ export default function StatsPage() {
   useEffect(() => {
     (async () => {
       // 聚合所有计划的 KnowledgeNode + ReviewCard
-      const planKeys = await keys("plan:");
-      const plans = await getMany<LearningPlan>(planKeys);
+      const plans = await listItems<LearningPlan>("plan:");
       const allNodes: KnowledgeNode[] = plans.flatMap((p) => p.knowledgeTree ?? []);
-      const allCards: ReviewCard[] = [];
-      const cardKeys = await keys("card:");
-      const cs = await getMany<ReviewCard>(cardKeys);
-      allCards.push(...cs);
+      const cs = await listItems<ReviewCard>("card:");
 
       // 聚合日志
-      const learnKeys = await keys("log:");
-      const learnLogsArr = await getMany<LearnLog>(learnKeys);
-      const reviewLogKeys = await keys("reviewlog:");
-      const reviewLogsArr = await getMany<ReviewLog>(reviewLogKeys);
+      const learnLogsArr = await listItems<LearnLog>("learn_log:");
+      const reviewLogsArr = await listItems<ReviewLog>("review_log:");
 
       // 聚合状态
-      const statusKeys = await keys("status:");
-      const statusArr = await getMany<DailyStatus>(statusKeys);
+      const statusArr = await listItems<DailyStatus>("status:");
 
       setNodes(allNodes);
-      setCards(allCards);
+      setCards(cs);
       setReviewLogs(reviewLogsArr);
       setLearnLogs(learnLogsArr);
       setStatuses(statusArr);

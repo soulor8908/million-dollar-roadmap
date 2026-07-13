@@ -4,7 +4,7 @@
 // 周报展示 + 生成按钮 + 历史列表
 
 import { useState, useEffect } from "react";
-import { keys, getMany } from "@/lib/storage/db";
+import { listItems } from "@/lib/storage/db";
 import type { LearnLog, ReviewLog, DailyStatus } from "@/lib/types";
 
 interface WeeklyEntry {
@@ -35,8 +35,7 @@ export function WeeklyReport({ learnLogs, reviewLogs, statuses }: Props) {
 
   useEffect(() => {
     (async () => {
-      const ks = await keys("weekly:");
-      const entries = await getMany<WeeklyEntry>(ks);
+      const entries = await listItems<WeeklyEntry>("weekly:");
       entries.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
       setHistory(entries);
     })();

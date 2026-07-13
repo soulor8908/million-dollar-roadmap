@@ -1,0 +1,16 @@
+# wrangler.toml
+# Cloudflare Pages 本地开发 + KV binding 配置
+# 本地运行：npx wrangler pages dev out --kv KV
+# 部署：npx wrangler pages deploy out
+
+name = "devpath"
+compatibility_date = "2026-07-13"
+pages_build_output_dir = "out"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
+[vars]
+PUBLIC_AUTH_TOKEN = "dev-token-change-in-prod"

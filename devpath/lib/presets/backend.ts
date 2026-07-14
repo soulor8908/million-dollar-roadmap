@@ -1,3595 +1,3035 @@
 // lib/presets/backend.ts
-// 后端工程师面试全攻略预设：15 知识节点 + 35 道高频面试题 + 学习计划
-// 覆盖：Java/Python/Go 语言、Spring/Django/FastAPI 框架、MySQL/Redis、
-//       消息队列、微服务、分布式、系统设计
+// 后端工程师（含 AI 后端方向）预设：31 知识节点 + 217 道高频面试题 + 学习计划
+// 覆盖：语言基础（Java/Python/Go）→ Spring 全家桶 → 数据存储（MySQL/Redis/MQ）→
+//       架构与设计（分布式/微服务/系统设计/API）→ AI 后端方向（LLM 网关/RAG/Agent/模型服务化/数据管道）→
+//       运维与工程（容器/CI-CD/监控/安全）
+// 大厂高频题标注 bigTech: true，答案结合真实项目场景（阿里双 11、美团外卖、字节抖音、腾讯微信支付等）
 
 import type { KnowledgeNode, Question, ScheduleItem } from "../types";
 
 const BACKEND_NODES: KnowledgeNode[] = [
+  // ===== 语言基础（8 个节点） =====
   {
-    id: "be-java-basic",
-    title: "Java 基础",
-    difficulty: 2,
+    id: "be-java-collection",
+    title: "Java 集合框架",
+    difficulty: 3,
     prerequisites: [],
     frequency: "高",
     bigTech: true,
-    summary: "集合（List/Set/Map）、IO/NIO、并发基础、JVM 常识、面向对象与泛型。",
+    summary: "List/Set/Map/Queue 体系、HashMap 底层、ConcurrentHashMap 分段锁、并发集合（CopyOnWrite/BlockingQueue）。",
     mastery: 0,
   },
   {
     id: "be-java-concurrent",
     title: "Java 并发",
     difficulty: 4,
-    prerequisites: ["be-java-basic"],
+    prerequisites: ["be-java-collection"],
     frequency: "高",
     bigTech: true,
-    summary: "线程池、synchronized 与 Lock、CAS、AQS、ConcurrentHashMap、ThreadLocal、volatile。",
+    summary: "线程池七参数、AQS、synchronized 与 Lock、volatile、CompletableFuture、ThreadLocal 内存泄漏。",
     mastery: 0,
   },
   {
     id: "be-jvm",
-    title: "JVM",
+    title: "JVM 原理",
     difficulty: 4,
-    prerequisites: ["be-java-basic"],
+    prerequisites: ["be-java-collection"],
     frequency: "高",
     bigTech: true,
-    summary: "内存模型（堆/栈/方法区）、GC 算法与收集器、类加载机制、调优（jstat/jmap）。",
+    summary: "内存模型（堆/栈/元空间）、GC 算法与收集器（G1/ZGC）、类加载双亲委派、JIT 编译、调优与 OOM 排查。",
     mastery: 0,
   },
   {
-    id: "be-spring",
-    title: "Spring 框架",
+    id: "be-spring-core",
+    title: "Spring 核心",
     difficulty: 3,
-    prerequisites: ["be-java-basic"],
+    prerequisites: ["be-java-collection"],
     frequency: "高",
     bigTech: true,
-    summary: "IoC/DI、AOP（动态代理）、声明式事务、Spring Boot 自动配置、Spring MVC。",
+    summary: "IoC 容器、AOP 动态代理（JDK/CGLIB）、Bean 生命周期、循环依赖三级缓存、声明式事务传播。",
     mastery: 0,
   },
   {
-    id: "be-orm",
-    title: "MyBatis/JPA",
+    id: "be-spring-boot",
+    title: "Spring Boot",
     difficulty: 3,
-    prerequisites: ["be-spring"],
-    frequency: "中",
-    bigTech: false,
-    summary: "ORM 映射、一二级缓存、动态 SQL、#{} 与 ${}、JPA Repository。",
+    prerequisites: ["be-spring-core"],
+    frequency: "高",
+    bigTech: true,
+    summary: "自动配置（@Conditional）、Starter 机制、Actuator 监控、配置加载优先级、启动流程与 Conditional 装配。",
     mastery: 0,
   },
   {
-    id: "be-python-basic",
-    title: "Python 基础",
-    difficulty: 2,
-    prerequisites: [],
-    frequency: "中",
-    bigTech: false,
-    summary: "GIL、装饰器、生成器、asyncio 异步、元类、垃圾回收（引用计数 + 分代）。",
+    id: "be-spring-cloud",
+    title: "Spring Cloud",
+    difficulty: 4,
+    prerequisites: ["be-spring-boot"],
+    frequency: "高",
+    bigTech: true,
+    summary: "服务注册发现（Nacos/Eureka）、配置中心、Gateway 网关、Sentinel 熔断限流、OpenFeign、链路追踪。",
     mastery: 0,
   },
   {
-    id: "be-python-web",
-    title: "Python Web",
+    id: "be-python-advanced",
+    title: "Python 进阶",
     difficulty: 3,
-    prerequisites: ["be-python-basic"],
+    prerequisites: [],
     frequency: "中",
-    bigTech: false,
-    summary: "Django（MTV/ORM/Admin）、Flask（轻量/蓝图）、FastAPI（异步/Pydantic/OpenAPI）。",
+    bigTech: true,
+    summary: "GIL 锁、asyncio 协程、元类 metaclass、装饰器、闭包与作用域、引用计数 + 分代 GC。",
     mastery: 0,
   },
   {
-    id: "be-go-basic",
-    title: "Go 基础",
-    difficulty: 2,
-    prerequisites: [],
-    frequency: "高",
-    bigTech: false,
-    summary: "goroutine、channel、interface 隐式实现、错误处理（error/panic）、slice/map 底层。",
-    mastery: 0,
-  },
-  {
-    id: "be-go-concurrent",
-    title: "Go 并发",
-    difficulty: 4,
-    prerequisites: ["be-go-basic"],
-    frequency: "高",
-    bigTech: false,
-    summary: "sync（Mutex/WaitGroup/Once）、Context 取消、select 多路复用、并发模式（fan-in/worker pool）。",
-    mastery: 0,
-  },
-  {
-    id: "be-mysql",
-    title: "数据库 MySQL",
+    id: "be-go-advanced",
+    title: "Go 进阶",
     difficulty: 4,
     prerequisites: [],
     frequency: "高",
     bigTech: true,
-    summary: "B+ 树索引、事务隔离级别、MVCC、行锁/间隙锁、explain 执行计划优化。",
+    summary: "goroutine 调度、channel、GMP 模型、interface 隐式实现、内存管理与 GC、context 取消传播。",
     mastery: 0,
   },
+  // ===== 数据存储（6 个节点） =====
   {
-    id: "be-redis",
-    title: "Redis",
+    id: "be-mysql-index",
+    title: "MySQL 索引与优化",
     difficulty: 4,
     prerequisites: [],
     frequency: "高",
     bigTech: true,
-    summary: "五大数据结构、持久化（RDB/AOF）、主从哨兵/Cluster、缓存策略与一致性问题。",
+    summary: "B+ 树、聚簇/非聚簇索引、覆盖索引、索引下推 ICP、explain 执行计划、索引失效场景。",
     mastery: 0,
   },
   {
-    id: "be-mq",
-    title: "消息队列",
+    id: "be-mysql-transaction",
+    title: "MySQL 事务",
+    difficulty: 4,
+    prerequisites: ["be-mysql-index"],
+    frequency: "高",
+    bigTech: true,
+    summary: "ACID、四种隔离级别、MVCC undo log 版本链、行锁/间隙锁/Next-Key、死锁排查、binlog/redolog/undolog。",
+    mastery: 0,
+  },
+  {
+    id: "be-redis-data",
+    title: "Redis 数据结构与应用",
+    difficulty: 3,
+    prerequisites: [],
+    frequency: "高",
+    bigTech: true,
+    summary: "5 种基础结构 + Stream、跳表实现、分布式锁、缓存淘汰策略、发布订阅、应用场景（计数/排行榜/红包）。",
+    mastery: 0,
+  },
+  {
+    id: "be-redis-cluster",
+    title: "Redis 集群与高可用",
+    difficulty: 4,
+    prerequisites: ["be-redis-data"],
+    frequency: "高",
+    bigTech: true,
+    summary: "主从复制、哨兵 Sentinel、Cluster 分片（16384 槽）、RDB/AOF 持久化对比、缓存与数据库一致性。",
+    mastery: 0,
+  },
+  {
+    id: "be-mq-kafka",
+    title: "Kafka",
     difficulty: 4,
     prerequisites: [],
     frequency: "高",
     bigTech: true,
-    summary: "Kafka（分区/副本/顺序）、RabbitMQ（路由模型）、可靠性、顺序性、幂等性。",
+    summary: "Broker/Topic/Partition/Replica 架构、ISR、消息可靠性、顺序消息、消息堆积、Exactly-Once。",
     mastery: 0,
   },
   {
-    id: "be-microservice",
-    title: "微服务",
+    id: "be-mq-rocketmq",
+    title: "RocketMQ / RabbitMQ",
     difficulty: 4,
-    prerequisites: ["be-spring"],
+    prerequisites: ["be-mq-kafka"],
     frequency: "高",
     bigTech: true,
-    summary: "Spring Cloud、服务注册发现（Nacos/Eureka）、熔断降级（Sentinel）、网关（Gateway）。",
+    summary: "事务消息、延迟消息、顺序消息、选型对比（吞吐/延迟/功能）、消息轨迹、消费幂等。",
     mastery: 0,
   },
+  // ===== 架构与设计（8 个节点） =====
   {
-    id: "be-distributed",
-    title: "分布式",
+    id: "be-distributed-tx",
+    title: "分布式事务",
     difficulty: 5,
-    prerequisites: ["be-microservice"],
+    prerequisites: ["be-mysql-transaction"],
     frequency: "高",
     bigTech: true,
-    summary: "CAP/BASE、Raft/Paxos 一致性算法、分布式锁、分布式事务（2PC/TCC/Seata）。",
+    summary: "2PC/3PC、TCC、Saga、Seata（AT/TCC/Saga/XA）、本地消息表、最终一致性方案选型。",
+    mastery: 0,
+  },
+  {
+    id: "be-distributed-lock",
+    title: "分布式锁",
+    difficulty: 4,
+    prerequisites: ["be-redis-data"],
+    frequency: "高",
+    bigTech: true,
+    summary: "Redis SETNX + 过期、Redisson 看门狗续期、Redlock 争议、Zookeeper 临时顺序节点、锁粒度与性能。",
+    mastery: 0,
+  },
+  {
+    id: "be-consistency",
+    title: "分布式一致性",
+    difficulty: 5,
+    prerequisites: ["be-distributed-lock"],
+    frequency: "高",
+    bigTech: true,
+    summary: "CAP/BASE、Raft 选举与日志复制、Paxos、ZooKeeper ZAB、etcd 强一致性、注册中心选型。",
+    mastery: 0,
+  },
+  {
+    id: "be-limit",
+    title: "限流与熔断",
+    difficulty: 4,
+    prerequisites: ["be-distributed-lock"],
+    frequency: "高",
+    bigTech: true,
+    summary: "令牌桶/漏桶/滑动窗口、Sentinel 槽点链、Hystrix 隔离、熔断半开、降级策略、热点参数限流。",
+    mastery: 0,
+  },
+  {
+    id: "be-cache-pattern",
+    title: "缓存模式",
+    difficulty: 4,
+    prerequisites: ["be-redis-data"],
+    frequency: "高",
+    bigTech: true,
+    summary: "穿透/击穿/雪崩、Cache Aside/Read Through/Write Behind、双写一致性、布隆过滤器、缓存预热。",
     mastery: 0,
   },
   {
     id: "be-system-design",
     title: "系统设计",
     difficulty: 5,
-    prerequisites: ["be-distributed"],
+    prerequisites: ["be-distributed-tx", "be-limit"],
     frequency: "高",
     bigTech: true,
-    summary: "限流（令牌桶/漏桶）、降级、分库分表、读写分离、设计模式、高可用架构。",
+    summary: "短链系统、秒杀、Feed 流（推/拉/推拉结合）、IM 长连接、排行榜、附近的人、设计权衡。",
+    mastery: 0,
+  },
+  {
+    id: "be-microservice",
+    title: "微服务架构",
+    difficulty: 4,
+    prerequisites: ["be-spring-cloud"],
+    frequency: "高",
+    bigTech: true,
+    summary: "拆分原则（DDD）、服务通信、治理（注册/熔断/限流）、链路追踪、Service Mesh、网关设计。",
+    mastery: 0,
+  },
+  {
+    id: "be-api-design",
+    title: "API 设计",
+    difficulty: 3,
+    prerequisites: ["be-spring-boot"],
+    frequency: "中",
+    bigTech: true,
+    summary: "RESTful 规范、GraphQL、gRPC、版本管理、幂等设计、错误码、Long polling/SSE/WebSocket。",
+    mastery: 0,
+  },
+  // ===== AI 后端方向（5 个节点，重点新增） =====
+  {
+    id: "be-llm-gateway",
+    title: "LLM API 网关",
+    difficulty: 4,
+    prerequisites: ["be-api-design", "be-redis-data"],
+    frequency: "高",
+    bigTech: true,
+    summary: "多模型路由、Token 计费、限流降级、流式 SSE、上下文管理、Prompt 注入防护、火山方舟/OneAPI 架构。",
+    mastery: 0,
+  },
+  {
+    id: "be-rag-backend",
+    title: "RAG 后端架构",
+    difficulty: 4,
+    prerequisites: ["be-llm-gateway"],
+    frequency: "高",
+    bigTech: true,
+    summary: "向量库选型（Milvus/Pinecone/PGVector）、文档分块、Embedding 索引（HNSW/IVF）、混合检索、Rerank、通义 RAG。",
+    mastery: 0,
+  },
+  {
+    id: "be-agent-backend",
+    title: "Agent 后端架构",
+    difficulty: 5,
+    prerequisites: ["be-llm-gateway"],
+    frequency: "高",
+    bigTech: true,
+    summary: "Function Calling 工具调度、状态机、ReAct 推理、Multi-Agent 通信、记忆管理、错误恢复、豆包/Coze 架构。",
+    mastery: 0,
+  },
+  {
+    id: "be-model-serving",
+    title: "模型服务化",
+    difficulty: 5,
+    prerequisites: ["be-llm-gateway"],
+    frequency: "中",
+    bigTech: true,
+    summary: "vLLM/TGI/Triton、Continuous Batching、PagedAttention、KV Cache、量化（INT8/AWQ/GPTQ）、流式推理。",
+    mastery: 0,
+  },
+  {
+    id: "be-ai-data",
+    title: "AI 数据管道",
+    difficulty: 4,
+    prerequisites: ["be-mq-kafka"],
+    frequency: "中",
+    bigTech: true,
+    summary: "数据标注、清洗去重、特征工程、数据版本管理（DVC）、特征平台、数据质量监控、阿里 PAI 数据中台。",
+    mastery: 0,
+  },
+  // ===== 运维与工程（5 个节点） =====
+  {
+    id: "be-container",
+    title: "容器与编排",
+    difficulty: 4,
+    prerequisites: ["be-spring-boot"],
+    frequency: "高",
+    bigTech: true,
+    summary: "Docker 镜像分层、K8s Pod/Deployment/Service、HPA 弹性、Service Mesh（Istio）、StatefulSet。",
+    mastery: 0,
+  },
+  {
+    id: "be-ci-cd",
+    title: "CI/CD",
+    difficulty: 3,
+    prerequisites: ["be-container"],
+    frequency: "中",
+    bigTech: true,
+    summary: "Jenkins/GitLab CI/GitHub Actions 流水线、蓝绿/金丝雀/灰度发布、回滚、阿里云效、制品管理。",
+    mastery: 0,
+  },
+  {
+    id: "be-monitoring",
+    title: "监控与日志",
+    difficulty: 3,
+    prerequisites: ["be-spring-boot"],
+    frequency: "中",
+    bigTech: true,
+    summary: "Prometheus 指标、Grafana 仪表盘、ELK 日志、SkyWalking/Zipkin 链路追踪、告警分级、SLO/SLI。",
+    mastery: 0,
+  },
+  {
+    id: "be-security",
+    title: "后端安全",
+    difficulty: 4,
+    prerequisites: ["be-api-design"],
+    frequency: "高",
+    bigTech: true,
+    summary: "JWT/OAuth2/SSO、SQL 注入、XSS/CSRF、越权（水平/垂直）、密钥管理、防重放、微信支付安全设计。",
     mastery: 0,
   },
 ];
 
 const BACKEND_QUESTIONS: Question[] = [
-  // ===== Java 基础 =====
+  // ===== 1. be-java-collection Java 集合框架 =====
   {
     id: "be-1",
-    nodeId: "be-java-basic",
-    question: "HashMap 的底层原理？JDK 1.8 相比 1.7 有什么改进？",
-    answer: `JDK 1.7：数组 + 链表，头插法（多线程可能成环导致死循环）。
-JDK 1.8：数组 + 链表 + 红黑树（链表长度 ≥8 且数组 ≥64 转红黑树，≤6 退化为链表），尾插法。
+    nodeId: "be-java-collection",
+    question: "阿里双 11 商品详情页商品属性展示，HashMap 和 ConcurrentHashMap 在 JDK 1.8 的底层实现差异？",
+    bigTech: true,
+    answer: `JDK 1.8 HashMap：数组 + 链表 + 红黑树（链表 ≥8 且数组 ≥64 转红黑树，≤6 退化），put 时尾插法、扩容 2 倍并用高位 bit 判位置。
+ConcurrentHashMap 1.8：放弃分段锁，采用 CAS + synchronized 锁单个桶头节点，并发度等于桶数。put 时先 CAS 占空桶，否则 synchronized 锁链表/红黑树头节点。
 
-put 流程：
-1. hash(key) 扰动（高 16 位异或低 16 位）减少冲突。
-2. (n-1) & hash 定位桶，空则直接放。
-3. 冲突则：链表尾插（或红黑树插入）。
-4. 超过阈值（capacity × 0.75）扩容（2 倍，重哈希）。
+\`\`\`java
+// ConcurrentHashMap 1.8 put 简化逻辑
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+    int hash = spread(key.hashCode());
+    for (Node<K,V>[] tab = table;;) {
+        Node<K,V> f; int n, i, fh;
+        if (tab == null || (n = tab.length) == 0) tab = initTable();
+        else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            if (casTabAt(tab, i, null, new Node<>(hash, key, value, null))) break; // CAS 占空桶
+        } else {
+            synchronized (f) { /* 链表/树插入 */ }
+        }
+    }
+}
+\`\`\`
 
-关键：扩容时 1.8 用高位 bit 判断新位置（原位置或原位置+oldCap），无需重算 hash，效率更高。`,
-    keyPoints: ["数组+链表+红黑树", "1.8 尾插法避免死循环", "扩容 2 倍 + 高位 bit 判位置"],
-    followUps: ["HashMap 为什么线程不安全？ConcurrentHashMap 怎么解决？", "负载因子为什么是 0.75？"],
+踩坑：双 11 商品属性并发读多写少，HashMap 直接用会丢数据，必须用 ConcurrentHashMap；size() 是估算值不能强依赖；computeIfAbsent 内嵌长任务会持有桶锁阻塞整个桶。`,
+    keyPoints: ["HashMap 1.8 数组+链表+红黑树", "ConcurrentHashMap 1.8 锁桶头节点", "CAS 占空桶 + synchronized 锁链表"],
+    followUps: ["HashMap 扩容为什么是 2 倍？", "ConcurrentHashMap size() 为什么不准？"],
     favorited: false,
   },
   {
     id: "be-2",
-    nodeId: "be-java-basic",
-    question: "ArrayList 和 LinkedList 的区别？各自适合什么场景？",
-    answer: `ArrayList：基于动态数组，随机访问 O(1)，尾部插入均摊 O(1)，中间插入/删除 O(n)（需搬移）。
-LinkedList：基于双向链表，随机访问 O(n)，头尾插入/删除 O(1)，中间需先遍历到位置。
+    nodeId: "be-java-collection",
+    question: "美团外卖骑手位置上报用 CopyOnWriteArrayList 还是 ConcurrentLinkedQueue？两者区别？",
+    bigTech: true,
+    answer: `CopyOnWriteArrayList：写时复制，读无锁，写时复制整个数组，适合"读多写极少"场景（如配置监听器）。
+ConcurrentLinkedQueue：基于 CAS 的无锁并发队列（Michael-Scott 算法），读写都高并发，适合生产消费场景。
 
-场景：
-- 频繁随机访问、尾部增删 → ArrayList（默认推荐）。
-- 频繁头/中间增删 → LinkedList（但实际因缓存友好性，ArrayList 往往仍更快）。
+骑手位置上报每秒数次写入 + 多消费者读取，写远多于读，应选 ConcurrentLinkedQueue 作为消息缓冲，再用线程池异步落库。CopyOnWriteArrayList 写时复制大数组会引发 GC 抖动。
 
-关键：LinkedList 实现了 Deque，可当队列/栈用；ArrayList 扩容 1.5 倍，System.arraycopy 搬迁。`,
-    keyPoints: ["ArrayList 数组随机访问 O(1)", "LinkedList 链表头尾增删 O(1)", "实际 ArrayList 缓存更友好"],
-    followUps: ["ArrayList 扩容机制？", "Vector 和 ArrayList 区别？"],
+\`\`\`java
+// 骑手位置上报缓冲队列
+ConcurrentLinkedQueue<Location> queue = new ConcurrentLinkedQueue<>();
+queue.offer(new Location(riderId, lat, lng, System.currentTimeMillis()));
+// 消费线程批量取
+List<Location> batch = new ArrayList<>(500);
+while (queue.peek() != null && batch.size() < 500) {
+    Location loc = queue.poll();
+    if (loc != null) batch.add(loc);
+}
+if (!batch.isEmpty()) batchInsert(batch); // 批量入库
+\`\`\`
+
+踩坑：ConcurrentLinkedQueue 的 size() 是 O(n)，不要在循环里调用；批量消费要限制单次大小避免压垮数据库；队列无界，下游阻塞会导致 OOM，应配合背压或换 BlockingQueue。`,
+    keyPoints: ["CopyOnWrite 写时复制读无锁", "ConcurrentLinkedQueue CAS 无锁", "写多读多用 Queue"],
+    followUps: ["CopyOnWriteArrayList 为什么不适合写多场景？", "LinkedBlockingQueue 和 ConcurrentLinkedQueue 区别？"],
     favorited: false,
   },
   {
     id: "be-3",
-    nodeId: "be-java-basic",
-    question: "Java 中 == 和 equals 的区别？String s = new String(\"a\") 创建了几个对象？",
-    answer: `==：比较引用地址（基本类型比较值）。
-equals：默认也是比较地址（Object），String/Integer 等重写后比较内容。
-
-String s = new String("a")：
-- 若常量池无 "a"：创建 2 个对象（堆中 new 的 + 常量池的 "a"）。
-- 若常量池已有 "a"：创建 1 个对象（堆中 new 的）。
-
-字符串常量池：JDK 1.7 后移到堆，intern() 可将字符串入池并返回池中引用。
+    nodeId: "be-java-collection",
+    question: "TreeMap 底层为什么用红黑树而不是 AVL 树或 B+ 树？",
+    answer: `红黑树是弱平衡二叉树（最长路径不超过最短 2 倍），AVL 是强平衡（高度差 ≤1）。红黑树插入/删除旋转次数更少（最多 3 次），查询略慢于 AVL 但综合性能更优，适合内存中频繁增删。
+B+ 树是多叉树，专为磁盘 IO 优化（扇出大、高度低），内存中单 key 比较无优势。TreeMap 在 JVM 内使用，红黑树最合适。
 
 \`\`\`java
-String a = "ab";           // 常量池
-String b = new String("ab"); // 堆 + 常量池
-a == b;          // false（地址不同）
-a.equals(b);     // true（内容相同）
-b.intern() == a; // true（intern 返回常量池引用）
-\`\`\``,
-    keyPoints: ["== 比地址，equals 比内容", "new String 可能创建 2 个对象", "intern() 入常量池"],
-    followUps: ["String 为什么设计成不可变？", "StringBuilder 和 StringBuffer 区别？"],
+// TreeMap 按自然序/Comparator 排序，红黑树保证 O(log n)
+TreeMap<String, Integer> orderMap = new TreeMap<>();
+orderMap.put("ORDER_2024_001", 100);
+orderMap.put("ORDER_2024_002", 200);
+// 子区间查询 O(log n)：取某天订单
+SortedMap<String, Integer> sub = orderMap.subMap("ORDER_2024_001", "ORDER_2024_002");
+\`\`\`
+
+踩坑：TreeMap 的 key 必须 Comparable 或构造时传 Comparator，否则 ClassCastException；并发修改用 ConcurrentSkipListMap（跳表 + 无锁）替代。`,
+    keyPoints: ["红黑树弱平衡旋转少", "AVL 查询快但增删贵", "B+ 树适合磁盘 IO"],
+    followUps: ["红黑树和 B 树的应用场景差异？", "ConcurrentSkipListMap 为什么用跳表？"],
     favorited: false,
   },
-  // ===== Java 并发 =====
   {
     id: "be-4",
-    nodeId: "be-java-concurrent",
-    question: "线程池的核心参数？拒绝策略有哪些？",
-    answer: `ThreadPoolExecutor 七参数：
-- corePoolSize：核心线程数。
-- maximumPoolSize：最大线程数。
-- keepAliveTime：空闲线程存活时间。
-- unit：时间单位。
-- workQueue：任务队列（LinkedBlockingQueue / ArrayBlockingQueue / SynchronousQueue）。
-- threadFactory：线程工厂。
-- handler：拒绝策略。
+    nodeId: "be-java-collection",
+    question: "ArrayBlockingQueue 和 LinkedBlockingQueue 在线程池里的选型差异？",
+    bigTech: true,
+    answer: `ArrayBlockingQueue：有界数组，put/take 用同一把 ReentrantLock，吞吐略低但内存可控。
+LinkedBlockingQueue：链表默认无界（Integer.MAX_VALUE），put/take 用两把锁（头尾分离），吞吐高但有 OOM 风险。
 
-执行流程：核心线程满 → 入队列 → 队列满 → 开到最大线程 → 仍满 → 拒绝。
+阿里 Java 开发手册强制线程池用有界队列，禁止用 Executors.newFixedThreadPool（其内部 LinkedBlockingQueue 无界）正是这个原因——任务堆积导致 OOM。
 
-四种拒绝策略：
-1. AbortPolicy（默认）：抛 RejectedExecutionException。
-2. CallerRunsPolicy：由提交线程执行（降级，不丢任务）。
-3. DiscardPolicy：静默丢弃。
-4. DiscardOldestPolicy：丢弃队列最老任务，重试。
+\`\`\`java
+// 阿里规约推荐：手动构造有界线程池
+ThreadPoolExecutor pool = new ThreadPoolExecutor(
+    8, 16, 60L, TimeUnit.SECONDS,
+    new ArrayBlockingQueue<>(1000), // 有界队列防 OOM
+    new ThreadFactoryBuilder().setNameFormat("biz-%d").build(),
+    new ThreadPoolExecutor.CallerRunsPolicy() // 拒绝策略：让调用方执行背压
+);
+\`\`\`
 
-关键：Executors.newFixedThreadPool 用无界队列，易 OOM，生产推荐手动构造 ThreadPoolExecutor。`,
-    keyPoints: ["七参数 + 执行流程", "核心→队列→最大→拒绝", "禁用 Executors，手动构造防 OOM"],
-    followUps: ["为什么阿里规约禁止用 Executors？", "如何合理设置线程数（CPU 密集 vs IO 密集）？"],
+踩坑：LinkedBlockingQueue 两把锁吞吐高但无界时 GC 压力大；SynchronousQueue 不存元素直接交接（newCachedThreadPool 用），适合高吞吐但任务必须立即处理；PriorityBlockingQueue 适合延迟任务。`,
+    keyPoints: ["ArrayBlockingQueue 单锁有界", "LinkedBlockingQueue 双锁高吞吐", "阿里规约禁无界队列"],
+    followUps: ["Executors.newFixedThreadPool 为什么被禁？", "SynchronousQueue 是什么场景用？"],
     favorited: false,
   },
   {
     id: "be-5",
-    nodeId: "be-java-concurrent",
-    question: "synchronized 和 ReentrantLock 的区别？",
-    answer: `1. 实现：synchronized 是 JVM 关键字（monitorenter/monitorexit）；ReentrantLock 是 JDK API（AQS）。
-2. 灵活性：ReentrantLock 可公平/非公平、可中断（lockInterruptibly）、可超时（tryLock）、多 Condition。
-3. 锁释放：synchronized 自动释放；ReentrantLock 必须 finally 手动 unlock。
-4. 性能：JDK 1.6 后 synchronized 有锁升级（偏向→轻量→重量），性能接近，简单场景优先 synchronized。
+    nodeId: "be-java-collection",
+    question: "HashMap 多线程下 1.7 头插法为什么会死循环？1.8 是否完全解决了并发问题？",
+    bigTech: true,
+    answer: `1.7 扩容时头插法会反转链表顺序，多线程并发扩容可能形成环形链表，get 时死循环 CPU 100%。
+1.8 改尾插法，扩容时保持原顺序，不再成环，但 HashMap 仍非线程安全：put 可能丢数据（两个线程同时写空桶）、size 不准、迭代器 ConcurrentModificationException 弱一致。
 
 \`\`\`java
-ReentrantLock lock = new ReentrantLock(true); // 公平锁
-lock.lock();
-try {
-  // 临界区
-} finally {
-  lock.unlock(); // 必须手动释放
+// 1.7 扩容头插法（伪代码）—— 多线程并发可能成环
+void transfer(Entry[] newTable) {
+    for (Entry<K,V> e : table) {
+        while (e != null) {
+            Entry<K,V> next = e.next; // 线程 B 此处挂起，next 指向 e
+            int i = indexFor(e.hash, newTable.length);
+            e.next = newTable[i]; // 头插
+            newTable[i] = e;
+            e = next;
+        }
+    }
 }
 \`\`\`
 
-关键：复杂需求（可中断/超时/多条件）用 ReentrantLock；否则 synchronized 更简洁。`,
-    keyPoints: ["synchronized JVM 层自动释放", "ReentrantLock API 层手动释放", "锁升级：偏向→轻量→重量"],
-    followUps: ["AQS 的原理？", "什么是乐观锁/悲观锁？CAS 的 ABA 问题？"],
+踩坑：1.8 没有彻底解决并发，只是不再死循环；高并发必须用 ConcurrentHashMap；用 Collections.synchronizedMap 性能差只适合老代码兼容。`,
+    keyPoints: ["1.7 头插法扩容成环", "1.8 尾插法不成环但仍非线程安全", "并发用 ConcurrentHashMap"],
+    followUps: ["1.8 HashMap 丢数据的具体场景？", "ConcurrentHashMap 1.7 分段锁为什么被弃用？"],
     favorited: false,
   },
   {
     id: "be-6",
-    nodeId: "be-java-concurrent",
-    question: "ConcurrentHashMap 在 JDK 1.8 的实现原理？",
-    answer: `JDK 1.7：Segment 分段锁（默认 16 段，每段一个 ReentrantLock），并发度 = 段数。
-JDK 1.8：Node 数组 + 链表/红黑树，锁粒度细化到桶（首节点）。
+    nodeId: "be-java-collection",
+    question: "WeakHashMap 和 HashMap 的区别？什么场景用 WeakHashMap？",
+    answer: `WeakHashMap 的 key 是 WeakReference，key 只被 WeakReference 引用时下次 GC 会被回收，对应 entry 自动清除。
+HashMap 的 key 是强引用，必须手动 remove 才能释放。
 
-put 流程：
-1. 计算 hash 定位桶。
-2. 桶空：CAS 写入（无锁）。
-3. 桶非空：synchronized 锁首节点，插入链表/红黑树。
-4. 链表 ≥8 转红黑树。
+适用场景：缓存"对象 → 元数据"映射，对象生命周期主导缓存生命周期。如 ThreadLocal 的 ThreadLocalMap 用弱引用 key 防止 ThreadLocal 对象泄漏（但 value 仍是强引用，需手动 remove）。
 
-size：用 baseCount + CounterCell 数组累加（类似 LongAdder），减少竞争。
+\`\`\`java
+// 用 WeakHashMap 做 Class → 元数据缓存，类卸载时自动清理
+WeakHashMap<Class<?>, BeanInfo> beanInfoCache = new WeakHashMap<>();
+BeanInfo info = beanInfoCache.computeIfAbsent(clazz, this::introspect);
+\`\`\`
 
-关键：1.8 摒弃分段锁，用 CAS + synchronized 细化锁粒度，并发度更高；扩容支持多线程协助迁移。`,
-    keyPoints: ["1.8 锁桶首节点（CAS+synchronized）", "摒弃分段锁，并发度更高", "size 用 CounterCell 分散计数"],
-    followUps: ["ConcurrentHashMap 的 put 为什么不全用 CAS？", "扩容时如何多线程协助？"],
+踩坑：WeakHashMap 的 key 回收依赖 GC，不要用它做有 SLA 的缓存；value 不会自动弱化，需用 WeakReference 包装 value；Tomcat 类加载器隔离场景常用 WeakHashMap 防类泄漏。`,
+    keyPoints: ["WeakHashMap key 弱引用", "GC 时自动清 entry", "适合对象生命周期主导的缓存"],
+    followUps: ["ThreadLocalMap 的 key 也是弱引用为什么还会泄漏？", "软引用和弱引用区别？"],
     favorited: false,
   },
-  // ===== JVM =====
   {
     id: "be-7",
-    nodeId: "be-jvm",
-    question: "JVM 运行时内存区域划分？哪些是线程私有的？",
-    answer: `线程私有：
-- 程序计数器：当前线程执行的字节码行号。
-- 虚拟机栈：方法栈帧（局部变量表/操作数栈/动态链接）。
-- 本地方法栈：Native 方法。
+    nodeId: "be-java-collection",
+    question: "字节抖音用户标签 Set 选型：HashSet vs TreeSet vs ConcurrentSkipListSet？",
+    bigTech: true,
+    answer: `HashSet：基于 HashMap，O(1) 增删查，无序。
+TreeSet：基于 TreeMap 红黑树，O(log n)，有序且支持范围查询。
+ConcurrentSkipListSet：基于 ConcurrentSkipListMap 跳表，O(log n)，有序 + 高并发安全。
 
-线程共享：
-- 堆：对象实例，GC 主战场（新生代 Eden + S0 + S1，老年代）。
-- 方法区（元空间 Metaspace，JDK 8+）：类信息、常量池、静态变量。
+抖音用户标签"高并发读 + 偶发更新 + 需要排序展示"，用 ConcurrentSkipListSet 兼顾并发与有序；若仅去重无需排序用 Collections.newSetFromMap(new ConcurrentHashMap<>()) 性能更好。
 
+\`\`\`java
+// 用户标签并发有序集合
+ConcurrentSkipListSet<String> tags = new ConcurrentSkipListSet<>();
+tags.add("数码"); tags.add("游戏"); tags.add("美食");
+// 并发安全 + 自然序遍历
+for (String t : tags) System.out.println(t);
 \`\`\`
-| 线程私有       | 线程共享     |
-| PC/栈/本地栈  | 堆 / 方法区  |
-\`\`\`
 
-关键：JDK 8 把永久代（PermGen）改为元空间（用本地内存），解决 OOM:PermGen；字符串常量池移到堆。`,
-    keyPoints: ["PC/栈/本地栈 线程私有", "堆/方法区 线程共享", "JDK 8 永久代→元空间（本地内存）"],
-    followUps: ["为什么用元空间替代永久代？", "StackOverflowError 和 OOM 区别？"],
+踩坑：HashSet 不是线程安全的，并发 add 可能丢元素；TreeSet 排序依赖 Comparable，标签频繁变更时红黑树调整开销大；跳表内存比红黑树大约 2 倍（多层索引）。`,
+    keyPoints: ["HashSet O(1) 无序", "TreeSet 红黑树有序", "ConcurrentSkipListSet 并发有序"],
+    followUps: ["跳表为什么比红黑树更适合并发？", "HashSet 并发为什么会丢元素？"],
     favorited: false,
   },
+
+  // ===== 2. be-java-concurrent Java 并发 =====
   {
     id: "be-8",
-    nodeId: "be-jvm",
-    question: "常见的 GC 算法和垃圾收集器？G1 的特点？",
-    answer: `GC 算法：
-1. 标记-清除：产生碎片。
-2. 标记-复制：新生代用（Eden:S0:S1 = 8:1:1），无碎片但浪费空间。
-3. 标记-整理：老年代用，无碎片但慢。
-4. 分代收集：新生代复制，老年代整理。
+    nodeId: "be-java-concurrent",
+    question: "阿里双 11 网关线程池如何设置 7 参数？拒绝策略选什么？",
+    bigTech: true,
+    answer: `七参数：corePoolSize、maximumPoolSize、keepAliveTime、unit、workQueue、threadFactory、handler。
+设置原则：CPU 密集型 core = N+1；IO 密集型 core = 2N。双 11 网关是典型 IO 密集，core=2N，max=4N，队列有界（如 10000），拒绝策略用 CallerRunsPolicy 让 Tomcat 线程背压，避免雪崩。
 
-可达性分析：从 GC Roots（栈引用/静态变量/常量/JNI）出发找存活对象。
+\`\`\`java
+int cpu = Runtime.getRuntime().availableProcessors();
+ThreadPoolExecutor gatewayPool = new ThreadPoolExecutor(
+    cpu * 2, cpu * 4, 60L, TimeUnit.SECONDS,
+    new ArrayBlockingQueue<>(10000),
+    new ThreadFactoryBuilder().setNameFormat("gateway-%d").build(),
+    new ThreadPoolExecutor.CallerRunsPolicy()
+);
+// 监控队列水位，超过 80% 触发降级
+if (gatewayPool.getQueue().size() > 8000) degradeService();
+\`\`\`
 
-收集器：Serial → ParNew → Parallel Scavenge → CMS（老年代，并发标记清除）→ G1 → ZGC（低延迟）。
-
-G1 特点：
-- 把堆分成多个 Region（默认 2048），逻辑分代物理不分代。
-- 可预测停顿：优先回收垃圾最多的 Region（Garbage First）。
-- 整体标记-整理 + 局部复制，无碎片。
-
-关键：G1 适合大堆（6GB+），ZGC 停顿 <10ms，适合超大堆低延迟场景。`,
-    keyPoints: ["分代：新生代复制/老年代整理", "G1 Region 化可预测停顿", "GC Roots 可达性分析"],
-    followUps: ["如何判断对象可回收？", "CMS 为什么被废弃？G1 如何解决碎片？"],
+踩坑：core=max 可省去扩缩容抖动但浪费资源；Abort 抛异常会污染调用栈；Discard 静默丢任务难排查；CallerRunsPolicy 会让 Tomcat 线程阻塞，需配合超时；动态调参推荐美团 DynamicTp 或阿里 Sentinel。`,
+    keyPoints: ["CPU 密集 N+1 / IO 密集 2N", "有界队列防 OOM", "CallerRunsPolicy 背压"],
+    followUps: ["线程池是如何从 core 扩到 max 的？", "如何动态调整线程池参数？"],
     favorited: false,
   },
-  // ===== Spring =====
   {
     id: "be-9",
-    nodeId: "be-spring",
-    question: "Spring IoC 的理解？Bean 的生命周期？",
-    answer: `IoC（控制反转）：对象创建和依赖注入由容器管理，解耦。DI（依赖注入）是实现方式（构造器/setter/字段）。
+    nodeId: "be-java-concurrent",
+    question: "AQS 原理？ReentrantLock 公平锁和非公平锁如何用 AQS 实现？",
+    bigTech: true,
+    answer: `AQS = volatile int state + CLH 双向 FIFO 队列。子类重写 tryAcquire/tryRelease 操作 state。
+ReentrantLock：state 0 表示空闲，>0 表示重入次数。
+非公平锁 tryAcquire：先 CAS 抢 state，成功就插队。
+公平锁 tryAcquire：先 hasQueuedPredecessors() 判断队列前面是否有人，有则排队，避免饥饿。
 
-Bean 生命周期：
-1. 实例化（反射创建对象）。
-2. 属性注入（populateBean，处理 @Autowired）。
-3. Aware 回调（BeanNameAware/BeanFactoryAware）。
-4. BeanPostProcessor.postProcessBeforeInitialization。
-5. 初始化：@PostConstruct → InitializingBean.afterPropertiesSet → init-method。
-6. BeanPostProcessor.postProcessAfterInitialization（AOP 代理在此生成）。
-7. 使用。
-8. 销毁：@PreDestroy → DisposableBean.destroy → destroy-method。
+\`\`\`java
+// 非公平锁 tryAcquire（简化）
+final boolean nonfairTryAcquire(int acquires) {
+    int c = getState();
+    if (c == 0) {
+        if (compareAndSetState(0, acquires)) { setExclusiveOwnerThread(current); return true; }
+    } else if (current == getExclusiveOwnerThread()) {
+        setState(c + acquires); return true; // 重入
+    }
+    return false;
+}
+\`\`\`
 
-循环依赖：通过三级缓存（singletonObjects/earlySingletonObjects/singletonFactories）解决 setter 注入循环，构造器循环无法解决。
-
-关键：AOP 代理在 postProcessAfterInitialization 阶段生成（AnnotationAwareAspectJAutoProxyCreator）。`,
-    keyPoints: ["IoC 容器管理对象创建与注入", "七步生命周期", "三级缓存解决 setter 循环依赖"],
-    followUps: ["为什么构造器循环依赖无法解决？", "@Autowired 和 @Resource 区别？"],
+踩坑：非公平锁吞吐高但可能让某些线程长时间拿不到锁；公平锁每次都要查队列，上下文切换多；AQS 的 condition 队列适合生产消费模型；CountDownLatch/Semaphore 都基于 AQS 共享模式。`,
+    keyPoints: ["AQS = state + CLH 队列", "非公平 CAS 抢锁", "公平先判断队列"],
+    followUps: ["AQS 独占模式和共享模式区别？", "Semaphore 如何基于 AQS？"],
     favorited: false,
   },
   {
     id: "be-10",
-    nodeId: "be-spring",
-    question: "Spring AOP 的实现原理？JDK 动态代理和 CGLIB 的区别？",
-    answer: `AOP（面向切面）：通过动态代理在方法前后织入增强逻辑（日志/事务/权限）。
+    nodeId: "be-java-concurrent",
+    question: "美团外卖订单创建场景，synchronized 和 ReentrantLock 如何选？",
+    bigTech: true,
+    answer: `synchronized：JVM 原语，自动释放，锁升级（偏向→轻量→重量），不可中断。
+ReentrantLock：API 层锁，需手动 unlock（finally），支持公平/非公平、tryLock 超时、Condition 多条件、可中断。
 
-术语：JoinPoint（连接点）、Pointcut（切点）、Advice（通知：Before/After/Around）、Aspect（切面）。
-
-两种代理：
-- JDK 动态代理：基于接口（Proxy.newProxyInstance），目标类需实现接口。
-- CGLIB：基于继承（生成子类），无需接口，但 final 类/方法无法代理。
-
-Spring 选择：有接口默认 JDK 代理；可配置 proxyTargetClass=true 强制 CGLIB。Spring Boot 2.x 默认 CGLIB。
+订单创建场景：高并发 + 需要超时返回（不能让请求一直阻塞）+ 多条件等待（库存不足等待、支付完成唤醒）→ ReentrantLock + Condition。如果只是简单同步块用 synchronized 更轻量。
 
 \`\`\`java
-// JDK 代理简化
-Object proxy = Proxy.newProxyInstance(
-  loader, new Class[]{Service.class},
-  (p, method, args) -> {
-    System.out.println("before");
-    Object res = method.invoke(target, args);
-    System.out.println("after");
-    return res;
-  });
+// 订单创建：tryLock 超时 + Condition
+ReentrantLock lock = new ReentrantLock();
+Condition stockReady = lock.newCondition();
+public Order createOrder(Long skuId) throws TimeoutException {
+    if (!lock.tryLock(500, TimeUnit.MILLISECONDS)) throw new TimeoutException();
+    try {
+        while (stockOf(skuId) <= 0) {
+            if (!stockReady.await(1, TimeUnit.SECONDS)) throw new TimeoutException("库存未补充");
+        }
+        return doCreate(skuId);
+    } finally { lock.unlock(); }
+}
 \`\`\`
 
-关键：@Transactional 失效常因自调用（同类方法调用不走代理）或非 public 方法。`,
-    keyPoints: ["JDK 代理基于接口，CGLIB 基于继承", "Spring Boot 默认 CGLIB", "事务失效：自调用/非 public"],
-    followUps: ["@Transactional 失效的场景有哪些？", "AOP 中 Around 通知怎么用？"],
+踩坑：ReentrantLock 必须在 finally 释放，否则死锁；tryLock 时间别设太长，否则拖垮上游；synchronized 在 JDK 6 后性能与 ReentrantLock 接近，能用 synchronized 优先用；锁粒度要细，按 orderId 分段锁比全局锁吞吐高几十倍。`,
+    keyPoints: ["synchronized JVM 原语自动释放", "ReentrantLock 支持超时/中断/Condition", "tryLock + 超时控制"],
+    followUps: ["synchronized 锁升级过程？", "Condition 的 await/signal 怎么和 Lock 配合？"],
     favorited: false,
   },
   {
     id: "be-11",
-    nodeId: "be-spring",
-    question: "Spring Boot 自动配置原理？",
-    answer: `核心：@SpringBootApplication = @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan。
+    nodeId: "be-java-concurrent",
+    question: "volatile 的两大作用？为什么不能保证原子性？双 11 计数器为什么用 AtomicLong？",
+    bigTech: true,
+    answer: `volatile 两大作用：可见性（写后立即刷主存，读强制从主存）+ 禁止指令重排序（插入内存屏障）。不保证原子性：i++ 是"读-改-写"三步，多个线程交错会丢更新。
 
-@EnableAutoConfiguration 通过 @Import(AutoConfigurationImportSelector) 加载自动配置类。
-
-流程：
-1. AutoConfigurationImportSelector 读取 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports（Boot 3.x，旧版 spring.factories）。
-2. 列出所有 AutoConfiguration 类。
-3. 每个配置类用 @Conditional 条件过滤（@ConditionalOnClass/OnBean/OnMissingBean/OnProperty）。
-4. 满足条件才注册 Bean，实现"约定优于配置"。
+双 11 UV 计数用 AtomicLong（CAS 自旋）而非 volatile long，正是这个原因。高并发下 AtomicLong CAS 失败率高，用 LongAdder（分段累加）性能提升 10 倍以上。
 
 \`\`\`java
-@Configuration
-@ConditionalOnClass(DataSource.class)
-@EnableConfigurationProperties(DataSourceProperties.class)
-public class DataSourceAutoConfiguration {
-  @Bean
-  @ConditionalOnMissingBean
-  public DataSource dataSource(DataSourceProperties props) { /* ... */ }
-}
+// 错：volatile 不保证 i++ 原子
+private volatile long count = 0;
+count++; // 丢更新
+
+// 对：LongAdder 分段累加，高并发性能最佳
+LongAdder uv = new LongAdder();
+uv.increment();
+long total = uv.sum(); // 合并所有 Cell
+
+// 中等并发用 AtomicLong
+AtomicLong pv = new AtomicLong();
+pv.getAndIncrement();
 \`\`\`
 
-关键：自定义 starter 只需写 AutoConfiguration + imports 文件，用户引入依赖即生效。`,
-    keyPoints: ["@EnableAutoConfiguration 加载 imports", "@Conditional 条件装配", "OnMissingBean 允许用户覆盖"],
-    followUps: ["如何自定义一个 Starter？", "@ConditionalOnMissingBean 的作用？"],
+踩坑：volatile 适合"一写多读"标志位（如 shutdown flag）；Double-Checked Singletons 必须用 volatile 防止"半初始化对象"逃逸（new 不是原子操作）；LongAdder.sum() 不是强一致，最终一致场景才用。`,
+    keyPoints: ["volatile 可见性 + 禁重排序", "不保证原子性", "高并发计数用 LongAdder"],
+    followUps: ["DCL 单例为什么必须 volatile？", "CAS 的 ABA 问题怎么解决？"],
     favorited: false,
   },
-  // ===== MyBatis/JPA =====
   {
     id: "be-12",
-    nodeId: "be-orm",
-    question: "MyBatis 中 #{} 和 ${} 的区别？为什么 #{} 能防 SQL 注入？",
-    answer: `#{}：预编译占位符，会生成 ?，参数用 PreparedStatement.setXxx 设置，自动转义，防 SQL 注入。
-\${}：字符串拼接，直接替换到 SQL 中，有注入风险，仅用于表名/列名/排序字段等不能预编译的位置。
+    nodeId: "be-java-concurrent",
+    question: "CompletableFuture 如何编排异步任务？腾讯视频转码流水线如何用？",
+    bigTech: true,
+    answer: `CompletableFuture 支持链式编排：thenApply（同步转换）、thenApplyAsync（异步转换）、thenCombine（合并两个 future）、allOf/anyOf（等待多任务）。
+腾讯视频转码流水线：上传 → 抽帧 → 多清晰度转码（4K/1080P/720P 并行）→ 生成封面 → 写库。多清晰度并行用 allOf 合并。
 
-\`\`\`xml
-<!-- 安全：预编译 -->
-<select id="get">
-  SELECT * FROM user WHERE id = #{id}
-</select>
-<!-- 动态表名：只能用 \${} -->
-<select id="getByTable">
-  SELECT * FROM \${tableName} WHERE id = #{id}
-</select>
+\`\`\`java
+// 转码流水线：4K/1080P 并行转码，全部完成后写库
+CompletableFuture<Void> pipeline = uploadVideo(req)
+    .thenComposeAsync(this::extractFrames)
+    .thenApplyAsync(this::generateCover)
+    .thenCombine(
+        CompletableFuture.allOf(
+            transcodeAsync(video, "4K"),
+            transcodeAsync(video, "1080P"),
+            transcodeAsync(video, "720P")
+        ),
+        (cover, ignored) -> new VideoMeta(video, cover)
+    )
+    .thenAcceptAsync(this::persist)
+    .exceptionally(ex -> { log.error("转码失败", ex); return null; });
 \`\`\`
 
-MyBatis 一级缓存：SqlSession 级别（默认开启），同 session 相同查询命中缓存。
-二级缓存：Mapper 级别（namespace），需手动开启，分布式下有脏读问题，生产多用 Redis 替代。
-
-关键：#{} 预编译防注入；\${} 拼接仅用于结构性参数且需校验白名单。`,
-    keyPoints: ["#{} 预编译防注入", "${} 拼接用于表名/列名", "一级缓存 session 级，二级 namespace 级"],
-    followUps: ["MyBatis 二级缓存在集群环境的脏读问题？", "动态 SQL 的 if/choose/foreach 用法？"],
+踩坑：thenApply 默认用前一步的线程池，可能阻塞上游，关键步骤用 thenApplyAsync 指定独立线程池；默认 ForkJoinPool.commonPool 共用易拖垮全局，必须显式传 Executor；exceptionally 只能捕获前面所有阶段异常；超时用 orTimeout(5, SECONDS)（JDK 9+）。`,
+    keyPoints: ["thenApply/thenCombine/allOf 编排", "并行任务用 allOf", "显式线程池避免 commonPool 拖垮"],
+    followUps: ["CompletableFuture 默认线程池有什么坑？", "thenApply 和 thenCompose 区别？"],
     favorited: false,
   },
   {
     id: "be-13",
-    nodeId: "be-orm",
-    question: "JPA 的 N+1 问题是什么？如何解决？",
-    answer: `N+1 问题：查询 N 条主实体后，对每条的关联属性单独发 1 次查询，共 N+1 次 SQL，性能差。
+    nodeId: "be-java-concurrent",
+    question: "ThreadLocal 为什么会内存泄漏？美团 ThreadLocal 用法有什么规范？",
+    bigTech: true,
+    answer: `ThreadLocalMap 的 key 是 WeakReference<ThreadLocal>，value 是强引用。ThreadLocal 实例被回收后 key 变 null，但 value 仍被 Entry 强引用，且 Thread 长生命周期（如线程池），value 无法回收 → 泄漏。
 
-示例：查 10 个 Order，每个 Order 关联 User，默认 lazy 加载会触发 10 次查 User。
+美团规约：1）用 static final 修饰 ThreadLocal 防止 key 被回收成 null；2）用完显式 remove()，尤其在线程池场景；3）ThreadLocal.withInitial 提供初始值避免 NPE。
 
-解决：
-1. JOIN FETCH（JPQL）：一次 join 查出关联。
-   \`\`\`jpql
-   SELECT o FROM Order o JOIN FETCH o.user
-   \`\`\`
-2. @EntityGraph：声明抓取图，一次查询带出指定关联。
-3. 批量查询：@BatchSize(size=50)，in 查询一次取多条关联。
-4. 改为 eager？不推荐，影响所有查询。
+\`\`\`java
+// 阿里规约：static final + try-finally remove
+private static final ThreadLocal<TraceContext> TRACE = ThreadLocal.withInitial(TraceContext::new);
 
-关键：N+1 根因是延迟加载逐条触发；JOIN FETCH 用一条 SQL 解决，最常用。`,
-    keyPoints: ["N+1：主查询后逐条查关联", "JOIN FETCH 一条 SQL 解决", "@EntityGraph 声明抓取图"],
-    followUps: ["lazy 和 eager 加载的权衡？", "MyBatis 会遇到 N+1 吗？怎么避免？"],
+try {
+    TRACE.get().setTraceId(reqId);
+    doBusiness();
+} finally {
+    TRACE.remove(); // 必须！线程池线程复用，不清理会污染下次任务
+}
+\`\`\`
+
+踩坑：线程池场景 ThreadLocal 不 remove 是最常见泄漏源；InheritableThreadLocal 不能跨线程池传递，要用阿里 TransmittableThreadLocal（TTL）；Spring 的 RequestContextHolder 也用 ThreadLocal，异步链路会丢失需手动传递。`,
+    keyPoints: ["key 弱引用 value 强引用", "线程池场景必须 remove", "跨线程池用 TTL"],
+    followUps: ["InheritableThreadLocal 为什么不能跨线程池？", "TTL 如何实现跨线程池传递？"],
     favorited: false,
   },
-  // ===== Python 基础 =====
   {
     id: "be-14",
-    nodeId: "be-python-basic",
-    question: "Python GIL 是什么？对多线程的影响？如何绕过？",
-    answer: `GIL（全局解释器锁，CPython）：同一时刻只有一个线程执行 Python 字节码，导致多线程无法利用多核做 CPU 密集任务。
+    nodeId: "be-java-concurrent",
+    question: "字节抖音直播点赞计数高并发场景：AtomicLong vs LongAdder vs 锁？",
+    bigTech: true,
+    answer: `点赞是典型"高频写 + 低频读"场景。
+AtomicLong：单 CAS，高并发自旋失败率高，QPS 上万后性能急剧下降。
+LongAdder：分段 Cell 累加，写分散到多个 Cell，读时 sum 合并，高并发写性能 5-10 倍于 AtomicLong。
+锁：完全不适合，序列化写吞吐最低。
 
-影响：
-- CPU 密集型：多线程无加速（甚至更慢，线程切换开销）。
-- IO 密集型：多线程有效（IO 时释放 GIL，其他线程可执行）。
+抖音直播间百万级 QPS 点赞用 LongAdder + 定时批量入库，热修复后 CPU 从 80% 降到 30%。
 
-绕过：
-1. multiprocessing：多进程，每进程独立 GIL（推荐 CPU 密集）。
-2. C 扩展：numpy/计算库在 C 层释放 GIL。
-3. Jython/IronPython：无 GIL（但生态差）。
-4. asyncio：单线程并发，IO 密集高效。
-
-\`\`\`python
-from multiprocessing import Pool
-with Pool(4) as p:
-    results = p.map(heavy_task, range(100))  # 真并行
+\`\`\`java
+// 直播间点赞 LongAdder + 批量入库
+LongAdder likeCount = new LongAdder();
+// 用户点赞：高并发写，分散到 Cell
+public void onLike(long roomId) { likeCount.increment(); }
+// 定时刷库：低频读
+@Scheduled(fixedRate = 1000)
+public void flush() {
+    long total = likeCount.sumThenReset(); // 读后清零
+    likeService.batchUpdate(roomId, total);
+}
 \`\`\`
 
-关键：GIL 是 CPython 历史设计，IO 多用多线程/asyncio，CPU 多用多进程。`,
-    keyPoints: ["GIL 同一时刻单线程执行字节码", "CPU 密集用多进程", "IO 密集多线程/asyncio 有效"],
-    followUps: ["asyncio 的事件循环原理？", "为什么 GIL 不直接移除？"],
+踩坑：sumThenReset 非原子，多读线程会丢数据，只能单消费者；LongAdder 内存比 AtomicLong 大（多个 Cell）；强一致读（如支付余额）不能用 LongAdder，必须用 AtomicLong 或锁。`,
+    keyPoints: ["LongAdder 分段写吞吐高", "适合高频写低频读", "sumThenReset 非原子"],
+    followUps: ["LongAdder 内部 Cell 怎么分散？", "强一致计数器用什么？"],
     favorited: false,
   },
+
+  // ===== 3. be-jvm JVM 原理 =====
   {
     id: "be-15",
-    nodeId: "be-python-basic",
-    question: "装饰器的原理？写一个带参数的计时装饰器。",
-    answer: `装饰器本质是高阶函数：接收函数返回新函数，在不改原函数的前提下增加功能（@语法糖等价 func = deco(func)）。
+    nodeId: "be-jvm",
+    question: "JVM 内存区域划分？美团 OOM 排查：堆溢出 vs 元空间溢出 vs 栈溢出？",
+    bigTech: true,
+    answer: `JVM 内存：堆（对象）、方法区/元空间（类元信息、JDK 8 后移出堆）、虚拟机栈（栈帧）、本地方法栈、程序计数器、直接内存。
+OOM 类型：1）Java heap space：对象太多/内存泄漏；2）Metaspace：动态生成类（CGLIB/反射）；3）GC overhead：GC 花费 >98% 时间回收 <2% 内存；4）Direct memory buffer：NIO ByteBuffer.allocateDirect 没释放；5）StackOverflowError：递归过深。
 
-带参数装饰器需要三层嵌套：参数层 → 装饰器层 → 包装层。
-
-\`\`\`python
-import time
-from functools import wraps
-
-def timer(label="cost"):
-    def decorator(func):
-        @wraps(func)  # 保留原函数元信息
-        def wrapper(*args, **kwargs):
-            start = time.time()
-            result = func(*args, **kwargs)
-            print(f"{label}: {func.__name__} {time.time()-start:.3f}s")
-            return result
-        return wrapper
-    return decorator
-
-@timer(label="耗时")  # 等价 myfunc = timer("耗时")(myfunc)
-def myfunc(): ...
+\`\`\`shell
+# 美团 OOM 三板斧
+# 1. 看堆概况
+jmap -heap <pid>
+# 2. dump 堆
+jmap -dump:format=b,file=heap.hprof <pid>
+# 3. MAT/Arthas 分析大对象
+# Arthas 在线排查
+[arthas@1234]$ dashboard      # 看 GC 和内存
+[arthas@1234]$ heapdump /tmp/heap.hprof
 \`\`\`
 
-关键：@wraps 保留 __name__/__doc__；类装饰器实现 __call__；functools.lru_cache 是常用缓存装饰器。`,
-    keyPoints: ["装饰器 = 高阶函数", "带参数需三层嵌套", "@wraps 保留元信息"],
-    followUps: ["类装饰器怎么写？", "functools.lru_cache 原理？"],
+踩坑：堆 OOM 多是 HashMap 当缓存不淘汰、ThreadLocal 不 remove、大 List 一次查出；元空间 OOM 多是动态代理类爆炸，加 -XX:MaxMetaspaceSize；栈溢出调小 -Xss 反而更易溢出，应排查递归；OOM 前 -XX:+HeapDumpOnOutOfMemoryError 自动 dump。`,
+    keyPoints: ["堆/元空间/栈/直接内存", "heap/Metaspace/GC overhead", "jmap dump + MAT 分析"],
+    followUps: ["为什么 JDK 8 把永久代替换为元空间？", "直接内存泄漏怎么排查？"],
     favorited: false,
   },
-  // ===== Python Web =====
   {
     id: "be-16",
-    nodeId: "be-python-web",
-    question: "Django、Flask、FastAPI 的定位和选型？",
-    answer: `Django：全栈框架（"batteries included"）。
-- 自带 ORM/Admin/表单/认证/中间件/模板，开箱即用。
-- 同步为主（4.x 支持异步但生态有限）。
-- 适合内容型/管理后台/CMS。
+    nodeId: "be-jvm",
+    question: "G1 和 CMS 区别？阿里双 11 为什么换 ZGC？",
+    bigTech: true,
+    answer: `CMS（老年代并发标记清除）：低停顿但有碎片，Concurrent Mode Failure 退化为 Serial Old 全堆 STW，JDK 9 弃用、14 移除。
+G1：分 Region（Eden/Survivor/Old/Humongous），标记整理无碎片，可预测停顿（-XX:MaxGCPauseMillis），适合 8G+ 堆。
+ZGC：染色指针 + 读屏障，停顿 <10ms 且不随堆增大，TB 级堆可用，适合双 11 大堆低延迟。
 
-Flask：微框架。
-- 只保留核心（路由/请求响应），扩展自选（SQLAlchemy/Flask-Login）。
-- 灵活，适合中小项目/原型。
+\`\`\`shell
+# 双 11 推荐：16G+ 堆用 ZGC
+java -Xmx16g -Xms16g \
+  -XX:+UseZGC -XX:+ZGenerational \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/data/dump/ \
+  -jar app.jar
 
-FastAPI：现代异步框架。
-- 基于 asyncio + Pydantic 类型校验，自动生成 OpenAPI 文档。
-- 性能接近 Go/Node（Starlette + uvicorn）。
-- 适合 API 服务、高并发 IO 场景。
-
-\`\`\`python
-# FastAPI 示例
-from fastapi import FastAPI
-from pydantic import BaseModel
-app = FastAPI()
-class Item(BaseModel):
-    name: str
-    price: float
-@app.post("/items")
-async def create(item: Item):
-    return item  # 自动类型校验 + 文档
+# G1 调优（中小堆）
+java -Xmx8g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:G1HeapRegionSize=16m
 \`\`\`
 
-选型：内容站选 Django，微服务 API 选 FastAPI，灵活小项目选 Flask。`,
-    keyPoints: ["Django 全栈同步", "Flask 微框架灵活", "FastAPI 异步 + 类型校验 + 自动文档"],
-    followUps: ["FastAPI 为什么快？", "Django ORM 和 SQLAlchemy 区别？"],
+踩坑：G1 的 Humongous 对象（>region 一半）直接进老年代，大数组要调 region size；ZGC JDK 15 前吞吐稍低；生产别用 ParallelGC，STW 长；GC 日志加 -Xlog:gc*:/path/gc.log 方便事后分析。`,
+    keyPoints: ["CMS 标记清除有碎片", "G1 Region + 可预测停顿", "ZGC 染色指针 TB 级"],
+    followUps: ["G1 的 Mixed GC 是什么？", "ZGC 染色指针如何实现？"],
     favorited: false,
   },
   {
     id: "be-17",
-    nodeId: "be-python-web",
-    question: "WSGI 和 ASGI 的区别？为什么 FastAPI 用 ASGI？",
-    answer: `WSGI（Web Server Gateway Interface）：Python 同步 Web 标准（PEP 3333）。
-- 每请求一个同步处理，阻塞等待 IO 时线程挂起。
-- 服务器：uWSGI/gunicorn（sync workers）。
-- 适合同步框架（Django 传统/Flask）。
+    nodeId: "be-jvm",
+    question: "类加载双亲委派模型？为什么打破它？Tomcat 和 SPI 各怎么打破？",
+    bigTech: true,
+    answer: `双亲委派：类加载请求先委派父加载器，父找不到再自己加载。保证核心类（如 java.lang.String）由 Bootstrap 加载，防止伪造。
+打破场景：1）SPI（JDBC Driver）——核心类反向依赖实现类，用 Thread.contextClassLoader；2）Tomcat —— 不同 Web 应用隔离，每个 Context 有独立 WebappClassLoader，先自己加载再委派父；3）OSGi —— 网状委派。
 
-ASGI（Asynchronous Server Gateway Interface）：异步标准。
-- 支持 async/await，单线程内协程并发处理多请求，IO 不阻塞。
-- 兼容 WSGI（可跑同步应用）。
-- 服务器：uvicorn/hypercorn/daphne。
-- 适合 FastAPI/Starlette/Django Channels。
-
-为什么 FastAPI 用 ASGI：基于 asyncio 实现 IO 并发，单进程可处理大量连接，吞吐远高于 WSGI 同步模型。
-
-关键：WSGI 同步一请求一线程；ASGI 异步协程并发，IO 密集场景吞吐高。`,
-    keyPoints: ["WSGI 同步，ASGI 异步", "ASGI 兼容 WSGI", "uvicorn 是 ASGI 服务器"],
-    followUps: ["gunicorn + uvicorn worker 是什么模式？", "Django 如何同时支持 WSGI/ASGI？"],
-    favorited: false,
-  },
-  // ===== Go 基础 =====
-  {
-    id: "be-18",
-    nodeId: "be-go-basic",
-    question: "Go 中 slice 的底层结构？append 扩容规则？",
-    answer: `slice 底层是一个结构体（runtime.slice）：
-\`\`\`go
-type slice struct {
-  array unsafe.Pointer // 指向底层数组
-  len   int            // 长度
-  cap   int            // 容量
+\`\`\`java
+// Tomcat WebappClassLoader 打破双亲委派（简化）
+@Override
+protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    Class<?> c = findLoadedClass(name);
+    if (c == null) {
+        try { c = findClass(name); }  // 先自己找（打破）
+        catch (ClassNotFoundException e) {
+            c = super.loadClass(name, resolve); // 找不到再委派父
+        }
+    }
+    if (resolve) resolveClass(c);
+    return c;
 }
 \`\`\`
 
-append 扩容规则（Go 1.18+）：
-- 若需要的 cap > 2×oldcap，新 cap = 需要值。
-- 否则若 oldcap < 256，新 cap = 2×oldcap。
-- 否则新 cap = oldcap + oldcap/4 + 192（平滑增长，避免大 slice 翻倍浪费）。
+踩坑：JDBC 4.0 用 ServiceLoader + ContextClassLoader 加载 Driver，所以 Class.forName 在 JDK 6 后非必需；Tomcat 多应用同 jar 不同版本必须靠 WebappClassLoader 隔离；热部署要清类加载器否则元空间爆；自定义类加载器要重写 findClass 不是 loadClass。`,
+    keyPoints: ["双亲委派先父后子", "SPI 用 ContextClassLoader", "Tomcat WebappClassLoader 反向"],
+    followUps: ["为什么 JDK 核心 SPI 要打破双亲委派？", "热部署如何避免元空间泄漏？"],
+    favorited: false,
+  },
+  {
+    id: "be-18",
+    nodeId: "be-jvm",
+    question: "JIT 编译（C1/C2）原理？字节抖音为什么关闭部分 JIT 优化？",
+    bigTech: true,
+    answer: `JVM 解释执行 + JIT 编译热点代码为机器码。C1（Client）快速编译，简单优化；C2（Server）激进优化（逃逸分析、内联、循环展开），吞吐高但编译耗 CPU。
+分层编译（Tiered）：先 C1 快速暖机，热点足够热再 C2 深度优化。
 
-关键陷阱：
-1. 多个 slice 共享底层数组，修改会影响彼此。
-2. append 超过 cap 会分配新数组，原 slice 不感知。
-3. 大 slice 截取后，底层数组无法 GC（用 copy 或 s[:n:n] 限定 cap）。
+字节抖音推荐服务在容器化初期，C2 编译耗 CPU 抢占业务线程，启动慢，曾用 -XX:TieredStopAtLevel=1 只用 C1 加速启动，再切换到分层编译。
 
-\`\`\`go
-s := make([]int, 0, 3)
-s = append(s, 1, 2, 3) // 未扩容，写入预分配
-s = append(s, 4)        // 扩容，分配新数组
-\`\`\``,
-    keyPoints: ["slice = ptr + len + cap", "扩容：<256 翻倍，之后平滑增长", "共享底层数组的陷阱"],
-    followUps: ["如何避免 slice 内存泄漏？", "make([]T, len) 和 make([]T, len, cap) 区别？"],
+\`\`\`shell
+# 抖音推荐服务 JVM 启动优化
+java -XX:+TieredCompilation \
+  -XX:TieredStopAtLevel=1 \      # 只用 C1 加速启动（牺牲峰值）
+  -XX:+UseJVMCICompiler=on \     # 或换 GraalVM
+  -jar recommendation.jar
+
+# 阿里 Dragonwell AOT 预编译
+java -XX:+UseAOTCompilation -XX:AOTLibrary=app.aot -jar app.jar
+\`\`\`
+
+踩坑：C2 逃逸分析未生效时对象仍在堆分配，加 -XX:+DoEscapeAnalysis 确认；即时编译的"逆优化"在去优化时会 STW；预热脚本（如京东 JaeRequestWarmup）触发 JIT 后再放流量，避免首请求慢。`,
+    keyPoints: ["C1 快编译 C2 深优化", "分层编译先 C1 后 C2", "逃逸分析栈上分配"],
+    followUps: ["逃逸分析如何决定对象栈上分配？", "GraalVM AOT 和 JIT 的区别？"],
     favorited: false,
   },
   {
     id: "be-19",
-    nodeId: "be-go-basic",
-    question: "Go 的 interface 是如何实现的？为什么说鸭子类型？",
-    answer: `Go interface 是隐式实现：类型只要实现了 interface 定义的全部方法，就自动满足该 interface，无需显式声明（鸭子类型）。
+    nodeId: "be-jvm",
+    question: "Full GC 频繁如何排查？美团一次线上 Full GC 飙升的案例分析？",
+    bigTech: true,
+    answer: `Full GC 触发原因：1）老年代空间不足（大对象/内存泄漏）；2）元空间不足；3）System.gc() 显式调用；4）CMS Concurrent Mode Failure；5）RMI 分布式 GC。
+排查步骤：1）jstat -gcutil 看 FGCT 增长频率；2）GC 日志看 Full GC 原因；3）dump 看老年代大对象；4）定位代码。
 
-底层结构：
-- iface（非空接口）：(*itab, data)，itab 含接口类型、实际类型、方法表。
-- eface（空接口 interface{}）：(*_type, data)。
+美团案例：日志组件异步队列无界，大促日志暴涨，老年代被未消费 LogEvent 填满，Full GC 每秒一次，接口 P99 从 50ms 飙到 5s。修复：队列改有界 + 拒绝策略丢弃 DEBUG 日志。
 
-\`\`\`go
-type Speaker interface { Speak() string }
+\`\`\`java
+// 故障代码：无界队列堆积日志
+LinkedBlockingQueue<LogEvent> queue = new LinkedBlockingQueue<>(); // 无界！
 
-type Dog struct{}
-func (Dog) Speak() string { return "woof" }
-
-var s Speaker = Dog{} // 隐式实现
+// 修复：有界队列 + 降级
+ArrayBlockingQueue<LogEvent> queue = new ArrayBlockingQueue<>(10000);
+if (!queue.offer(event)) { // 队满丢弃 DEBUG/INFO
+    if (event.level >= Level.WARN) blockingPut(event);
+}
 \`\`\`
 
-关键点：
-1. 值接收者 vs 指针接收者：指针接收者实现的方法，只有指针类型满足 interface。
-2. interface 内部存 (类型, 值)，nil 判断要小心（interface != nil 当类型非 nil 时即使值为 nil 也非 nil）。
-3. 类型断言：v, ok := i.(T)；type switch 做多类型分支。
-
-关键：Go 的隐式接口解耦了定义与实现，便于组合与测试（mock）。`,
-    keyPoints: ["隐式实现（鸭子类型）", "iface 含 itab 方法表", "值接收者 vs 指针接收者影响 interface 满足"],
-    followUps: ["interface 值为 nil 但 interface 本身非 nil 的问题？", "空接口和 any 的关系（Go 1.18）？"],
+踩坑：System.gc() 默认触发 Full GC，加 -XX:+DisableExplicitGC 禁用；RMI 默认 1 小时一次 System.gc，需 -Dsun.rmi.dgc.client/server.gcInterval=36000000；CMS 的 Concurrent Mode Failure 多是晋升速率过快，调大老年代或新生代。`,
+    keyPoints: ["Full GC 五大原因", "jstat + GC 日志 + dump", "无界队列是常见元凶"],
+    followUps: ["如何区分 Minor GC 和 Full GC？", "CMS Concurrent Mode Failure 如何避免？"],
     favorited: false,
   },
-  // ===== Go 并发 =====
   {
     id: "be-20",
-    nodeId: "be-go-concurrent",
-    question: "Go 中 goroutine 和 channel 的关系？为什么不要通过共享内存通信？",
-    answer: `Go 并发哲学："不要通过共享内存通信，而通过通信共享内存"（Do not communicate by sharing memory; instead, share memory by communicating）。
+    nodeId: "be-jvm",
+    question: "对象内存布局？为什么 8 字节对齐？指针压缩是什么？",
+    bigTech: true,
+    answer: `64 位 JVM 对象布局：对象头（MarkWord 8B + KlassPointer 4B 压缩/8B 不压缩）+ 实例数据 + 对齐填充（8 字节倍数）。
+8 字节对齐：CPU 缓存行（64B）和原子性需要，避免跨缓存行读写引发伪共享。
+指针压缩（-XX:+UseCompressedOops，堆 <32G 默认开）：把 8B 指针压缩成 4B，节省 50% 指针内存，所以 32G 是分水岭。
 
-goroutine：轻量级协程（~2KB 栈，可动态增长），由 Go runtime 调度（GMP 模型：G goroutine / M 线程 / P 处理器）。
-
-channel：goroutine 间通信的管道，类型安全，自带同步。
-
-\`\`\`go
-// 生产者-消费者
-ch := make(chan int, 3) // 带缓冲
-go func() { ch <- 1; close(ch) }()
-for v := range ch { fmt.Println(v) } // close 后 range 自动退出
+\`\`\`java
+// 用 JOL 查看对象布局
+<dependency>
+  <groupId>org.openjdk.jol</groupId>
+  <artifactId>jol-core</artifactId>
+</dependency>
+// 打印 HashMap 对象布局
+System.out.println(ClassLayout.parseInstance(new HashMap<>()).toPrintable());
+// 输出：HEADER(12) + padding(4) = 16B 一个空 HashMap
 \`\`\`
 
-对比共享内存 + 锁：
-- 共享内存：需 sync.Mutex 保护，易死锁、竞态。
-- channel：天然同步（无缓冲发送阻塞直到接收），更安全、表达力强。
-
-关键：无缓冲 channel 同步通信；有缓冲 channel 异步解耦；close 通知接收方结束。`,
-    keyPoints: ["GMP 调度模型", "channel 通信代替共享内存", "无缓冲同步/有缓冲解耦"],
-    followUps: ["GMP 模型中 P 的作用？", "channel 底层数据结构？发送/接收如何阻塞？"],
+踩坑：堆 >32G 必须关指针压缩，对象头从 12B 变 16B，反而占内存更多，所以单实例堆建议 ≤31G；MarkWord 存 hashCode/锁状态/GC 分代年龄，锁升级会改写它；对齐填充让 Long[] 比 long[] 多占 50% 内存（每个 Long 对象 16B 包装）。`,
+    keyPoints: ["对象头 + 实例数据 + 对齐", "8B 对齐匹配缓存行", "32G 是指针压缩分水岭"],
+    followUps: ["MarkWord 在不同锁状态如何变化？", "为什么堆超 32G 反而更耗内存？"],
     favorited: false,
   },
   {
     id: "be-21",
-    nodeId: "be-go-concurrent",
-    question: "Context 的作用？如何用 Context 做超时和取消？",
-    answer: `Context 用于在 goroutine 间传递截止时间/取消信号/请求范围值，解决 goroutine 泄漏。
+    nodeId: "be-jvm",
+    question: "线上 CPU 100% 如何定位？阿里 Arthas 排查三步法？",
+    bigTech: true,
+    answer: `三步法：1）top 找 CPU 高的 Java 进程 pid；2）top -Hp pid 找 CPU 高的线程 tid（十进制）；3）printf "%x\\n" tid 转 16 进制，jstack pid | grep tid 找栈定位代码。Arthas 一站式：thread -n 5 看占用最高线程，profiler 生成火焰图。
 
-核心方法：
-- context.WithCancel(parent)：手动取消。
-- context.WithTimeout(parent, dur)：超时自动取消。
-- context.WithValue(parent, k, v）：传值（谨慎用，非传参手段）。
+\`\`\`shell
+# 阿里 Arthas CPU 排查
+# 1. 启动 Arthas
+java -jar arthas-boot.jar <pid>
+# 2. 看 CPU 最高的 5 个线程
+[arthas@1234]$ thread -n 5
+# 3. 看具体栈
+[arthas@1234]$ thread <threadId>
+# 4. 火焰图
+[arthas@1234]$ profiler start; sleep 30; profiler stop --format html
+# 5. 反编译看 JIT 后代码
+[arthas@1234]$ jad com.demo.Service
+\`\`\`
 
-\`\`\`go
-func handler(ctx context.Context) {
-  ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-  defer cancel() // 退出时释放资源
+踩坑：CPU 高常见死循环（while(true) 无 sleep）、正则灾难回溯、GC 线程占满（看是否 GC 频繁而非业务）；jstack 多打几次看栈是否变化判断死锁/活锁；Arthas watch 看方法入参出参，trace 看调用链耗时，对线上无侵入但会影响性能。`,
+    keyPoints: ["top → top -Hp → jstack", "Arthas thread -n 5", "profiler 火焰图"],
+    followUps: ["死锁如何用 jstack 排查？", "Arthas trace 和 watch 区别？"],
+    favorited: false,
+  },
 
-  select {
-  case <-work(ctx):
-    fmt.Println("done")
-  case <-ctx.Done():
-    fmt.Println("timeout/cancel:", ctx.Err())
-  }
-}
+  // ===== 4. be-spring-core Spring 核心 =====
+  {
+    id: "be-22",
+    nodeId: "be-spring-core",
+    question: "Spring IoC 容器初始化流程？BeanDefinition 作用？",
+    bigTech: true,
+    answer: `IoC 容器初始化：1）资源定位（XML/注解/Configuration 类）；2）BeanDefinition 加载和解析（Bean 的元数据：class、scope、lazy、依赖）；3）注册到 BeanDefinitionRegistry；4）getBean 触发实例化（懒加载）或 refresh() 后实例化（非懒）。
+BeanDefinition 是 Bean 的"图纸"，BeanFactoryPostProcessor 可改图纸（如占位符替换），BeanPostProcessor 改成品 Bean。
 
-func work(ctx context.Context) <-chan struct{} {
-  ch := make(chan struct{})
-  go func() {
-    defer close(ch)
-    // 每步检查 ctx 是否取消
-    select {
-    case <-time.After(5 * time.Second):
-    case <-ctx.Done():
-      return
+\`\`\`java
+// 自定义 BeanFactoryPostProcessor 改 BeanDefinition（如动态注册 Mapper）
+@Component
+public class MapperScannerPostProcessor implements BeanDefinitionRegistryPostProcessor {
+    @Override
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+        ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
+        scanner.setAnnotationClass(Mapper.class);
+        scanner.registerFilters();
+        scanner.scan("com.demo.mapper");
     }
-  }()
-  return ch
 }
 \`\`\`
 
-关键：Context 沿调用链传递，cancel 时所有子 context 一起取消，goroutine 应在 select 中监听 ctx.Done() 及时退出。`,
-    keyPoints: ["Context 传取消/超时/值", "WithTimeout 超时取消", "select 监听 ctx.Done()"],
-    followUps: ["Context 如何防止 goroutine 泄漏？", "WithValue 为什么不推荐传业务参数？"],
-    favorited: false,
-  },
-  // ===== MySQL =====
-  {
-    id: "be-22",
-    nodeId: "be-mysql",
-    question: "MySQL InnoDB 为什么用 B+ 树做索引？相比 B 树/Hash/红黑树的优势？",
-    answer: `B+ 树优势：
-1. 非叶子节点只存索引不存数据，单页能放更多 key，树更矮，磁盘 IO 少（3 层可存千万级）。
-2. 叶子节点用双向链表相连，范围查询高效（定位起点后顺序遍历）。
-3. 数据稳定有序，等值/范围/排序都高效。
-
-对比：
-- B 树：非叶子也存数据，单页 key 少树更高；范围查询需回溯。
-- Hash：等值 O(1) 极快，但不支持范围查询和排序。
-- 红黑树：二叉，树高远大于 B+（千万级约 20+ 层），IO 次数多。
-
-聚簇索引（InnoDB 主键）：叶子节点存整行数据。
-二级索引：叶子存主键，需回表（用主键再查聚簇索引）。
-
-关键：B+ 树为磁盘存储优化，矮树 + 叶子链表兼顾等值和范围查询。`,
-    keyPoints: ["非叶只存 key 树矮 IO 少", "叶子链表范围查询快", "二级索引需回表"],
-    followUps: ["什么是回表？如何用覆盖索引避免？", "为什么建议主键自增？"],
+踩坑：@Configuration(proxyBeanMethods=false) 关闭 Full 模式省启动时间，但 @Bean 间相互调用会重建对象；BeanDefinition 不实例化对象，beanFactory.getBean 才真正创建；MyBatis Mapper 没有实现类，靠 MapperFactoryBean + BeanDefinition 注册代理。`,
+    keyPoints: ["定位→加载→注册→实例化", "BeanDefinition 是图纸", "BeanFactoryPostProcessor 改图纸"],
+    followUps: ["BeanFactory 和 ApplicationContext 区别？", "@Configuration 全模式和轻量模式区别？"],
     favorited: false,
   },
   {
     id: "be-23",
-    nodeId: "be-mysql",
-    question: "MySQL 事务的隔离级别？MVCC 原理？",
-    answer: `四个隔离级别：
-1. 读未提交（READ UNCOMMITTED）：脏读。
-2. 读已提交（READ COMMITTED）：解决脏读，有不可重复读。Oracle 默认。
-3. 可重复读（REPEATABLE READ）：解决不可重复读，InnoDB 默认，用间隙锁解决幻读。
-4. 串行化（SERIALIZABLE）：最高隔离，性能差。
+    nodeId: "be-spring-core",
+    question: "Spring AOP 用 JDK 动态代理还是 CGLIB？美团性能对比？",
+    bigTech: true,
+    answer: `JDK 动态代理：基于接口，Proxy.newProxyInstance 生成 $Proxy0 实现 InvocationHandler。
+CGLIB：基于继承，生成目标类子类重写方法，需 final 类不能代理。
+Spring 默认：有接口用 JDK，无接口用 CGLIB；@EnableAspectJAutoProxy(proxyTargetClass=true) 强制 CGLIB。
 
-MVCC（多版本并发控制）：通过隐藏列（trx_id 事务ID、roll_pointer 回滚指针）+ undo log 版本链实现快照读，读不加锁。
+美团 RPC 框架 Swan 实测：JDK 代理反射调用比 CGLIB FastClass 慢 30%，且 CGLIB 生成子类可被 JIT 内联，所以 Dubbo/Swan 默认 javassist 或 CGLIB。
 
-ReadView（读视图）：包含当前活跃事务列表。判断版本可见性：
-- trx_id < min_trx：已提交，可见。
-- trx_id > max_trx：未来事务，不可见。
-- 在活跃列表中：未提交，不可见，沿 undo log 找上一版本。
+\`\`\`java
+// 强制 CGLIB 代理（Spring Boot 2.x 默认）
+@Configuration
+@EnableAspectJAutoProxy(proxyTargetClass = true)
+public class AopConfig {}
 
-RC：每次 SELECT 生成新 ReadView（能看到新提交）。
-RR：事务首次 SELECT 生成 ReadView 并复用（保证可重复读）。
+// 自定义 AOP 切面（美团日志组件）
+@Aspect
+@Component
+public class TraceAspect {
+    @Around("@annotation(com.demo.Trace)")
+    public Object trace(ProceedingJoinPoint pjp) throws Throwable {
+        long start = System.currentTimeMillis();
+        try { return pjp.proceed(); }
+        finally { metrics.timer(pjp.getSignature().getName(), System.currentTimeMillis() - start); }
+    }
+}
+\`\`\`
 
-关键：MVCC 只对快照读（普通 SELECT）有效；当前读（SELECT ... FOR UPDATE / UPDATE）用锁。`,
-    keyPoints: ["四个级别 + RR 默认", "MVCC = 版本链 + ReadView", "RC 每次/RR 首次生成 ReadView"],
-    followUps: ["快照读和当前读区别？", "间隙锁如何解决幻读？"],
+踩坑：CGLIB 不能代理 final 方法和 final 类；JDK 代理只能代理接口方法，类自有方法调不到；@Transactional 自调用（同类方法互相调用）失效——因为不走代理对象，需注入自己或用 AopContext.currentProxy()。`,
+    keyPoints: ["JDK 接口代理 / CGLIB 子类代理", "CGLIB FastClass 性能更好", "自调用失效要走代理对象"],
+    followUps: ["@Transactional 自调用为什么失效？", "AspectJ 编译时织入和 Spring AOP 区别？"],
     favorited: false,
   },
   {
     id: "be-24",
-    nodeId: "be-mysql",
-    question: "如何用 explain 分析 SQL？索引失效的常见场景？",
-    answer: `explain 关键字段：
-- type：访问类型，从好到差：const > eq_ref > ref > range > index > ALL（全表扫描，需优化）。
-- key：实际用的索引；key_len：索引使用长度（判断联合索引用了几列）。
-- rows：估算扫描行数。
-- Extra：Using index（覆盖索引好）、Using filesort（需优化）、Using temporary（需优化）。
+    nodeId: "be-spring-core",
+    question: "Bean 生命周期完整流程？循环依赖为什么用三级缓存解决？",
+    bigTech: true,
+    answer: `Bean 生命周期：1）实例化（构造器）；2）属性填充（依赖注入）；3）初始化（BeanPostProcessor.before → @PostConstruct → InitializingBean.afterPropertiesSet → init-method → BeanPostProcessor.after）；4）使用；5）销毁（@PreDestroy → DisposableBean.destroy → destroy-method）。
+三级缓存：singletonObjects（成品）、earlySingletonObjects（半成品已暴露）、singletonFactories（ObjectFactory 可生成代理）。循环依赖时，A 依赖 B、B 依赖 A，B 创建时从三级缓存拿到 A 的 ObjectFactory 调用提前生成半成品 A。
 
-索引失效场景：
-1. 对索引列做函数/运算：WHERE YEAR(create_time) = 2024。
-2. 隐式类型转换：字符串列 WHERE phone = 13800000000（数字）。
-3. LIKE 左模糊：WHERE name LIKE '%abc'。
-4. OR 连接非索引列。
-5. 联合索引未遵循最左前缀。
-6. != / NOT IN / IS NOT NULL（部分情况）。
+\`\`\`java
+// 三级缓存核心代码（DefaultSingletonRegistry）
+Map<String, Object> singletonObjects = new ConcurrentHashMap<>();      // 一级：成品
+Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(); // 二级：半成品
+Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>();    // 三级：工厂
 
-优化：建联合索引覆盖查询列，避免回表；大分页用游标 WHERE id > last_id LIMIT 10。
-
-关键：type=ALL、Extra 出现 filesort/temporary 通常需优化。`,
-    keyPoints: ["type 越靠左越好，ALL 需优化", "索引失效：函数/隐式转换/左模糊", "联合索引最左前缀"],
-    followUps: ["什么是覆盖索引和回表？", "大分页 LIMIT 1000000,10 如何优化？"],
-    favorited: false,
-  },
-  // ===== Redis =====
-  {
-    id: "be-25",
-    nodeId: "be-redis",
-    question: "Redis 五大基础数据结构及底层实现？",
-    answer: `1. String：SDS（动态字符串，O(1) 取长度，二进制安全，预分配减少扩容）。
-2. List：quicklist（双向链表 + ziplist/listpack 节点，兼顾内存和效率）。
-3. Hash：listpack（小） / hashtable（大，渐进式 rehash）。
-4. Set：intset（纯整数） / hashtable。
-5. ZSet（有序集合）：listpack（小） / skiplist + hashtable（大，跳表支持范围查询 O(logN)，hashtable 支持等值 O(1)）。
-
-\`\`\`redis
-ZADD rank 100 alice 90 bob
-ZRANGE rank 0 -1 WITHSCORES   # 升序
-ZRANGEBYSCORE rank 80 100     # 按分数范围
+// A 实例化后立即放入三级缓存
+addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 \`\`\`
 
-高级结构：HyperLogLog（基数统计）、Bitmap（位图）、Stream（消息流）、Geo（地理位置）。
+踩坑：构造器注入循环依赖无法解决（实例化阶段就报错），必须改 setter；@Async 的代理由后置处理器生成，循环依赖 + @Async 会启动报错；Spring Boot 2.6+ 默认 spring.main.allow-circular-references=false 禁止循环依赖，倒逼重构。`,
+    keyPoints: ["实例化→填充→初始化→销毁", "三级缓存暴露半成品", "构造器注入循环依赖无解"],
+    followUps: ["为什么需要三级而非二级？", "@Async 循环依赖为什么报错？"],
+    favorited: false,
+  },
+  {
+    id: "be-25",
+    nodeId: "be-spring-core",
+    question: "Spring 事务传播行为？美团订单 + 库存事务如何配置？",
+    bigTech: true,
+    answer: `7 种传播：REQUIRED（默认，有则加入无则新建）、REQUIRES_NEW（挂起当前，新建独立事务）、SUPPORTS、NOT_SUPPORTED、NEVER、MANDATORY、NESTED（嵌套，依赖外层回滚点）。
+订单 + 库存场景：主流程 createOrder 是 REQUIRED，记录日志用 REQUIRES_NEW（订单失败日志要留），扣库存用 REQUIRED（和订单同生共死），发奖励券用 NESTED（券失败只回滚券不影响订单）。
 
-关键：ZSet 用跳表而非红黑树，因实现简单、范围查询友好、并发友好（局部修改）。`,
-    keyPoints: ["String=SDS，ZSet=skiplist+hashtable", "小数据用 listpack 压缩省内存", "渐进式 rehash 避免阻塞"],
-    followUps: ["为什么 ZSet 用跳表不用红黑树？", "渐进式 rehash 过程？"],
+\`\`\`java
+@Service
+public class OrderService {
+    @Transactional(required)  // 主事务
+    public void createOrder(OrderReq req) {
+        orderDao.insert(req);
+        stockService.deduct(req.getSkuId());           // REQUIRED，同事务
+        couponService.grant(req.getUserId());           // NESTED，独立回滚点
+        logService.record(req, "CREATE");               // REQUIRES_NEW，独立事务
+    }
+}
+class LogService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void record(OrderReq req, String action) { logDao.insert(...); }
+}
+\`\`\`
+
+踩坑：自调用不走代理，事务和传播都失效；REQUIRES_NEW 持有两个数据库连接，连接池小易死锁；NESTED 依赖数据库 savepoint，MySQL InnoDB 支持；rollbackFor 默认只回滚 RuntimeException，业务异常要 rollbackFor = Exception.class。`,
+    keyPoints: ["REQUIRED 默认", "REQUIRES_NEW 独立事务", "NESTED 嵌套回滚点"],
+    followUps: ["REQUIRES_NEW 为什么容易死锁？", "rollbackFor 默认行为是什么？"],
     favorited: false,
   },
   {
     id: "be-26",
-    nodeId: "be-redis",
-    question: "Redis 持久化 RDB 和 AOF 的区别？如何选择？",
-    answer: `RDB（快照）：
-- 某时刻全量数据二进制压缩文件，体积小恢复快。
-- 触发：save（阻塞）/ bgsave（fork 子进程，COW）。
-- 缺点：宕机丢失上次快照后的数据。
+    nodeId: "be-spring-core",
+    question: "@Autowired 和 @Resource 区别？阿里为什么推荐构造器注入？",
+    bigTech: true,
+    answer: `@Autowired（Spring）：按类型注入，多实现用 @Qualifier 指定 name；可加在字段/构造器/setter；required=false 容忍找不到。
+@Resource（JSR-250）：按 name 注入，找不到再按 type；name+type 都可指定。
+构造器注入优势：1）依赖不可变 final；2）初始化完成即可用，无 NPE；3）易单元测试（new 出来）；4）暴露依赖过多提醒类设计臃肿。Spring 4.3+ 单构造器可省 @Autowired。
 
-AOF（追加日志）：
-- 记录每条写命令，文本格式，可读。
-- 刷盘策略：always（每条 fsync，最安全最慢）/ everysec（默认，每秒）/ no（OS 决定）。
-- AOF 重写：fork 子进程，按当前状态生成最小命令集，压缩文件。
-- 缺点：文件大、恢复慢。
+\`\`\`java
+// 阿里规约：构造器注入
+@Service
+public class OrderService {
+    private final OrderRepo orderRepo;
+    private final StockClient stockClient;
+    // 单构造器省 @Autowired
+    public OrderService(OrderRepo orderRepo, StockClient stockClient) {
+        this.orderRepo = orderRepo;
+        this.stockClient = stockClient;
+    }
+}
+// 字段注入（不推荐，难测试 + 不能 final）
+// @Autowired private OrderRepo orderRepo;
+\`\`\`
 
-Redis 4.0+ 混合持久化：AOF 重写时前半段写 RDB 二进制，后半段追加增量 AOF 命令，兼顾恢复速度和数据安全。
-
-选择：仅缓存可 RDB；数据重要用 AOF（everysec）+ RDB；生产推荐混合持久化。
-
-关键：RDB 恢复快但可能丢数据；AOF 安全但慢；混合持久化两全。`,
-    keyPoints: ["RDB 快照恢复快可能丢", "AOF 日志安全但慢", "混合持久化 RDB+AOF 兼顾"],
-    followUps: ["AOF 重写过程？fork 期间写入命令怎么处理？", "bgsave 的 COW 原理？"],
+踩坑：字段注入循环依赖不报错悄悄用三级缓存，掩盖设计问题；构造器注入循环依赖启动直接报错，倒逼重构；@Autowired 加 List<Interface> 可注入所有实现，做策略模式；Lombok @RequiredArgsConstructor 自动生成构造器，配合 final 字段最简洁。`,
+    keyPoints: ["@Autowired 按 type", "@Resource 按 name", "构造器注入 final + 可测试"],
+    followUps: ["@Autowired 注入 List 怎么工作？", "Lombok @RequiredArgsConstructor 原理？"],
     favorited: false,
   },
   {
     id: "be-27",
-    nodeId: "be-redis",
-    question: "缓存穿透/击穿/雪崩 的区别和解决方案？",
-    answer: `缓存穿透：查询不存在的数据（如恶意攻击 id=-1），缓存和 DB 都没有，每次穿透到 DB。
-解决：
-1. 缓存空值（设短 TTL，如 60s）。
-2. 布隆过滤器拦截非法 key。
-
-缓存击穿：单个热点 key 过期瞬间，大量并发请求打到 DB。
-解决：
-1. 互斥锁（setnx）重建缓存，其他请求等待。
-2. 热点 key 永不过期（逻辑过期，后台异步刷新）。
-
-缓存雪崩：大量 key 同时过期或 Redis 宕机，请求全打 DB。
-解决：
-1. TTL 加随机值打散。
-2. 多级缓存（本地 Caffeine + Redis）。
-3. Redis 集群高可用 + 限流降级。
+    nodeId: "be-spring-core",
+    question: "Spring 事件机制 ApplicationEvent？订单创建后异步通知多系统如何用？",
+    answer: `Spring 事件：ApplicationEventPublisher 发布 ApplicationEvent，@EventListener 监听。@Async 异步执行。ApplicationEventPublisher.publishEvent 同步调用所有监听器（@Async 才异步）。
+订单创建后通知：库存、券、积分、推送、风控多系统，用事件解耦，新增系统不改订单代码。
 
 \`\`\`java
-// 互斥锁防击穿
-String val = redis.get(key);
-if (val == null) {
-  if (redis.setnx(lockKey, "1", 10)) {
-    try { val = db.get(key); redis.set(key, val, 300); } finally { redis.del(lockKey); }
-  } else { Thread.sleep(50); return get(key); } // 重试
+// 订单事件 + 多系统异步监听
+public class OrderCreatedEvent extends ApplicationEvent {
+    public final Long orderId;
+    public OrderCreatedEvent(Object src, Long orderId) { super(src); this.orderId = orderId; }
+}
+@Service
+public class OrderService {
+    @Autowired private ApplicationEventPublisher publisher;
+    @Transactional
+    public void create(OrderReq req) {
+        Long id = orderDao.insert(req);
+        publisher.publishEvent(new OrderCreatedEvent(this, id)); // 同事务内同步
+    }
+}
+@Component
+public class StockListener {
+    @Async @EventListener @TransactionalEventListener(phase = AFTER_COMMIT)
+    public void on(OrderCreatedEvent e) { stockService.deduct(e.orderId); }
+    // AFTER_COMMIT 保证订单事务提交后再扣库存，避免回滚不一致
 }
 \`\`\`
 
-关键：穿透=查不存在（空值/布隆）；击穿=热点过期（互斥锁）；雪崩=大量过期（随机TTL+集群）。`,
-    keyPoints: ["穿透：空值+布隆过滤器", "击穿：互斥锁/永不过期", "雪崩：随机TTL+多级缓存+限流"],
-    followUps: ["布隆过滤器原理？能否删除？", "如何保证缓存与 DB 一致性？"],
+踩坑：默认 @EventListener 同步执行，监听器抛异常会回滚主事务；@TransactionalEventListener(phase=AFTER_COMMIT) 在事务提交后才触发，避免"扣了库存订单回滚"；@Async 需配 @EnableAsync + 自定义线程池，否则用默认 SimpleAsyncTaskExecutor 每次新建线程；事件最终一致用 MQ 更稳。`,
+    keyPoints: ["publishEvent + @EventListener", "@Async 异步", "@TransactionalEventListener AFTER_COMMIT"],
+    followUps: ["@TransactionalExecutor 和 @Async 区别？", "事件 vs MQ 各适用什么场景？"],
     favorited: false,
   },
-  // ===== 消息队列 =====
   {
     id: "be-28",
-    nodeId: "be-mq",
-    question: "Kafka 如何保证消息不丢失？高吞吐的原因？",
-    answer: `不丢失三端保障：
-1. 生产者：acks=all（所有 ISR 副本确认）+ 重试 + 幂等（enable.idempotence）+ 事务。
-2. Broker：副本机制（replication.factor≥3, min.insync.replicas≥2）+ 磁盘持久化。
-3. 消费者：手动提交 offset（关闭 enable.auto.commit），处理完业务再 commit。
-
-高吞吐原因：
-1. 顺序写磁盘（append，速度接近内存）。
-2. 零拷贝（sendfile，数据不进用户态）。
-3. 批量发送 + 压缩（gzip/snappy/lz4）。
-4. 分区并行（多 partition 并行读写）。
-5. PageCache 利用操作系统缓存。
-
-关键：Kafka 用追加写 + 零拷贝 + 批量压缩实现百万级 TPS；acks=all + 副本保证可靠性。`,
-    keyPoints: ["acks=all + 副本保证可靠", "顺序写+零拷贝+批量压缩高吞吐", "消费者手动提交 offset"],
-    followUps: ["Kafka 如何保证消息顺序性？", "ISR 机制是什么？"],
-    favorited: false,
-  },
-  {
-    id: "be-29",
-    nodeId: "be-mq",
-    question: "如何保证消息的幂等性（不重复消费）？",
-    answer: `MQ 的 exactly-once 难保证，网络重试/消费者重启会导致重复投递，需消费端做幂等。
-
-方案：
-1. 唯一约束：业务主键/唯一 ID 写 DB，利用唯一索引防重。
-2. 去重表：处理前查去重表（message_id），已处理则跳过。
-3. Redis SETNX：用 message_id 作 key，设 NX + TTL，处理成功标记。
-4. 状态机：业务状态只能单向流转（如 待支付→已支付），重复消息因状态不满足被拒。
-5. 乐观锁：UPDATE ... WHERE version = ?，重复更新影响 0 行。
+    nodeId: "be-spring-core",
+    question: "Spring 扩展点 BeanPostProcessor 和 BeanFactoryPostProcessor 区别？阿里扩展案例？",
+    bigTech: true,
+    answer: `BeanFactoryPostProcessor：在 BeanDefinition 加载后、Bean 实例化前，可修改 BeanDefinition（如改 class、属性值、注册新 Bean）。Spring 启动早期执行。
+BeanPostProcessor：在 Bean 实例化后、初始化前后，可替换/包装 Bean 实例（如生成代理）。@Autowired、@ConfigurationProperties 都靠它。
+阿里 Sentinel DataSource AutoConfig 用 BeanFactoryPostProcessor 动态注册规则源 Bean；HSF RPC 用 BeanPostProcessor 给 @RpcService 标注 Bean 注入远程代理。
 
 \`\`\`java
-// 去重表 + 事务
-@Transactional
-public void consume(Message msg) {
-  if (dedupDao.exists(msg.getId())) return; // 已处理
-  doBusiness(msg);
-  dedupDao.insert(msg.getId()); // 同事务内记录
+// 阿里 Sentinel 动态注册规则源 Bean
+public class SentinelRuleSourcePostProcessor implements BeanDefinitionRegistryPostProcessor {
+    @Override
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+        if (rulesEnabled()) {
+            BeanDefinition bd = new RootBeanDefinition(NacosDataSource.class);
+            bd.getConstructorArgumentValues().addGenericArgumentValue(serverAddr);
+            registry.registerBeanDefinition("flowRuleSource", bd);
+        }
+    }
+}
+
+// HSF 远程代理注入（BeanPostProcessor）
+public class HsfProxyPostProcessor implements BeanPostProcessor {
+    @Override public Object postProcessBeforeInitialization(Object bean, String name) {
+        if (bean.getClass().isAnnotationPresent(RpcService.class)) {
+            return HsfProxyFactory.create(bean.getClass()); // 替换为远程代理
+        }
+        return bean;
+    }
 }
 \`\`\`
 
-关键：幂等键要全局唯一（业务 ID + 消息 ID），去重操作与业务操作在同一事务内。`,
-    keyPoints: ["唯一约束/去重表防重", "Redis SETNX + TTL", "状态机/乐观锁天然幂等"],
-    followUps: ["Kafka 生产者幂等原理？", "如何处理消息积压？"],
+踩坑：BeanPostProcessor 不能拦截自己依赖的 Bean（鸡生蛋）；BeanFactoryPostProcessor 改 BeanDefinition 后该 Bean 还未实例化；@Autowired 的 AutowiredAnnotationBeanPostProcessor 必须早注册，否则其他 Bean 注入失效；@ConfigurationProperties 的 ConfigurationPropertiesBindingPostProcessor 处理属性绑定。`,
+    keyPoints: ["BFPP 改图纸 / BPP 改成品", "BFPP 启动早期 / BPP 实例化后", "Sentinel/HSF 用扩展点"],
+    followUps: ["BeanPostProcessor 怎么实现 @Autowired？", "Spring 启动顺序里两个扩展点何时执行？"],
     favorited: false,
   },
-  // ===== 微服务 =====
+
+  // ===== 5. be-spring-boot Spring Boot =====
+  {
+    id: "be-29",
+    nodeId: "be-spring-boot",
+    question: "Spring Boot 自动配置原理？@EnableAutoConfiguration 如何工作？",
+    bigTech: true,
+    answer: `@SpringBootApplication = @SpringBootConfiguration + @ComponentScan + @EnableAutoConfiguration。
+@EnableAutoConfiguration 通过 @Import(AutoConfigurationImportSelector.class) 加载 META-INF/spring.factories（2.7+ 改为 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports）中所有 AutoConfiguration 类。
+每个 AutoConfiguration 用 @Conditional 系列注解（ConditionalOnClass/Bean/MissingBean/Property）判断是否生效，只有条件满足才装配 Bean。
+
+\`\`\`java
+// 自定义 RedisAutoConfiguration 简化版
+@AutoConfiguration
+@ConditionalOnClass(RedisTemplate.class)
+@EnableConfigurationProperties(RedisProperties.class)
+public class RedisAutoConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, Object> t = new RedisTemplate<>();
+        t.setConnectionFactory(factory);
+        return t;
+    }
+}
+// 注册：META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+// com.demo.RedisAutoConfiguration
+\`\`\`
+
+踩坑：@ConditionalOnMissingBean 让用户 Bean 覆盖默认配置，所以"约定大于配置"；spring.factories 2.7 弃用但仍兼容，新项目用 imports 文件；启动慢可加 --debug 看哪些 AutoConfiguration 不匹配；@ConditionalOnBean 有顺序问题，尽量用 @ConditionalOnClass。`,
+    keyPoints: ["@Import 加载 AutoConfiguration", "@Conditional 系列条件装配", "spring.factories / imports 文件"],
+    followUps: ["@ConditionalOnBean 有什么坑？", "如何查看哪些自动配置类生效？"],
+    favorited: false,
+  },
   {
     id: "be-30",
-    nodeId: "be-microservice",
-    question: "服务注册与发现原理？Nacos 和 Eureka 区别？",
-    answer: `原理：
-1. 服务启动时向注册中心注册（IP + 端口 + 元数据）。
-2. 消费者从注册中心拉取服务列表并缓存本地。
-3. 心跳续约：服务定时发心跳，超时未续约则剔除。
-4. 注册中心变更通知消费者（push 或定时 pull）。
+    nodeId: "be-spring-boot",
+    question: "Starter 机制如何设计？美团 Cat 监控 Starter 怎么写？",
+    bigTech: true,
+    answer: `Starter = 自动配置类 + 配置属性类 + 依赖打包。命名规范：官方 spring-boot-starter-xxx，第三方 xxx-spring-boot-starter。
+设计：1）Properties 类绑定 yml；2）AutoConfiguration 装配 Bean；3）META-INF/spring/...imports 注册；4）pom 把依赖收口进 starter。
 
-Eureka（AP）：
-- 最终一致，节点间复制异步，保证可用性。
-- 客户端缓存，注册中心挂了仍能调用（兜底）。
-- 自我保护模式（心跳比例低时不再剔除，防网络分区误删）。
+\`\`\`java
+// 美团 Cat 监控 Starter
+@ConfigurationProperties(prefix = "cat")
+public class CatProperties {
+    private String domain; private String servers; private boolean enabled = true;
+    // getter/setter
+}
+@AutoConfiguration
+@ConditionalOnClass(Cat.class)
+@EnableConfigurationProperties(CatProperties.class)
+@ConditionalOnProperty(prefix = "cat", name = "enabled", havingValue = "true", matchIfMissing = true)
+public class CatAutoConfiguration {
+    @Bean @ConditionalOnMissingBean
+    public Cat cat(CatProperties props) {
+        return new Cat.Builder().domain(props.getDomain()).servers(props.getServers()).build();
+    }
+    @Bean public CatWebMvcInterceptor catInterceptor() { return new CatWebMvcInterceptor(); }
+}
+// 用户使用：<dependency><artifactId>cat-spring-boot-starter</artifactId></dependency>
+// application.yml: cat.domain=order-service / cat.servers=10.0.0.1:2280
+\`\`\`
 
-Nacos（AP/CP 可切换）：
-- 默认 AP（临时实例，心跳），支持 CP（永久实例，Raft 强一致）。
-- 自带配置中心（动态配置推送）。
-- 支持健康检查、权重路由。
-- Spring Cloud Alibaba 生态。
-
-关键：AP 保证高可用（注册中心宕机不影响调用），CP 保证强一致。微服务多选 AP。`,
-    keyPoints: ["注册+心跳+客户端缓存", "Eureka AP + 自我保护", "Nacos AP/CP 可切换 + 配置中心"],
-    followUps: ["AP 和 CP 在服务发现场景如何取舍？", "Nacos 如何实现配置动态推送？"],
+踩坑：Starter 内 Bean 用 @ConditionalOnMissingBean 让用户可覆盖；starter 不要包含业务代码，只做自动装配；配置 key 用独立前缀避免冲突；启动时打日志告诉用户生效了哪些配置便于排查。`,
+    keyPoints: ["Starter = 自动配置 + Properties + 依赖", "命名 xxx-spring-boot-starter", "@ConditionalOnMissingBean 可覆盖"],
+    followUps: ["Starter 内如何暴露健康检查？", "Starter 之间如何控制加载顺序？"],
     favorited: false,
   },
   {
     id: "be-31",
-    nodeId: "be-microservice",
-    question: "熔断降级的作用？Sentinel 的熔断策略？",
-    answer: `熔断降级：当下游服务故障/慢时，快速失败而非级联等待，防止雪崩，保护系统可用性。
+    nodeId: "be-spring-boot",
+    question: "Spring Boot 配置加载优先级？Nacos 配置和本地 yml 谁覆盖谁？",
+    bigTech: true,
+    answer: `优先级（高 → 低）：1）命令行参数 --xxx；2）SPRING_APPLICATION_JSON；3）ServletConfig/ServletContext；4）JNDI；5）Java 系统属性；6）操作系统环境变量；7）RandomValuePropertySource；8）jar 包外 application-{profile}.yml；9）jar 包内 application-{profile}.yml；10）jar 包外 application.yml；11）jar 包内 application.yml；12）@PropertySource。
+Spring Cloud Bootstrap：Nacos 配置在 application 之前加载，默认 application 优先级高（覆盖 Nacos），用 spring.cloud.config.override-none=true 让本地不覆盖远程。
 
-熔断器三态：
-- Closed：正常调用，统计失败率。
-- Open：失败率达阈值，直接拒绝请求（快速失败/降级），不再调用下游。
-- Half-Open：超时后放少量请求试探，成功则回 Closed，失败则回 Open。
-
-Sentinel 熔断策略：
-1. 慢调用比例：RT 超阈值的请求比例达阈值触发。
-2. 异常比例：异常比例达阈值触发。
-3. 异常数：异常数达阈值触发。
-
-\`\`\`java
-@SentinelResource(value = "queryOrder", fallback = "queryOrderFallback")
-public Order queryOrder(String id) {
-  return orderService.get(id);
-}
-public Order queryOrderFallback(String id) {
-  return new Order(id, "默认商品"); // 降级返回兜底
-}
+\`\`\`yaml
+# bootstrap.yml（Nacos 加载早于 application.yml）
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: nacos.prod:8848
+        namespace: prod
+        # 远程优先，本地无法覆盖
+        override-none: false  # 默认 false，远程配置可被本地覆盖
+        allow-override: true  # 允许本地覆盖
+        override-system-properties: false
+# application.yml
+myapp:
+  timeout: 3000  # 若 Nacos 同 key，看 override-none 决定谁覆盖
 \`\`\`
 
-关键：熔断保护调用方（快速失败）；降级提供兜底（返回默认值/缓存）；限流保护被调方（控制 QPS）。`,
-    keyPoints: ["熔断三态 Closed/Open/Half-Open", "Sentinel 慢调用/异常比例/异常数", "熔断保护调用方，限流保护被调方"],
-    followUps: ["熔断和限流的区别？", "Hystrix 和 Sentinel 区别？"],
+踩坑：bootstrap.yml 在 Spring Cloud 2020+ 默认禁用，需 spring.cloud.bootstrap.enabled=true 或改用 spring.config.import；本地调试加 -Dspring.profiles.active=dev 切环境；敏感配置用 Nacos + 加密，不要进 yml 提交 Git；@RefreshScope + /actuator/refresh 才能动态刷新。`,
+    keyPoints: ["命令行 > 系统属性 > 环境变量 > jar 外 yml > jar 内 yml", "Nacos bootstrap 优先", "override-none 控制覆盖方向"],
+    followUps: ["@RefreshScope 如何实现配置动态刷新？", "Spring Cloud 2020 为什么禁用 bootstrap？"],
     favorited: false,
   },
-  // ===== 分布式 =====
   {
     id: "be-32",
-    nodeId: "be-distributed",
-    question: "CAP 理论和 BASE 理论？为什么分布式系统难以同时满足强一致？",
-    answer: `CAP：一致性（Consistency）、可用性（Availability）、分区容错（Partition tolerance）三选二。
-- 网络分区（P）必然存在，故实际在 C 和 A 间权衡。
-- CP：分区时拒绝写入保证一致（ZooKeeper/etcd）。
-- AP：分区时允许不一致保证可用（Eureka/Cassandra）。
+    nodeId: "be-spring-boot",
+    question: "Spring Boot 启动流程？阿里如何优化启动时间（秒级 → 亚秒）？",
+    bigTech: true,
+    answer: `启动流程：1）SpringApplication.run；2）创建 SpringApplicationRunListener；3）prepareEnvironment 加载配置；4）createApplicationContext（Servlet 用 AnnotationConfigServletWebServerApplicationContext）；5）refreshContext：注册 BeanDefinition → 实例化 BeanFactoryPostProcessor → 注册 BeanPostProcessor → 实例化单例 Bean → onRefresh 启动 Tomcat → finishRefresh 发布 ApplicationReadyEvent。
 
-BASE：Basically Available（基本可用）、Soft state（软状态）、Eventually consistent（最终一致）。
-- CAP 的 AP 延伸，放弃强一致，追求最终一致，换取高可用。
+阿里优化：1）懒加载 spring.main.lazy-init=true（启动快，首请求慢）；2）排除未用 AutoConfiguration（spring.autoconfigure.exclude）；3）ApplicationContextFactory 用定制轻量上下文；4）Spring Boot 3 + GraalVM Native Image AOT 编译，启动 50ms；5）Dragonwell AOT。
 
-为什么难强一致：
-1. 网络延迟不可控，同步复制会拖慢写入。
-2. 分区时部分节点不可达，强一致需牺牲可用性。
-3. 分布式事务协调开销大（2PC 阻塞、性能差）。
+\`\`\`java
+// 阿里秒级启动优化
+@SpringBootApplication(exclude = {
+    DataSourceAutoConfiguration.class,  // 排除未用
+    RedisAutoConfiguration.class
+})
+public class App {
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(App.class)
+            .lazyInitialization(true)                // 懒加载
+            .logStartupInfo(false)
+            .bannerMode(Banner.Mode.OFF)
+            .run(args);
+    }
+}
+# GraalVM Native Image
+native-image -H:Name=app -H:ConfigurationFileDirectories=meta app.jar
+\`\`\`
 
-实践：金融核心用 CP + 强一致（TCC/Saga）；互联网多用 AP + 最终一致（消息可靠投递）。
-
-关键：CAP 是分区时的取舍；BASE 是 AP 的工程实践，最终一致是主流。`,
-    keyPoints: ["CAP 分区时 C/A 二选一", "BASE = 基本可用+软状态+最终一致", "金融 CP / 互联网 AP"],
-    followUps: ["Raft 如何保证一致性？", "2PC 和 3PC 区别？"],
+踩坑：懒加载让首请求慢（JIT/连接池冷启动），生产慎用；Native Image 不支持反射（需配置 reflect-config.json），CGLIB/动态代理要适配；Spring Boot 3 Native 仍在完善，第三方库兼容性是坑；启动慢可加 -Ddebug 看哪个 Bean 初始化久。`,
+    keyPoints: ["run → 环境 → 上下文 → refresh → Tomcat", "lazy-init / 排除 AutoConfig", "GraalVM Native AOT"],
+    followUps: ["lazy-init 为什么生产慎用？", "Native Image 反射为什么不支持？"],
     favorited: false,
   },
   {
     id: "be-33",
-    nodeId: "be-distributed",
-    question: "分布式锁的实现方式？Redis 和 ZooKeeper 分布式锁的区别？",
-    answer: `三种主流实现：DB 唯一索引、Redis、ZooKeeper/etcd。
-
-Redis 分布式锁（SETNX + 过期）：
-\`\`\`redis
-SET lock_key <requestId> NX PX 30000  # 加锁+过期原子
-\`\`\`
-- 释放锁用 Lua 脚本校验 requestId（防误删别人的锁）。
-- 问题：锁过期但业务未完成 → Redisson 看门狗自动续期。
-- Redlock：多个 Redis 节点多数加锁成功，防单点故障（争议较大）。
-
-ZooKeeper 分布式锁（临时顺序节点）：
-1. 创建临时顺序节点 /lock/node-xxx。
-2. 判断自己是否最小节点，是则获锁；否则监听前一个节点删除事件。
-3. 释放锁：删除自己的节点；客户端宕机则临时节点自动删除（防死锁）。
-
-对比：
-- Redis：性能高，AP，锁过期有风险（看门狗缓解）。
-- ZK：可靠性高，CP，客户端宕机自动释放，但性能较低。
-
-关键：Redis 适合高性能场景；ZK/etcd 适合强一致可靠场景。`,
-    keyPoints: ["Redis SETNX+过期+Lua 校验", "ZK 临时顺序节点+监听", "Redisson 看门狗续期"],
-    followUps: ["Redis 锁误删问题怎么解决？", "Redlock 的争议是什么？"],
-    favorited: false,
-  },
-  // ===== 系统设计 =====
-  {
-    id: "be-34",
-    nodeId: "be-system-design",
-    question: "限流算法有哪些？令牌桶和漏桶的区别？",
-    answer: `四种限流算法：
-1. 计数器（固定窗口）：单位时间计数，超限拒绝。临界点可能 2 倍流量（窗口边界突刺）。
-2. 滑动窗口：细分小窗口滑动统计，平滑突刺。
-3. 漏桶：固定速率漏水（处理），请求先入桶，满则拒绝。强制匀速，无法应对突发。
-4. 令牌桶：固定速率放令牌入桶，请求消耗令牌，无令牌则拒绝。允许一定突发（桶满可攒令牌）。
-
-漏桶 vs 令牌桶：
-- 漏桶：出流恒定，平滑流量，拒绝突发。
-- 令牌桶：允许突发（桶里令牌可一次性消耗），更灵活，主流选择。
+    nodeId: "be-spring-boot",
+    question: "Actuator 端点有哪些？阿里如何二次封装做生产监控？",
+    bigTech: true,
+    answer: `Actuator 端点：/health（健康检查，DB/Redis/GC 探针）、/info（应用信息）、/metrics（Micrometer 指标）、/env（环境配置）、/loggers（动态调日志级别）、/heapdump（堆 dump）、/threaddump（线程 dump）、/refresh（刷新配置）、/shutdown（优雅关闭）。
+生产端点只暴露 /health 给 K8s liveness/readiness，其他端点接 Prometheus 拉取或网关鉴权后访问。
 
 \`\`\`java
-// 令牌桶简化
-while (true) {
-  if (tokens < capacity) tokens += rate * elapsed; // 按速率补充
-  if (request && tokens >= 1) { tokens--; pass(); } else { reject(); }
+// 阿里生产 Actuator 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers  # 只暴露必要端点
+        exclude: env,heapdump,threaddump                  # 敏感端点排除
+  endpoint:
+    health:
+      show-details: when-authorized  # 鉴权后才显示详情
+      probes:
+        enabled: true                # 暴露 liveness/readiness 给 K8s
+    shutdown:
+      enabled: true                  # 启用优雅关闭
+// 自定义健康检查
+@Component
+public class KafkaHealthIndicator implements HealthIndicator {
+    @Override public Health health() {
+        return kafkaClient.isConnected() ? Health.up().build() : Health.down().build();
+    }
 }
 \`\`\`
 
-实现：Guava RateLimiter（单机令牌桶）、Sentinel（滑动窗口）、Redis + Lua（分布式限流）。
+踩坑：/env 默认脱敏密码字段，但加密弱仍可能泄露，生产必须配 management.security 鉴权；/heapdump 生产慎开，几十 MB 文件被恶意频繁拉取耗带宽；/shutdown 默认关闭，开启必须配密码；K8s readiness 用 /health/readiness，liveness 用 /health/liveness 区分启动期与运行期。`,
+    keyPoints: ["/health /metrics /loggers /heapdump", "K8s 用 liveness/readiness", "敏感端点鉴权"],
+    followUps: ["Micrometer 和 Prometheus 关系？", "K8s liveness 和 readiness 区别？"],
+    favorited: false,
+  },
+  {
+    id: "be-34",
+    nodeId: "be-spring-boot",
+    question: "@Conditional 系列注解有哪些？ConditionalOnBean 的坑？",
+    answer: `@Conditional 系：ConditionalOnClass（类路径有类）、ConditionalOnMissingClass、ConditionalOnBean（容器有 Bean）、ConditionalOnMissingBean、ConditionalOnProperty（配置项满足）、ConditionalOnResource（资源存在）、ConditionalOnWebApplication（Web 环境）、ConditionalOnExpression（SpEL）。
+ConditionalOnBean 坑：Bean 装配顺序不确定，AutoConfiguration 之间若 A 依赖 B 的 Bean，A 的 ConditionalOnBean 可能因 B 未初始化而失效。Spring Boot 用 AutoConfigureAfter/Before/@Order 保证顺序。
 
-关键：令牌桶允许突发更常用；分布式限流用 Redis + Lua 保证原子性。`,
-    keyPoints: ["令牌桶允许突发，漏桶匀速", "滑动窗口平滑突刺", "Redis+Lua 分布式限流原子"],
-    followUps: ["如何实现分布式限流？", "熔断、降级、限流的区别？"],
+\`\`\`java
+// ConditionalOnBean 坑：必须 AutoConfigureAfter 保证顺序
+@AutoConfiguration
+@ConditionalOnClass(DataSource.class)
+@AutoConfigureAfter(DataSourceAutoConfiguration.class) // 等 DataSource 装完
+public class MyBatisAutoConfiguration {
+    @Bean
+    @ConditionalOnBean(DataSource.class)  // 必须在 DataSource 后判定
+    public SqlSessionFactory sqlSessionFactory(DataSource ds) { ... }
+}
+// 用 ConditionalOnClass 替代更稳
+@ConditionalOnClass(SqlSessionFactory.class)  // 类路径判定无顺序依赖
+\`\`\`
+
+踩坑：@ConditionalOnBean 适合本 AutoConfiguration 内已声明 Bean 判定，跨 AutoConfiguration 不可靠；@ConditionalOnProperty 缺省值用 matchIfMissing；@Profile 是另一种条件，按 spring.profiles.active 激活；自定义条件实现 Condition 接口 + @Conditional。`,
+    keyPoints: ["ConditionalOnClass/Bean/Property/Web", "ConditionalOnBean 跨配置不可靠", "AutoConfigureAfter 保证顺序"],
+    followUps: ["自定义 Condition 怎么写？", "@Profile 和 @ConditionalOnProperty 区别？"],
     favorited: false,
   },
   {
     id: "be-35",
-    nodeId: "be-system-design",
-    question: "分库分表的策略？分库分表后带来的问题如何解决？",
-    answer: `分表（单库多表）：解决单表数据量大（千万级）。
-分库（多库）：解决单库并发/连接/IO 瓶颈。
+    nodeId: "be-spring-boot",
+    question: "Spring Boot 优雅停机如何配置？K8s 滚动更新不丢请求？",
+    bigTech: true,
+    answer: `优雅停机：1）接收 SIGTERM 信号；2）停止接收新请求；3）等待在途请求处理完；4）关闭数据库连接/线程池/MQ Consumer；5）退出。
+Spring Boot 2.3+ 内置 graceful shutdown，配 server.shutdown=graceful + spring.lifecycle.timeout-per-shutdown-phase=30s。
+K8s 配合：preStop 钩子 sleep 5s 等待 Endpoints 摘除，readinessProbe 立即失败防止新流量，terminationGracePeriodSeconds=45。
 
-分片策略：
-1. 范围分片：按 id/时间范围（0-1000 万一张），易扩容但热点。
-2. Hash 分片：hash(id) % N，分布均匀但扩容需 rehash（一致性哈希缓解）。
-3. 一致性哈希：节点变化只影响相邻数据。
-
-带来的问题及解决：
-1. 跨库 JOIN：避免 join，应用层组装；或冗余字段/宽表。
-2. 分布式事务：用 Seata/TCC/消息最终一致。
-3. 全局唯一 ID：Snowflake（雪花）、号段模式（Leaf）。
-4. 跨库分页排序：禁用深分页；用游标 WHERE id > last_id；或 ES 异构查询。
-5. 聚合统计：异构到 ES/ClickHouse 做 OLAP。
-
-中间件：ShardingSphere（Java 生态）、MyCat、Vitess。
-
-读写分离：主写从读，缓解读压力；注意主从延迟（强制读主/缓存）。
-
-关键：先垂直拆（按业务/字段），再水平拆（分片）；引入 ES/ClickHouse 处理复杂查询。`,
-    keyPoints: ["范围/Hash/一致性哈希分片", "全局 ID 用 Snowflake", "跨库 join/分页/事务靠异构+最终一致"],
-    followUps: ["Snowflake 的时钟回拨问题？", "一致性哈希如何解决扩容数据迁移？"],
-    favorited: false,
-  },
-  // ===== Java 基础（扩充） =====
-  {
-    id: "be-36",
-    nodeId: "be-java-basic",
-    question: "Java 泛型擦除是什么？带来哪些限制？",
-    answer: `泛型擦除（Type Erasure）：编译后泛型类型信息被擦除，运行时 ArrayList<String> 和 ArrayList<Integer> 都是同一个 ArrayList.class，无法在运行时区分泛型参数。
-
-擦除规则：无边界 <T> 擦除为 Object；有边界 <T extends Number> 擦除为 Number；调用处编译器自动插入 checkcast。
-
-限制：
-1. 不能 new T()、new T[]（运行时类型未知）。
-2. 不能用基本类型作泛型参数（List<int> 不行，要 List<Integer>）。
-3. 不能用 instanceof 判断泛型类型（instanceof List<String> 编译错）。
-4. 静态字段/静态方法不能引用类的泛型参数。
-5. 重载冲突：void m(List<String>) 和 void m(List<Integer>) 编译报错（擦除后签名相同）。
-
-\`\`\`java
-// 运行时拿不到泛型参数
-List<String> a = new ArrayList<>();
-List<Integer> b = new ArrayList<>();
-System.out.println(a.getClass() == b.getClass()); // true
-
-// 通过匿名子类 + 反射保留泛型信息
-Type t = new TypeToken<List<String>>(){}.getType();
+\`\`\`yaml
+# Spring Boot 优雅停机
+server:
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+# K8s Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 5"]  # 等 Endpoints 摘除
+        readinessProbe:
+          httpGet: { path: /health/liveness, port: 8080 }
+      terminationGracePeriodSeconds: 45
 \`\`\`
 
-关键：擦除为兼容 JDK 1.5 之前的字节码；运行时泛型不可用，需靠 Class<T> 参数或 TypeToken 传递类型。`,
-    keyPoints: ["编译期擦除，运行时无泛型", "不能 new T() / instanceof 泛型", "靠 Class<T> 或 TypeToken 传类型"],
-    followUps: ["为什么 Java 选择擦除而不是具化（reified）？", "Kotlin 的 reified 泛型怎么实现？"],
+踩坑：preStop 的 sleep 是关键，K8s 摘除 Endpoints 异步，立即 SIGTERM 会有请求打到正在关闭的 Pod；SIGTERM 后 Spring Boot 默认立即关 Tomcat，必须配 server.shutdown=graceful；MQ Consumer 优雅停止要 unregister consumer 再处理完在途消息；线程池用 shutdown() + awaitTermination(30s) + shutdownNow() 兜底。`,
+    keyPoints: ["SIGTERM → 停新请求 → 处理在途 → 关资源", "server.shutdown=graceful", "K8s preStop sleep"],
+    followUps: ["为什么 preStop 要 sleep？", "线程池如何优雅关闭？"],
+    favorited: false,
+  },
+
+  // ===== 6. be-spring-cloud Spring Cloud =====
+  {
+    id: "be-36",
+    nodeId: "be-spring-cloud",
+    question: "字节抖音用 Nacos 还是 Eureka？服务注册中心选型？",
+    bigTech: true,
+    answer: `Eureka：AP 模型，节点间 P2P 复制，可用性优先，能容忍部分节点宕机；自保护模式（85% 心跳丢失不再剔除）防止网络分区误删；客户端缓存注册表，注册中心挂了仍能调用。
+Nacos：支持 AP（默认）/CP 切换（CP 用 Raft），同时是注册中心和配置中心；支持命名空间、分组、权重、健康检查；阿里开源生态完善。
+
+抖音微服务体量大 + 需要配置中心一体化，选 Nacos；早期 Netflix OSS 用户用 Eureka（已停止维护）。CP 模式注册中心（ZK/Consul/etcd）适合强一致场景（如分布式锁），不适合注册中心（网络分区时大量服务被误剔除）。
+
+\`\`\`java
+// Nacos 注册 + 配置一体化
+@SpringBootApplication
+@EnableDiscoveryClient
+public class App {
+    public static void main(String[] args) { SpringApplication.run(App.class, args); }
+}
+// bootstrap.yml
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos.prod:8848
+        namespace: prod
+        cluster-name: BJ         // 同机房优先
+        metadata:
+          version: 1.0.0
+      config:
+        server-addr: nacos.prod:8848
+        file-extension: yaml
+        shared-configs:
+          - data-id: common.yaml  // 共享配置
+            refresh: true
+\`\`\`
+
+踩坑：Nacos AP 模式服务列表短暂不一致（秒级），强一致场景切 CP；Eureka 自保护模式生产常关闭或调整阈值（eureka.server.renewal-percent-threshold）；服务实例 metadata 用来灰度路由（按 version 路由）；Nacos 2.x gRPC 长连接比 1.x HTTP 心跳省资源 10 倍。`,
+    keyPoints: ["Eureka AP / Nacos AP+CP", "注册中心用 AP", "Nacos 配置注册一体"],
+    followUps: ["为什么注册中心选 AP 不选 CP？", "Nacos AP 和 CP 如何切换？"],
     favorited: false,
   },
   {
     id: "be-37",
-    nodeId: "be-java-basic",
-    question: "Integer 缓存机制？自动装箱有哪些陷阱？",
-    answer: `Integer 缓存：IntegerCache 默认缓存 -128~127 的 Integer 对象，valueOf 在此范围返回缓存实例，故 == 比较可能为 true，超出范围则 false。
+    nodeId: "be-spring-cloud",
+    question: "Spring Cloud Gateway 路由 + 过滤器原理？字节网关鉴权过滤器如何写？",
+    bigTech: true,
+    answer: `Gateway = Route（id + uri + predicate + filter）+ Predicate（断言匹配请求）+ Filter（前置/后置处理）。基于 Reactor + Netty 异步非阻塞，性能优于 Zuul 1.x 同步。
+路由流程：请求 → Predicate 匹配 → 前置 Filter → 转发下游 → 后置 Filter → 响应。
+字节网关鉴权：自定义 GlobalFilter 校验 JWT，校验失败返回 401，校验通过把 userId 注入 header 透传下游。
 
 \`\`\`java
-Integer a = 127;  // Integer.valueOf(127) → 命中缓存
-Integer b = 127;
-System.out.println(a == b);      // true
-
-Integer c = 128;  // new Integer
-Integer d = 128;
-System.out.println(c == d);      // false！必须用 equals
-System.out.println(c.equals(d)); // true
-
-// 自动装箱陷阱：循环中累加产生大量临时对象
-Integer sum = 0;
-for (int i = 0; i < 1000; i++) sum += i; // 每次 += 都拆箱+装箱
+// 字节网关 JWT 鉴权过滤器
+@Component
+@Order(-100)  // 优先级（数字越小越先执行）
+public class AuthFilter implements GlobalFilter {
+    @Autowired private JwtService jwt;
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest req = exchange.getRequest();
+        String path = req.getPath().value();
+        if (path.startsWith("/public/")) return chain.filter(exchange); // 白名单
+        String token = req.getHeaders().getFirst("Authorization");
+        if (token == null) return unauthorized(exchange, "missing token");
+        try {
+            Claims claims = jwt.parse(token.replace("Bearer ", ""));
+            ServerHttpRequest mutated = req.mutate()
+                .header("X-User-Id", claims.getSubject())
+                .build();
+            return chain.filter(exchange.mutate().request(mutated).build());
+        } catch (Exception e) {
+            return unauthorized(exchange, "invalid token");
+        }
+    }
+}
 \`\`\`
 
-陷阱：
-1. Integer == 在缓存范围外不可靠，必须 equals。
-2. 自动装箱在循环/高频路径会创建大量临时对象，GC 压力大。
-3. Integer 为 null 时自动拆箱抛 NullPointerException。
-4. 缓存范围可由 -XX:AutoBoxCacheMax 扩大上限。
-
-关键：包装类比较永远用 equals；高频路径优先基本类型；注意拆箱 NPE。`,
-    keyPoints: ["IntegerCache -128~127", "缓存范围外 == 为 false", "自动装箱循环有性能/NPE 陷阱"],
-    followUps: ["如何让 Integer == 比较安全？", "-XX:AutoBoxCacheMax 作用是什么？"],
+踩坑：GlobalFilter 全局生效，GatewayFilter 仅特定 Route；@Order 控制顺序，鉴权应在最前；Netty 不能用阻塞操作，必须用 reactive（jwt 解析若同步要 wrap inMono.fromCallable + boundedElastic）；限流用 RequestRateLimiter + Redis，熔断用 circuitbreaker；网关聚合日志要 requestId 透传。`,
+    keyPoints: ["Route + Predicate + Filter", "Reactor + Netty 异步", "GlobalFilter 鉴权"],
+    followUps: ["Gateway 和 Zuul 区别？", "GlobalFilter 和 GatewayFilter 区别？"],
     favorited: false,
   },
   {
     id: "be-38",
-    nodeId: "be-java-basic",
-    question: "Stream API 的惰性求值原理？Optional 怎么用避免 NPE？",
-    answer: `Stream 操作分两类：
-- 中间操作（lazy）：filter/map/sorted 等，调用时只记录操作，不执行。
-- 终端操作（eager）：collect/count/forEach 等，触发流水线执行。
-
-惰性求值：终端操作才触发遍历，且能"短路"（findFirst/findAny 找到即停），避免无效计算。
-
-\`\`\`java
-// 惰性 + 短路：找到第一个大于 3 的即停止，只打印 0~4
-int r = IntStream.range(0, 100)
-    .peek(i -> System.out.println("peek " + i))
-    .filter(i -> i > 3)
-    .findFirst()
-    .orElse(-1);
-
-// collect 分组
-Map<String, List<Person>> byCity = list.stream()
-    .collect(Collectors.groupingBy(Person::getCity));
-\`\`\`
-
-Optional：包装可能为 null 的返回值，强制调用方显式处理。
+    nodeId: "be-spring-cloud",
+    question: "Sentinel 限流熔断原理？阿里双 11 如何用？",
+    bigTech: true,
+    answer: `Sentinel：滑动窗口统计 + 槽点链（Slot Chain）处理。责任链：NodeSelectorSlot → ClusterBuilderSlot → StatisticSlot（统计 QPS/RT）→ FlowSlot（限流）→ DegradeSlot（熔断）→ SystemSlot（系统保护）→ AuthoritySlot（黑白名单）。
+熔断策略：慢调用比例、异常比例、异常数；半开探测。限流算法：滑动窗口、漏桶（匀速）、预热（WarmUp）。
+阿里双 11：网关层按 API 限流（如秒杀 API 1 万 QPS），应用层按接口 + 用户维度限流（防恶意刷），下游依赖熔断（DB 慢时熔断保护上游）。
 
 \`\`\`java
-// 链式替代 if (x != null)
-String name = Optional.ofNullable(user)
-    .map(User::getName)
-    .map(String::toUpperCase)
-    .orElse("UNKNOWN");
-
-// orElseThrow 替代抛 NPE
-User u = repo.findById(id)
-    .orElseThrow(() -> new BizException("用户不存在"));
+// Sentinel 双 11 秒杀限流
+@SentinelResource(value = "seckill", blockHandler = "seckillBlocked", fallback = "seckillFallback")
+public OrderResult seckill(Long skuId, Long userId) {
+    return doSeckill(skuId, userId);
+}
+public OrderResult seckillBlocked(Long skuId, Long userId, BlockException ex) {
+    return OrderResult.fail("当前秒杀火爆，请稍后再试");
+}
+// Nacos 动态规则
+FlowRule rule = new FlowRule("seckill");
+rule.setGrade(RuleConstant.FLOW_GRADE_QPS);
+rule.setCount(10000);                  // 全局 1 万 QPS
+rule.setLimitApp("default");
+rule.setStrategy(RuleConstant.STRATEGY_DIRECT);
+FlowRuleManager.loadRules(Collections.singletonList(rule));
 \`\`\`
 
-关键：Stream 惰性求值短路省计算；不要做副作用（forEach 内修改外部状态）；Optional 用作返回类型，不要做字段或参数。`,
-    keyPoints: ["中间操作 lazy，终端才触发", "短路 findFirst 省 CPU", "Optional 链式 + orElse/orElseThrow"],
-    followUps: ["Stream 并行流（parallel）有什么坑？", "Optional 为什么不推荐做字段？"],
+踩坑：blockHandler 处理限流降级，fallback 处理业务异常，两者方法签名不同；sentinel-datasource-nacos 支持规则动态推送；热点参数限流（ParamFlowRule）按 skuId 限流，防单 SKU 拖垮全局；熔断半开默认 5s，可调；Sentinel 集群限流（Token Server）适合网关层。`,
+    keyPoints: ["槽点链 + 滑动窗口", "慢调用/异常熔断", "@SentinelResource 注解"],
+    followUps: ["Sentinel 和 Hystrix 区别？", "集群限流如何实现？"],
     favorited: false,
   },
-  // ===== Java 并发（扩充） =====
   {
     id: "be-39",
-    nodeId: "be-java-concurrent",
-    question: "CompletableFuture 的用法？如何编排异步任务？",
-    answer: `CompletableFuture 是 Java 8 引入的异步编排工具，支持链式调用、组合、异常处理，比 Future（只能 get 阻塞）强大得多。
-
-常用 API：
-- supplyAsync/runAsync：异步执行（默认 ForkJoinPool，建议传自定义线程池）。
-- thenApply/thenAccept/thenRun：上一步结果传给下一步。
-- thenCompose：串联两个异步任务（flatMap）。
-- thenCombine：合并两个独立任务结果。
-- allOf/anyOf：等待全部/任一完成。
-- exceptionally/handle/whenComplete：异常处理。
+    nodeId: "be-spring-cloud",
+    question: "OpenFeign 原理？阿里如何集成 Sentinel + Feign？",
+    bigTech: true,
+    answer: `OpenFeign = 接口 + 注解 → 动态代理。@EnableFeignClients 扫描 @FeignClient 接口，FeignClientFactoryBean 创建 JDK 代理，方法调用 → 编码 HTTP 请求 → 负载均衡选实例 → 执行 → 解码响应。
+集成 Sentinel：feign.sentinel.enabled=true，Feign 自动用 Sentinel 包装每个方法，触发限流走 fallback。
 
 \`\`\`java
-ExecutorService pool = Executors.newFixedThreadPool(8);
-
-// 串联：查用户 → 查订单 → 计算总价
-CompletableFuture<Integer> future = CompletableFuture
-    .supplyAsync(() -> userService.findById(1L), pool)   // User
-    .thenComposeAsync(u -> orderService.findByUser(u.getId()), pool) // List<Order>
-    .thenApplyAsync(orders -> orders.stream().mapToInt(Order::getAmount).sum(), pool);
-
-// 异常兜底
-future.exceptionally(ex -> { log.error("失败", ex); return 0; });
-
-// 合并两个独立任务
-CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> "A");
-CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> "B");
-f1.thenCombine(f2, (a, b) -> a + b).join(); // "AB"
+// 阿里 Feign + Sentinel + fallback
+@FeignClient(name = "stock-service", fallback = StockClientFallback.class)
+public interface StockClient {
+    @PostMapping("/stock/deduct")
+    Result deduct(@RequestBody DeductReq req);
+}
+@Component
+public class StockClientFallback implements StockClient {
+    @Override public Result deduct(DeductReq req) {
+        // 兜底：本地缓存 / 默认值 / 异步重试
+        return Result.fail("库存服务暂不可用");
+    }
+}
+// fallbackFactory 拿到异常做精细降级
+@FeignClient(name = "stock-service", fallbackFactory = StockFallbackFactory.class)
+public interface StockClientV2 { ... }
+@Component
+public class StockFallbackFactory implements FallbackFactory<StockClient> {
+    @Override public StockClient create(Throwable cause) {
+        return new StockClient() {
+            @Override public Result deduct(DeductReq req) {
+                if (cause instanceof FlowException) return Result.fail("限流");
+                return Result.fail("系统异常");
+            }
+        };
+    }
+}
 \`\`\`
 
-关键：默认线程池 ForkJoinPool 并发度低，IO 密集任务务必传自定义线程池；join 抛 unchecked，get 抛 checked；避免在 thenApply 中阻塞调用。`,
-    keyPoints: ["supplyAsync + thenCompose 串联", "allOf/anyOf 组合", "默认 ForkJoinPool 不够用，传自定义池"],
-    followUps: ["CompletableFuture 默认线程池为什么不适合 IO 密集？", "thenApply 和 thenCompose 区别？"],
+踩坑：fallback 无异常入参，fallbackFactory 能拿异常细分；Feign 默认不打印请求日志，调 Logger.Level.FULL；超时分别配 connectTimeout 和 readTimeout；Feign + Ribbon/LoadBalancer 重试默认不开启，开启后要警惕幂等性；Hystrix 已停止维护，新项目用 Resilience4j 或 Sentinel。`,
+    keyPoints: ["Feign 动态代理 + 负载均衡", "feign.sentinel.enabled 集成", "fallback vs fallbackFactory"],
+    followUps: ["Feign 如何做负载均衡？", "Resilience4j 和 Sentinel 区别？"],
     favorited: false,
   },
   {
     id: "be-40",
-    nodeId: "be-java-concurrent",
-    question: "ThreadLocal 原理？为什么会内存泄漏？如何避免？",
-    answer: `ThreadLocal：每个线程独立副本，常用于线程上下文（用户信息、TraceId、数据库连接）。
-
-原理：每个 Thread 有一个 ThreadLocalMap，key 是 ThreadLocal 弱引用，value 是强引用的实际数据。
+    nodeId: "be-spring-cloud",
+    question: "服务雪崩如何防止？字节熔断降级策略？",
+    bigTech: true,
+    answer: `雪崩原因：下游慢 → 上游线程池耗尽 → 上游也慢 → 全链路阻塞。
+防止：1）熔断（Circuit Breaker）：下游异常率超阈值快速失败，半开探测恢复；2）限流：控制进入下游 QPS；3）隔离：信号量/线程池隔离避免互相拖累；4）降级：返回兜底值；5）超时：所有调用必设超时。
+字节抖音策略：调用推荐/搜索等下游用熔断（异常率 50% 触发），核心 API 用限流（QPS 上限），非核心功能（如评论）降级返回空。
 
 \`\`\`java
-private static final ThreadLocal<UserContext> CTX = ThreadLocal.withInitial(UserContext::new);
-
-CTX.get().setUserId(uid); // 线程内取用
-CTX.get().getUserId();
-CTX.remove(); // 用完必须清理！
+// 字节 Resilience4j 熔断 + 限流
+@Configuration
+public class ResilienceConfig {
+    @Bean
+    public CircuitBreakerRegistry circuitRegistry() {
+        CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+            .failureRateThreshold(50)             // 异常率 50% 触发
+            .slowCallRateThreshold(60)            // 慢调用比例 60% 触发
+            .slowCallDurationThreshold(Duration.ofSeconds(2))
+            .waitDurationInOpenState(Duration.ofSeconds(20))   // 开启 20s 后半开
+            .slidingWindowSize(100)               // 滑动窗口 100 次
+            .minimumNumberOfCalls(20)             // 最少 20 次才统计
+            .build();
+        return CircuitBreakerRegistry.of(config);
+    }
+}
+// 使用
+@Service
+public class RecommendService {
+    @CircuitBreaker(name = "recommend", fallbackMethod = "fallback")
+    @TimeLimiter(name = "recommend")
+    public CompletableFuture<RecommendResp> recommend(long uid) {
+        return CompletableFuture.supplyAsync(() -> client.recommend(uid));
+    }
+    public CompletableFuture<RecommendResp> fallback(long uid, Throwable t) {
+        return CompletableFuture.completedFuture(RecommendResp.cached(uid));
+    }
+}
 \`\`\`
 
-内存泄漏原因：
-1. ThreadLocalMap 的 key 是弱引用，value 是强引用。
-2. ThreadLocal 对象被回收后 key 变 null，但 value 仍被 Entry 强引用，无法回收。
-3. 线程池线程长期存活，ThreadLocalMap 一直存在 → value 泄漏。
-
-InheritableThreadLocal：子线程可继承父线程的值（构造时复制），但线程池复用线程不触发继承 → 用 TransmittableThreadLocal（阿里）解决。
-
-避免方式：
-1. 用完务必 remove()（try-finally）。
-2. ThreadLocal 字段尽量 static final，避免实例被回收后 key 失效。
-3. 线程池场景用 TransmittableThreadLocal 透传。
-
-关键：弱引用 key + 强引用 value 是泄漏根因；线程池复用放大问题；remove 是唯一解。`,
-    keyPoints: ["ThreadLocalMap key 弱引用 value 强引用", "线程池复用导致泄漏", "remove() 必须执行"],
-    followUps: ["InheritableThreadLocal 在线程池为什么不生效？", "TransmittableThreadLocal 原理？"],
+踩坑：熔断半开探测请求量少，可能误判恢复，多次半开失败要延长 waitDuration；线程池隔离开销大但隔离强，信号量隔离轻量但不支持异步超时；超时层次：网关 > 应用 > RPC > DB，外层要大于内层总和；限流和熔断都要监控告警，否则静默降级难发现。`,
+    keyPoints: ["熔断/限流/隔离/降级/超时五板斧", "熔断半开探测", "Resilience4j 配置"],
+    followUps: ["熔断器三种状态如何切换？", "信号量隔离和线程池隔离区别？"],
     favorited: false,
   },
   {
     id: "be-41",
-    nodeId: "be-java-concurrent",
-    question: "ForkJoinPool 和普通线程池的区别？适用场景？",
-    answer: `ForkJoinPool：分治框架专用线程池，核心是"工作窃取"（work-stealing）：每个线程有自己的双端队列，空闲时从其他线程队列尾部偷任务，减少竞争、提高利用率。
-
-对比普通线程池（ThreadPoolExecutor）：
-- ThreadPoolExecutor：所有线程共享一个 workQueue，竞争集中。
-- ForkJoinPool：每线程一个 deque，自己 LIFO 处理（栈顶），偷任务 FIFO（队列尾），减少冲突。
+    nodeId: "be-spring-cloud",
+    question: "Spring Cloud Config vs Nacos Config vs Apollo？阿里配置中心选型？",
+    bigTech: true,
+    answer: `Spring Cloud Config：基于 Git，无 UI 推送改 Git，需 Bus + MQ 广播刷新，运维复杂。
+Nacos Config：注册配置一体，AP/CP 可切，支持命名空间/分组/灰度发布，阿里开源。
+Apollo：携程开源，UI 强大，多环境/多集群/灰度发布/权限/审计完善，CTO 模式支持，配置实时推送（HTTP 长轮询）。
+阿里内部用 Diamond/Configserver，开源版用 Nacos；中大型企业多选 Apollo（功能更全）。
 
 \`\`\`java
-// 递归分治求和
-class SumTask extends RecursiveTask<Long> {
-  private final long[] arr; private final int lo, hi;
-  protected Long compute() {
-    if (hi - lo <= 1000) return sum(arr, lo, hi); // 阈值直接算
-    int mid = (lo + hi) >>> 1;
-    SumTask left = new SumTask(arr, lo, mid);
-    SumTask right = new SumTask(arr, mid, hi);
-    left.fork();            // 异步执行左半
-    long r = right.compute(); // 当前算右半
-    return r + left.join();  // 合并
-  }
+// Apollo 客户端
+@Configuration
+@EnableApolloConfig
+public class AppConfig {}
+@Component
+public class OrderConfig {
+    @Value("${order.timeout:3000}")
+    private int timeout;
+    @ApolloConfigChangeListener
+    private void onChange(ConfigChangeEvent event) {
+        if (event.changedKeys().contains("order.timeout")) {
+            refreshPool();  // 配置变更时重建线程池
+        }
+    }
 }
-long result = pool.invoke(new SumTask(arr, 0, arr.length));
+// Nacos @RefreshScope
+@RestController
+@RefreshScope
+public class OrderController {
+    @Value("${order.timeout:3000}") private int timeout;
+}
 \`\`\`
 
-适用场景：
-- CPU 密集 + 可分治任务（归并排序、大数组统计、树的遍历）。
-- CompletableFuture 默认用 ForkJoinPool.commonPool()（parallelism = CPU 核数 - 1）。
-
-注意：IO 密集任务不要用 ForkJoinPool（线程少、阻塞会拖垮）；parallelStream 共享 commonPool，内部阻塞会拖慢其他并行流。
-
-关键：工作窃取是核心；适合 CPU 密集分治；不适合阻塞 IO。`,
-    keyPoints: ["工作窃取减少队列竞争", "适合 CPU 密集分治任务", "parallelStream 共享 commonPool"],
-    followUps: ["parallelStream 有什么坑？", "ForkJoinPool 和 ThreadPoolExecutor 谁更适合 IO？"],
+踩坑：Spring Cloud Config 不能实时推送（要 Bus），新项目别选；Apollo 监听器在变更时同步执行，慢操作要异步；@RefreshScope 重建 Bean 但不重建依赖它的 Bean（如不刷新 Controller 已注入的 Service），需手动重启或重新注入；敏感配置（数据库密码）用加密 + KMS，不要明文存配置中心。`,
+    keyPoints: ["Config Git / Nacos 一体 / Apollo 功能强", "Apollo 灰度发布 + 审计", "@RefreshScope 动态刷新"],
+    followUps: ["@RefreshScope 不刷新依赖的 Bean 怎么办？", "Apollo 灰度发布如何实现？"],
     favorited: false,
   },
-  // ===== JVM（扩充） =====
   {
     id: "be-42",
-    nodeId: "be-jvm",
-    question: "哪些对象可作为 GC Roots？可达性分析过程？",
-    answer: `GC Roots 是可达性分析的起点，从 GC Roots 出发能遍历到的对象都存活，遍历不到的视为可回收。
-
-可作为 GC Roots 的对象：
-1. 虚拟机栈中引用的对象（方法局部变量、参数）。
-2. 本地方法栈中 JNI 引用的对象。
-3. 方法区中类静态变量引用的对象。
-4. 方法区中常量引用的对象。
-5. Java 虚拟机内部引用（基本类型 Class、常驻异常对象、ClassLoader）。
-6. 被同步锁（synchronized）持有的对象。
-7. JMXBean、JVMTI 等 JVM 内部引用。
+    nodeId: "be-spring-cloud",
+    question: "分布式链路追踪原理？字节 SkyWalking 部署架构？",
+    bigTech: true,
+    answer: `链路追踪核心：Trace（一次请求全局 ID）+ Span（一个操作）+ Parent Span ID（父子关系）。Agent 在 HTTP/RPC/MQ/Kafka 入口生成 traceId，透传到下游（HTTP header / RPC attachment / MQ header）。
+采样：全量采样压力大，按比例（如 1%）或按异常请求采样。
+字节用 SkyWalking（阿里也用）：Agent（无侵入字节码增强）→ OAP Server（聚合分析）→ ES/MySQL（存储）→ UI（拓扑图 + 调用链）。
 
 \`\`\`java
-// 局部变量 obj 是 GC Root
-public void demo() {
-  Object obj = new Object(); // obj 在栈帧，new 的对象可达，不回收
-  obj = null;                 // 断开引用，下次 GC 可回收
+// SkyWalking Agent 无侵入接入
+# 启动参数挂载 agent
+java -javaagent:/data/skywalking-agent/skywalking-agent.jar \
+  -Dskywalking.agent.service_name=order-service \
+  -Dskywalking.collector.backend_service=oap:11800 \
+  -jar app.jar
+// 手动埋点（异常场景）
+@Trace
+public Order createOrder(OrderReq req) {
+    ContextManager.currentSpan().tag("orderId", String.valueOf(req.getId()));
+    return doCreate(req);
 }
-
-// 静态变量是 GC Root，引用的对象不会回收
-private static final List<byte[]> CACHE = new ArrayList<>();
+// 跨服务透传（HTTP）
+String traceId = TraceContext.traceId();
+HttpHeaders headers = new HttpHeaders();
+headers.add("SW8", TraceContext.serialize()); // 透传 SW8 header
 \`\`\`
 
-分析过程：
-1. 枚举 GC Roots（需 SafePoint 暂停所有线程）。
-2. 从 Roots 遍历对象图（标记存活）。
-3. 三色标记：白（未访问）/灰（访问中，子节点未处理完）/黑（已完成）。
-4. 并发标记阶段用写屏障记录引用变化（SATB/增量更新）。
-
-关键：GC Roots 是"肯定不会被回收"的起点；静态变量和栈引用最常见；三色标记 + 写屏障解决并发标记漏标。`,
-    keyPoints: ["栈/本地栈/静态变量/常量是 GC Roots", "三色标记 + 写屏障", "SafePoint 枚举 Roots"],
-    followUps: ["什么是三色标记的漏标问题？", "SafePoint 和 SafeRegion 区别？"],
+踩坑：SkyWalking Agent 字节码增强会和 Arthas/CGLIB 冲突；采样率不能 0，否则性能问题难排查；traceId 必须全链路透传，跨 MQ/线程池要手动传递（SkyWalking 8.x 自动透传大部分场景）；存储 ES 大流量要分索引 + TTL，否则磁盘爆；traceId 落日志便于关联；MDC 把 traceId 注入日志上下文。`,
+    keyPoints: ["Trace + Span + ParentId", "Agent 无侵入 + OAP + ES", "traceId 跨服务透传"],
+    followUps: ["SkyWalking 和 Zipkin 区别？", "traceId 跨线程池如何透传？"],
     favorited: false,
   },
+
+  // ===== 7. be-python-advanced Python 进阶 =====
   {
     id: "be-43",
-    nodeId: "be-jvm",
-    question: "Java 对象的内存布局？对象头包含什么？",
-    answer: `在 64 位 JVM（开启压缩指针）下，对象内存布局分三部分：对象头（Header）、实例数据（Instance Data）、对齐填充（Padding）。
+    nodeId: "be-python-advanced",
+    question: "Python GIL 为什么存在？多线程为什么不能利用多核？美团爬虫如何绕过？",
+    bigTech: true,
+    answer: `GIL（全局解释器锁）：CPython 解释器级别的互斥锁，同一时刻只允许一个线程执行 Python 字节码。设计原因：CPython 内存管理（引用计数）非线程安全，加 GIL 简化实现。
+影响：CPU 密集型多线程无法用多核；IO 密集型多线程仍有效（IO 时释放 GIL）。
+绕过：1）multiprocessing 多进程；2）C 扩展（NumPy/Pandas 内部释放 GIL）；3）Jython/PyPy（无 GIL）；4）Python 3.13+ 实验性 No-GIL。
 
-对象头（HotSpot）：
-- Mark Word（8 字节）：哈希码、GC 分代年龄、锁状态（无锁/偏向/轻量/重量）、偏向线程 ID 等。
-- 类元数据指针（4 字节，压缩后）：指向 Class 元数据（Klass）。
-- 数组长度（4 字节，仅数组对象有）。
-
-实例数据：各字段（按类型宽度排序，父类字段在前），引用压缩后 4 字节。
-
-对齐填充：补齐到 8 字节整数倍。
-
-\`\`\`java
-// 用 jol 查看对象布局
-import org.openjdk.jol.info.ClassLayout;
-Object o = new Object();
-System.out.println(ClassLayout.parseInstance(o).toPrintable());
-// 输出：12 字节对象头(8 MarkWord + 4 Klass) + 0 实例数据 + 4 对齐 = 16 字节
+\`\`\`python
+# 美团爬虫：IO 密集用 asyncio + aiohttp（GIL 在 IO 时释放）
+import asyncio, aiohttp
+async def fetch(session, url):
+    async with session.get(url) as resp:
+        return await resp.text()
+async def crawl(urls):
+    async with aiohttp.ClientSession() as session:
+        return await asyncio.gather(*[fetch(session, u) for u in urls])
+# CPU 密集（解析 HTML）用 ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
+with ProcessPoolExecutor(max_workers=4) as pool:
+    results = list(pool.map(parse_html, htmls))
 \`\`\`
 
-锁升级在 Mark Word 中的体现：
-- 无锁：存 hashCode、分代年龄。
-- 偏向锁：存线程 ID。
-- 轻量级锁：指向栈中 Lock Record。
-- 重量级锁：指向 ObjectMonitor（mutex）。
-
-关键：对象头是锁与 GC 的载体；压缩指针（-XX:+UseCompressedOops）省内存；对象大小 8 字节对齐。`,
-    keyPoints: ["对象头 = MarkWord + Klass 指针", "MarkWord 存锁状态/哈希/年龄", "8 字节对齐"],
-    followUps: ["偏向锁为什么在 JDK 15 后被废弃？", "压缩指针如何节省内存？"],
+踩坑：CPU 密集多线程反而比单线程慢（GIL 切换开销）；multiprocessing 进程间内存不共享，序列化开销大，用 shared_memory 或 Manager 共享；CPU 密集型任务可考虑用 Cython/Rust 加 norelse 释放 GIL；多进程启动慢，长任务才划算。`,
+    keyPoints: ["GIL 解释器级互斥锁", "CPU 密集多线程无效", "IO 用 asyncio / CPU 用多进程"],
+    followUps: ["Python 3.13 No-GIL 怎么实现的？", "C 扩展如何释放 GIL？"],
     favorited: false,
   },
   {
     id: "be-44",
-    nodeId: "be-jvm",
-    question: "类加载器的双亲委派模型？为什么要打破它？",
-    answer: `类加载器层次（从上到下）：
-- Bootstrap ClassLoader（C++）：加载 rt.jar 等核心类（java.*）。
-- Extension/Platform ClassLoader：加载 ext 目录 / JDK 9+ 平台模块。
-- Application ClassLoader：加载 classpath。
-- 自定义 ClassLoader。
+    nodeId: "be-python-advanced",
+    question: "asyncio 协程原理？事件循环 + Future + Task 关系？",
+    bigTech: true,
+    answer: `协程：用户态轻量线程，由事件循环调度。async def 定义协程函数，await 挂起当前协程让出执行权。
+事件循环（EventLoop）：单线程轮询 IO 就绪事件，调度就绪的协程恢复执行。
+Future：异步结果占位符；Task：包装协程的 Future，事件循环调度执行。
 
-双亲委派：收到加载请求时先委派父加载器，父加载失败才自己加载。保证核心类（如 java.lang.Object）只被 Bootstrap 加载，防止恶意替换，保证类型安全。
-
-\`\`\`java
-// 自定义类加载器需重写 findClass（不要重写 loadClass 以保留双亲委派）
-class MyLoader extends ClassLoader {
-  protected Class<?> findClass(String name) throws ClassNotFoundException {
-    byte[] data = loadClassData(name); // 自定义字节码来源
-    return defineClass(name, data, 0, data.length);
-  }
-}
+\`\`\`python
+import asyncio
+async def fetch_url(url):
+    reader, writer = await asyncio.open_connection(url, 80)
+    writer.write(b"GET / HTTP/1.1\\r\\n\\r\\n")
+    await writer.drain()
+    data = await reader.read(1024)
+    writer.close()
+    return data
+async def main():
+    # 并发 1000 个请求
+    tasks = [asyncio.create_task(fetch_url(u)) for u in urls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+asyncio.run(main())
+# 限制并发数（信号量）
+sem = asyncio.Semaphore(100)
+async def limited_fetch(url):
+    async with sem:
+        return await fetch_url(url)
 \`\`\`
 
-打破双亲委派的场景：
-1. SPI（JDBC Driver）：核心接口在 Bootstrap，实现类在 classpath → 用线程上下文类加载器（TCCL）反向加载。
-2. Tomcat：每个 webapp 独立 ClassLoader，webapp 间隔离，且优先自己加载（重写 loadClass）。
-3. OSGi/热部署：网状加载，模块独立。
-4. JDK 9 模块化：层级仍是双亲委派，但按模块解析。
-
-关键：双亲委派保证核心类安全与唯一；SPI/Tomcat/热部署需打破，靠 TCCL 或重写 loadClass。`,
-    keyPoints: ["父加载器优先，保证核心类唯一", "SPI 用 TCCL 打破", "Tomcat 重写 loadClass 隔离 webapp"],
-    followUps: ["Tomcat 的类加载器结构？", "线程上下文类加载器解决什么问题？"],
+踩坑：asyncio 单线程，CPU 密集会阻塞循环，CPU 任务用 run_in_executor 丢线程池；asyncio.gather 默认一异常全失败，return_exceptions=True 容错；asyncio.run 每次创建新循环，不要嵌套；HTTP 客户端用 aiohttp 不能用 requests（同步阻塞）；Python 3.11+ asyncio.TaskGroup 更优雅。`,
+    keyPoints: ["协程 + 事件循环 + Future/Task", "await 让出执行权", "Semaphore 限并发"],
+    followUps: ["asyncio 和 gevent 区别？", "asyncio 如何调度协程？"],
     favorited: false,
   },
   {
     id: "be-45",
-    nodeId: "be-jvm",
-    question: "JIT 编译原理？常见的内存溢出场景及排查？",
-    answer: `JIT（Just-In-Time）编译：JVM 把热点代码（频繁执行的"热点"）编译成机器码缓存，提升运行速度。
+    nodeId: "be-python-advanced",
+    question: "元类 metaclass 作用？ORM/Django Model 如何用？",
+    answer: `元类是"类的类"，type 是默认元类。class Foo 触发 type.__call__ → type.__new__ + type.__init__ 创建类对象。
+元类用途：1）拦截类创建，自动注入属性/方法；2）注册类（插件系统）；3）DSL（Django ORM 把字段定义转 SQL）。
+Django Model：ModelBase 元类扫描 _meta.fields 收集 Field 实例，生成数据库表元数据；SQLAlchemy Declarative 同理。
 
-热点探测：基于方法调用计数器 + 回边计数器，超过阈值（-XX:CompileThreshold，C2 默认 10000）触发编译。
-编译器：
-- C1（Client）：快速编译，简单优化。
-- C2（Server）：慢但深度优化（逃逸分析、标量替换、锁消除、内联）。
-- 分层编译（Tiered）：先 C1 后 C2（JDK 默认）。
-
-\`\`\`bash
-# 查看即时编译日志
-java -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining MyApp
-# 关键优化：逃逸分析
-java -XX:+DoEscapeAnalysis -XX:+EliminateAllocations MyApp  # 栈上分配/标量替换
+\`\`\`python
+# 简化版 ORM 元类
+class Field:
+    def __init__(self, type): self.type = type
+class ModelMeta(type):
+    def __new__(mcs, name, bases, ns):
+        if name == "Model": return super().__new__(mcs, name, bases, ns)
+        fields = {k: v for k, v in ns.items() if isinstance(v, Field)}
+        ns["_fields"] = fields
+        ns["_table"] = name.lower()
+        return super().__new__(mcs, name, bases, ns)
+class Model(metaclass=ModelMeta):
+    pass
+class User(Model):
+    id = Field("int")
+    name = Field("str")
+print(User._fields)  # {'id': Field('int'), 'name': Field('str')}
+print(User._table)   # 'user'
 \`\`\`
 
-常见 OOM 场景及排查：
-1. java.lang.OutOfMemoryError: Java heap space → 堆内存不足，-Xmx 调大或查内存泄漏（jmap -histo 看大对象）。
-2. Metaspace → 动态生成类太多（CGLIB/反射），-XX:MaxMetaspaceSize 调大。
-3. GC overhead limit exceeded → GC 花费 >98% 时间回收 <2% 内存，多为泄漏。
-4. Direct buffer memory → NIO 堆外内存未释放。
-5. unable to create new native thread → 线程数超限。
-
-\`\`\`bash
-# 排查堆内存泄漏
-jmap -dump:live,format=b,file=heap.hprof <pid>  # 导出堆
-jmap -histo:live <pid> | head -30              # 看对象直方图
-# 用 MAT/jvisualvm 分析 hprof
-\`\`\`
-
-关键：JIT 靠热点探测 + 分层编译优化；OOM 先分类型再 dump 分析；生产建议加 -XX:+HeapDumpOnOutOfMemoryError 自动 dump。`,
-    keyPoints: ["热点探测触发 JIT", "C1 快/C2 深，逃逸分析优化", "OOM 分类型 + dump 排查"],
-    followUps: ["逃逸分析和栈上分配的关系？", "如何定位 Metaspace OOM？"],
+踩坑：元类增加魔法让代码难调试，能用装饰器/继承就别用元类；元类继承复杂（多继承时元类冲突）；Django Model 的字段定义在类层级（不是实例），避免可变默认值；dataclass（3.7+）能替代 90% 元类场景，更易理解。`,
+    keyPoints: ["元类是类的类", "拦截类创建注入属性", "Django ORM ModelBase"],
+    followUps: ["type 元类如何创建类？", "dataclass 和元类区别？"],
     favorited: false,
   },
-  // ===== Spring（扩充） =====
   {
     id: "be-46",
-    nodeId: "be-spring",
-    question: "Spring 三级缓存如何解决循环依赖？为什么构造器循环无法解决？",
-    answer: `循环依赖：A 依赖 B，B 依赖 A。Spring 用三级缓存解决单例 setter/字段注入的循环依赖。
+    nodeId: "be-python-advanced",
+    question: "装饰器原理？带参数装饰器 + functools.wraps 怎么写？",
+    bigTech: true,
+    answer: `装饰器：本质是高阶函数，接收函数返回新函数。@decorator 等价于 func = decorator(func)。
+带参数装饰器：三层嵌套——外层接收参数，中层接收函数，内层接收实际参数。functools.wraps 保留原函数元信息（__name__/__doc__）。
 
-三级缓存（DefaultSingletonBeanRegistry）：
-- singletonObjects（一级）：完整成品 Bean。
-- earlySingletonObjects（二级）：提前暴露的半成品（已实例化未注入完）。
-- singletonFactories（三级）：ObjectFactory，按需生成早期引用（可能是代理）。
-
-\`\`\`java
-// 简化流程：创建 A
-1. 实例化 A（构造器），放入三级缓存（ObjectFactory）。
-2. 注入 A 的属性 B → 创建 B。
-3. 实例化 B，注入 B 的属性 A → 从三级缓存拿到 A 的早期引用（必要时生成代理），放入二级缓存，移除三级。
-4. B 注入完成，B 成品放一级。
-5. 回到 A，拿到 B，A 注入完成，A 成品放一级，移除二级。
+\`\`\`python
+from functools import wraps
+import time
+# 带参数装饰器：美团接口耗时监控
+def metric(name, threshold=1.0):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            try:
+                result = func(*args, **kwargs)
+                return result
+            finally:
+                cost = time.time() - start
+                if cost > threshold:
+                    report_slow(name, cost)  # 上报慢调用
+        return wrapper
+    return decorator
+@metric("order.create", threshold=0.5)
+def create_order(req):
+    """创建订单"""
+    return do_create(req)
+print(create_order.__name__)  # create_order（wraps 保留）
 \`\`\`
 
-为什么要三级而非二级：如果 A 需要被 AOP 代理，提前暴露的必须是代理对象。三级缓存存 ObjectFactory，调用时才决定返回原始对象还是代理（保证注入的和最终的是同一个代理），避免重复创建。
-
-构造器循环无法解决：构造器注入时实例化就需要依赖，而此时对象还未创建，无法提前暴露，Spring 直接抛 BeanCurrentlyInCreationException。
-
-关键：三级缓存让"提前暴露"与"代理生成"解耦；只解决单例 setter/字段注入循环；构造器循环必须重构。`,
-    keyPoints: ["三级缓存：成品/半成品/ObjectFactory", "三级为代理生成留延迟", "构造器循环无法解决"],
-    followUps: ["@Async 的循环依赖为什么会有问题？", "Spring Boot 2.6 为什么默认禁止循环依赖？"],
+踩坑：@wraps 必须加，否则原函数元信息丢失，traceback 难定位；带参装饰器三层嵌套易写错；类装饰器用 __call__ 实现，可保持状态（如缓存）；functools.lru_cache 内置缓存装饰器，maxsize 控制大小；装饰器叠加从下往上执行装饰，从上往下调用包装。`,
+    keyPoints: ["装饰器 = 高阶函数", "@deco 等价 func=deco(func)", "带参数三层嵌套 + wraps"],
+    followUps: ["类装饰器如何实现？", "functools.lru_cache 原理？"],
     favorited: false,
   },
   {
     id: "be-47",
-    nodeId: "be-spring",
-    question: "@Transactional 失效的场景有哪些？如何避免？",
-    answer: `@Transactional 基于 AOP 代理，失效本质是"没走代理"或"异常被吞"。
+    nodeId: "be-python-advanced",
+    question: "Python 闭包和作用域 LEGB？为什么默认参数是可变对象有坑？",
+    bigTech: true,
+    answer: `LEGB 查找顺序：Local → Enclosing（闭包外层）→ Global → Builtin。
+闭包：内层函数引用外层函数变量，外层函数返回后变量仍存活（在 __closure__ 中）。
+默认参数坑：可变默认参数（list/dict）在函数定义时只创建一次，多次调用共享同一对象，导致状态污染。
 
-常见失效场景：
-1. 自调用：同类中方法 A 调方法 B（B 有 @Transactional），this 调用不走代理 → 失效。
-2. 非 public 方法：默认只代理 public。
-3. 异常被 catch 吞掉：没抛出代理无法感知 → 不回滚。
-4. 回滚异常类型不对：默认只回滚 RuntimeException/Error，checked 异常不回滚。
-5. 异常类型不匹配 rollbackFor：抛了但 rollbackFor 未包含。
-6. 数据库不支持事务（MyISAM）。
-7. 传播行为配置不当（NOT_SUPPORTED/NEVER）。
-8. 类未被 Spring 管理（没加 @Service）。
+\`\`\`python
+# 闭包：累加器
+def make_accumulator():
+    total = 0
+    def add(n):
+        nonlocal total   # 修改外层变量用 nonlocal
+        total += n
+        return total
+    return add
+acc = make_accumulator()
+acc(1); acc(2)  # 3
 
-\`\`\`java
-// 失效：自调用
-@Service
-public class OrderService {
-  public void batch() { this.create(); } // this 不走代理，create 事务失效
-  @Transactional public void create() { ... }
-}
+# 坑：可变默认参数共享
+def append_item(item, lst=[]):  # 错！lst 在函数定义时创建一次
+    lst.append(item)
+    return lst
+append_item(1)  # [1]
+append_item(2)  # [1, 2]（不是 [2]！）
 
-// 解决1：注入自己
-@Autowired private OrderService self;
-public void batch() { self.create(); } // 走代理
-
-// 解决2：从 AopContext 拿代理
-((OrderService) AopContext.currentProxy()).create();
-
-// 正确配置回滚
-@Transactional(rollbackFor = Exception.class) // checked 异常也回滚
-public void pay() throws IOException { ... }
+# 正确：用 None 哨兵
+def append_safe(item, lst=None):
+    if lst is None: lst = []
+    lst.append(item)
+    return lst
 \`\`\`
 
-关键：失效核心是"绕过代理"；自调用用自注入或 AopContext；务必指定 rollbackFor = Exception.class。`,
-    keyPoints: ["自调用不走代理失效", "非 public / 异常被吞失效", "rollbackFor = Exception.class"],
-    followUps: ["事务传播行为有哪些？", "嵌套事务和 REQUIRED_NEW 区别？"],
+踩坑：可变默认参数是 Python 经典面试题，pylint 会告警 W0102；闭包修改变量用 nonlocal（局部）、global（全局）；list/dict 局部变量也别用 *args 收集后修改；延迟绑定：闭包在循环里捕获循环变量，到调用时变量已是最后值，要默认参数固定。`,
+    keyPoints: ["LEGB 作用域", "闭包 __closure__", "可变默认参数共享"],
+    followUps: ["nonlocal 和 global 区别？", "闭包延迟绑定怎么修？"],
     favorited: false,
   },
   {
     id: "be-48",
-    nodeId: "be-spring",
-    question: "Spring MVC 一次请求的完整处理流程？",
-    answer: `Spring MVC 核心是 DispatcherServlet，统一接收并分发请求。
+    nodeId: "be-python-advanced",
+    question: "Python GC：引用计数 + 分代回收？循环引用如何处理？",
+    answer: `Python GC：1）引用计数（主）：对象引用 +1/-1，归零立即回收，快但不能处理循环引用；2）分代回收（辅）：定期扫描"容器对象"（list/dict/实例）解决循环引用，分 3 代，越老扫描越少；3）标记清除：从根对象出发标记可达对象，清除不可达。
+循环引用：a.b = b, b.a = a，引用计数都是 1 无法回收，分代回收检测后清除。
 
-完整流程：
-1. 请求到达 DispatcherServlet。
-2. DispatcherServlet 调用 HandlerMapping 找到 Handler（Controller 方法）+ HandlerInterceptor 链。
-3. 调用 HandlerAdapter 执行 Handler。
-4. HandlerInterceptor.preHandle（前置拦截）。
-5. 执行 Controller 方法（参数解析、数据绑定、@RequestBody 反序列化）。
-6. Controller 返回 ModelAndView 或 ResponseEntity。
-7. HandlerInterceptor.postHandle（后置处理）。
-8. 结果处理：@ResponseBody → HttpMessageConverter 写 JSON；视图 → ViewResolver 渲染。
-9. HandlerInterceptor.afterCompletion（完成回调）。
-10. 响应返回客户端。
+\`\`\`python
+import gc
+class Node:
+    def __init__(self): self.ref = None
+a = Node(); b = Node()
+a.ref = b; b.ref = a  # 循环引用
+del a; del b           # 引用计数都还是 1，分代 GC 才回收
+gc.collect()           # 手动触发
+# 弱引用打破循环
+import weakref
+a.ref = weakref.ref(b)  # 弱引用不计引用计数
 
-\`\`\`java
-@RestController
-@RequestMapping("/api/orders")
-public class OrderController {
-  @PostMapping
-  public Result<Order> create(@Valid @RequestBody OrderDTO dto) {
-    Order o = orderService.create(dto); // Service @Transactional
-    return Result.ok(o); // HttpMessageConverter(jackson) 转 JSON
-  }
+# 调试循环引用
+gc.set_debug(gc.DEBUG_LEAK)
+gc.collect()
+print(gc.garbage)  # 无法清除的对象（有 __del__ 的循环引用）
+\`\`\`
+
+踩坑：定义 __del__ 的循环引用（Python 3.4 前）无法被 GC 回收，进 gc.garbage；__slots__ 节省内存但禁用属性动态添加；大量小对象用 __slots__ + numpy/Pandas 提升性能；gc 模块阈值调高减少 GC 频率提升吞吐；C 扩展对象的引用计数要手动 Py_INCREF/DECREF。`,
+    keyPoints: ["引用计数 + 分代 + 标记清除", "循环引用靠分代 GC", "weakref 打破循环"],
+    followUps: ["__del__ 对 GC 有什么影响？", "__slots__ 为什么省内存？"],
+    favorited: false,
+  },
+  {
+    id: "be-49",
+    nodeId: "be-python-advanced",
+    question: "美团推荐服务用 Python 还是 C++？GIL 限制下如何提升性能？",
+    bigTech: true,
+    answer: `美团推荐场景：在线服务用 C++/Java（高性能），离线训练用 Python（生态好），特征抽取用 Python + Cython/Rust 加速。
+GIL 限制下提速方法：1）C 扩展（Cython/numpy 内部释放 GIL）；2）multiprocessing 多进程；3）PyPy JIT；4）Numba JIT（数值计算）；5）Rust + PyO3；6）Python 3.13 No-GIL。
+
+\`\`\`python
+# 美团特征计算：Cython 释放 GIL
+# features.pyx
+cimport cython
+from libc.math cimport sqrt
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double compute_score(double[:] vec) nogil:  # nogil 释放 GIL
+    cdef double s = 0.0
+    cdef int i
+    for i in range(vec.shape[0]):
+        s += vec[i] * vec[i]
+    return sqrt(s)
+# 多线程调用（释放 GIL 后真正并行）
+from concurrent.futures import ThreadPoolExecutor
+with ThreadPoolExecutor(8) as pool:
+    scores = list(pool.map(compute_score_py, vectors))
+\`\`\`
+
+踩坑：Cython 编译部署复杂，CI 要编译 .so；numpy 操作本身 C 实现已释放 GIL，尽量用向量化代替循环；multiprocessing 序列化开销大，大数据用 shared_memory；Python 3.13 No-GIL 兼容性还在改善，C 扩展需重新编译；在线服务用 gunicorn + uvicorn workers 多进程充分利用多核。`,
+    keyPoints: ["在线 C++ 离线 Python", "Cython nogil 释放 GIL", "numpy 向量化"],
+    followUps: ["Cython 和 Numba 区别？", "Python 3.13 No-GIL 兼容性如何？"],
+    favorited: false,
+  },
+
+  // ===== 8. be-go-advanced Go 进阶 =====
+  {
+    id: "be-50",
+    nodeId: "be-go-advanced",
+    question: "GMP 调度模型？goroutine 为什么轻量？字节 Go 微服务 QPS 如何？",
+    bigTech: true,
+    answer: `GMP：G（goroutine，用户态协程 2KB 栈）、M（内核线程）、P（处理器，调度上下文，GOMAXPROCS 个）。
+调度：G 在 P 的本地队列（256 容量）+ 全局队列。M 绑定 P 执行 G，本地空了从全局/其他 P 偷一半（work stealing）。
+goroutine 轻量：2KB 初始栈（可扩缩）、用户态切换（无系统调用）、创建销毁成本极低。
+字节 Go 微服务单机 100 万 goroutine、10 万 QPS 常见。
+
+\`\`\`go
+// 字节微服务高并发 HTTP 服务
+func main() {
+    http.HandleFunc("/api/feed", feedHandler)
+    // GOMAXPROCS 默认 CPU 核数
+    runtime.GOMAXPROCS(runtime.NumCPU())
+    http.ListenAndServe(":8080", nil)
+}
+func feedHandler(w http.ResponseWriter, r *http.Request) {
+    // 每请求一个 goroutine，2KB 栈可扩到 1GB
+    uid := r.URL.Query().Get("uid")
+    ch := make(chan *Feed, 3)
+    go fetchRecommend(uid, ch)  // 并发拉取多个数据源
+    go fetchFollow(uid, ch)
+    go fetchHot(uid, ch)
+    var feeds []*Feed
+    for i := 0; i < 3; i++ {
+        feeds = append(feeds, <-ch)
+    }
+    json.NewEncoder(w).Encode(merge(feeds))
 }
 \`\`\`
 
-关键组件：
-- HandlerMapping：RequestMappingHandlerMapping（@RequestMapping）。
-- HandlerAdapter：RequestMappingHandlerAdapter（参数解析、返回值处理）。
-- HttpMessageConverter：Jackson 处理 JSON。
-- MultipartResolver：文件上传。
-- ExceptionHandler：@ControllerAdvice 统一异常。
-
-关键：DispatcherServlet 是中央调度器；拦截器 pre/post/afterCompletion 三阶段；@ResponseBody 走 MessageConverter 而非视图。`,
-    keyPoints: ["DispatcherServlet 统一分发", "HandlerMapping/Adapter/Interceptor", "@ResponseBody 走 MessageConverter"],
-    followUps: ["拦截器和过滤器（Filter）的区别？", "@ControllerAdvice 如何统一异常？"],
-    favorited: false,
-  },
-  // ===== MyBatis/JPA（扩充） =====
-  {
-    id: "be-49",
-    nodeId: "be-orm",
-    question: "MyBatis 动态 SQL 常用标签？foreach 如何防止 SQL 注入？",
-    answer: `动态 SQL 标签：if、choose/when/otherwise、where、set、trim、foreach、sql/include。
-
-\`\`\`xml
-<!-- where 自动去掉首个 AND/OR -->
-<select id="search" resultType="User">
-  SELECT * FROM user
-  <where>
-    <if test="name != null and name != ''">
-      AND name LIKE CONCAT('%', #{name}, '%')
-    </if>
-    <if test="status != null">
-      AND status = #{status}
-    </if>
-  </where>
-</select>
-
-<!-- foreach 批量查询：collection/list，item/separator/open/close -->
-<select id="findByIds" resultType="User">
-  SELECT * FROM user WHERE id IN
-  <foreach collection="ids" item="id" open="(" separator="," close=")">
-    #{id}
-  </foreach>
-</select>
-
-<!-- set 自动去掉末尾逗号 -->
-<update id="update">
-  UPDATE user
-  <set>
-    <if test="name != null">name = #{name},</if>
-    <if test="age != null">age = #{age},</if>
-  </set>
-  WHERE id = #{id}
-</update>
-\`\`\`
-
-foreach 防注入：foreach 内部用 #{} 占位符，生成多个 ?，参数走 PreparedStatement，安全。绝不能用 \${} 拼接 id 值（有注入风险），\${} 仅用于表名/列名等结构性参数且需白名单校验。
-
-批量优化：大批量 IN 查询注意 SQL 长度限制，可分批（每次 500-1000）；批量插入用 foreach + VALUES 多行，或 BATCH 执行器。
-
-关键：where/set/trim 自动处理 SQL 拼接细节；foreach 用 #{} 防 SQL 注入；大批量要分批。`,
-    keyPoints: ["where/set 自动去 AND/逗号", "foreach 配合 #{} 防注入", "大批量 IN 需分批"],
-    followUps: ["MyBatis 的 BATCH 执行器原理？", "trim 标签 prefixOverrides 作用？"],
-    favorited: false,
-  },
-  {
-    id: "be-50",
-    nodeId: "be-orm",
-    question: "HikariCP 和 Druid 连接池的区别？如何选型与调参？",
-    answer: `HikariCP：性能极高（号称最快），代码精简，Spring Boot 2.x 默认。
-- 优化：FastList（无范围检查）、ConcurrentBag（无锁借取连接）、字节码级优化。
-- 配置简单：maximumPoolSize、minimumIdle、connectionTimeout、idleTimeout、maxLifetime。
-
-Druid：阿里开源，功能丰富，监控强。
-- 自带 SQL 防火墙（防注入）、慢 SQL 监控、StatFilter 统计。
-- 提供 Druid Monitor 监控页面。
-- 配置项多：initialSize、minIdle、maxActive、keepAlive、wallConfig 等。
-
-\`\`\`java
-// HikariCP 配置（Spring Boot）
-spring.datasource.hikari.maximum-pool-size=20
-spring.datasource.hikari.minimum-idle=10
-spring.datasource.hikari.connection-timeout=30000
-spring.datasource.hikari.idle-timeout=600000
-spring.datasource.hikari.max-lifetime=1800000
-
-// Druid 配置
-spring.datasource.druid.initial-size=5
-spring.datasource.druid.max-active=20
-spring.datasource.druid.stat-view-servlet.enabled=true   // 监控页
-spring.datasource.druid.filter.stat.slow-sql-millis=1000 // 慢 SQL
-\`\`\`
-
-调参要点：
-- 连接数公式（HikariCP 官方）：pool_size = ((core_count × 2) + effective_spindle_count)，一般 10-20 够用，并非越大越好（过多会拖慢 DB）。
-- maxLifetime < 数据库 wait_timeout（如 MySQL 默认 8h），避免连接失效。
-- minimumIdle 建议等于 maximumPoolSize（HikariCP 推荐固定大小，减少抖动）。
-
-选型：追求性能/简单用 HikariCP；需要监控/SQL 防火墙/国产化用 Druid。
-
-关键：HikariCP 快而精简，Druid 功能全监控强；连接数不是越大越好；maxLifetime 要小于 DB 超时。`,
-    keyPoints: ["HikariCP 性能最强", "Druid 监控+SQL 防火墙", "连接数并非越大越好"],
-    followUps: ["HikariCP 为什么快？", "连接池 maxLifetime 为什么要小于 wait_timeout？"],
+踩坑：goroutine 泄漏（channel 等待方退出但发送方阻塞），用 context.Context 传播取消；GOMAXPROCS > CPU 核数不提升性能反而增加切换；cgo 调用会锁定 M（sysmon 不能抢占）；高并发 channel 用 buffered 避免阻塞；pprof 看 goroutine 数量防泄漏。`,
+    keyPoints: ["GMP: G/M/P", "goroutine 2KB 栈用户态切换", "work stealing 调度"],
+    followUps: ["goroutine 泄漏如何排查？", "GMP 中 P 的本地队列满了怎么办？"],
     favorited: false,
   },
   {
     id: "be-51",
-    nodeId: "be-orm",
-    question: "MyBatis-Plus 分页插件原理？深度分页如何优化？",
-    answer: `分页插件原理：MyBatis-Plus 的 PaginationInnerInterceptor 拦截 Executor.query，在 SQL 执行前：
-1. 执行 count SQL 查询总数（自动改写原 SQL 为 SELECT COUNT(*)）。
-2. 在原 SQL 后拼接 LIMIT offset, size。
-3. 用 dialect（数据库方言）适配不同数据库的分页语法。
+    nodeId: "be-go-advanced",
+    question: "channel 原理？无缓冲 vs 有缓冲？关闭 channel 注意事项？",
+    bigTech: true,
+    answer: `channel 底层：hchan 结构含循环数组（缓冲）、发送/接收 goroutine 队列、互斥锁。
+无缓冲：发送和接收必须同时存在（同步握手），否则阻塞。
+有缓冲：缓冲未满发送不阻塞，未空接收不阻塞（异步）。
+关闭：只能由发送方关闭；关闭后接收方读完数据后返回零值（用 v, ok := <-ch 判断）；重复关闭或向已关闭 channel 发送 panic。
 
-\`\`\`java
-// 配置插件
-@Bean
-public MybatisPlusInterceptor mybatisPlusInterceptor() {
-  MybatisPlusInterceptor i = new MybatisPlusInterceptor();
-  i.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
-  return i;
+\`\`\`go
+// 字节抖音点赞：worker pool + channel
+func likeWorker(id int, jobs <-chan LikeReq, results chan<- LikeResp, ctx context.Context) {
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case req, ok := <-jobs:
+            if !ok { return }  // channel 关闭
+            results <- processLike(req)
+        }
+    }
 }
-
-// 使用
-Page<User> page = new Page<>(1, 10); // 第1页，每页10
-userMapper.selectPage(page, queryWrapper);
-page.getRecords(); // 数据
-page.getTotal();   // 总数
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    jobs := make(chan LikeReq, 1000)
+    results := make(chan LikeResp, 1000)
+    for i := 0; i < 100; i++ { go likeWorker(i, jobs, results, ctx); }
+    // 生产者
+    go func() { defer close(jobs); for _, r := range reqs { jobs <- r } }()
+    // 收集结果
+    for i := 0; i < len(reqs); i++ { fmt.Println(<-results) }
+}
 \`\`\`
 
-深度分页问题：LIMIT 1000000, 10 会扫描 100 万行再丢弃，越往后越慢。
-
-优化方案：
-1. 游标分页（推荐）：WHERE id > last_id ORDER BY id LIMIT 10，走索引，O(1)。
-2. 覆盖索引 + 延迟关联：先走覆盖索引查 id，再 join 取数据。
-   \`\`\`sql
-   SELECT t.* FROM user t
-   INNER JOIN (SELECT id FROM user ORDER BY id LIMIT 1000000, 10) tmp
-   ON t.id = tmp.id;
-   \`\`\`
-3. 业务限制：禁止跳页，只允许"下一页"；或限制最大页数。
-4. ES/ClickHouse 异构：复杂搜索走搜索引擎。
-
-关键：分页插件拦截改写 SQL；深度分页用游标或延迟关联；count 慢时可异步或缓存。`,
-    keyPoints: ["拦截器改写 SQL + count", "深度分页用游标 WHERE id > last_id", "延迟关联避免回表百万行"],
-    followUps: ["count 查询慢怎么优化？", "MyBatis 插件（Interceptor）的实现原理？"],
+踩坑：关闭已关闭 channel panic；向已关闭 channel 发送 panic；for range channel 在 close 后自动退出；select + default 实现非阻塞；nil channel 的发送接收永久阻塞（select 中可用于禁用分支）；缓冲大小按生产消费速率差设，过大掩盖背压。`,
+    keyPoints: ["channel 循环数组 + goroutine 队列", "无缓冲同步 / 有缓冲异步", "只能发送方 close"],
+    followUps: ["nil channel 在 select 中有什么用？", "channel 底层 hchan 结构？"],
     favorited: false,
   },
   {
     id: "be-52",
-    nodeId: "be-orm",
-    question: "MyBatis 和 JPA 的缓存机制？二级缓存为什么生产慎用？",
-    answer: `MyBatis 缓存：
-- 一级缓存：SqlSession 级别，默认开启。同一 session 相同查询命中缓存。增删改会清空该 session 缓存。Spring 中每个 service 方法（默认每次 mapper 调用新建 session）一级缓存基本失效。
-- 二级缓存：Mapper（namespace）级别，需手动开启（<cache/> 或 @CacheNamespace）。跨 session 共享。序列化存储。
+    nodeId: "be-go-advanced",
+    question: "interface 隐式实现？nil interface 坑？Go 错误处理最佳实践？",
+    bigTech: true,
+    answer: `interface 隐式实现：不需要 implements 关键字，结构体实现接口所有方法即视为实现（鸭子类型）。
+nil interface 坑：interface 内部是 (type, value) 二元组，只要 type 不为 nil 接口就不为 nil，即使 value 为 nil。错误赋值导致 nil 检查失效。
+错误处理：error 作为返回值（无异常），if err != nil 显式处理；errors.Is/As 处理包装错误；defer + recover 处理 panic。
 
-JPA/Hibernate 缓存：
-- 一级缓存：EntityManager/Session 级别（持久化上下文），默认开启。
-- 二级缓存：进程级，需配置 provider（EhCache/Caffeine）+ @Cache 注解。
+\`\`\`go
+// nil interface 坑
+type MyError struct{ msg string }
+func (e *MyError) Error() string { return e.msg }
+func bad() error {
+    var err *MyError = nil
+    return err  // 返回 (*MyError, nil)，接口非 nil！
+}
+func good() error {
+    return nil  // 返回 (nil, nil)，接口为 nil
+}
+// 错误包装（Go 1.13+）
+if err := doSomething(); err != nil {
+    return fmt.Errorf("operation failed: %w", err)  // %w 包装
+}
+// 错误判断
+if errors.Is(err, sql.ErrNoRows) { /* ... */ }
+var pe *PathError
+if errors.As(err, &pe) { /* 取出 PathError */ }
 
-\`\`\`xml
-<!-- MyBatis 开启二级缓存 -->
-<mapper namespace="com.xx.UserMapper">
-  <cache eviction="LRU" flushInterval="60000" size="512" readOnly="false"/>
-</mapper>
+// panic 恢复（中间件）
+func recoverMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if rec := recover(); rec != nil {
+                log.Printf("panic: %v\\n%s", rec, debug.Stack())
+                http.Error(w, "internal error", 500)
+            }
+        }()
+        next.ServeHTTP(w, r)
+    })
+}
 \`\`\`
 
-二级缓存生产慎用原因：
-1. 粒度粗：namespace 级，该 namespace 任意增删改清空整个缓存，命中率低。
-2. 多表联查脏读：查询涉及多表时，任一表更新无法精准失效，导致读到旧数据。
-3. 分布式不一致：本地缓存在集群节点间不同步。
-4. 序列化开销：readOnly=false 时对象需序列化，性能损耗。
-
-生产实践：
-- 关闭 ORM 二级缓存。
-- 用 Redis/Caffeine 在业务层自建缓存，精准控制 key 与失效。
-- 配合 Canal 监听 binlog 主动失效缓存。
-
-关键：一级缓存 session 级基本够用；二级缓存粒度粗、多表脏读、分布式不一致，生产多用 Redis 替代。`,
-    keyPoints: ["一级 SqlSession 级默认开", "二级 namespace 级粒度粗", "生产用 Redis 业务层缓存"],
-    followUps: ["如何保证缓存与 DB 一致性？", "Canal 监听 binlog 失效缓存的流程？"],
+踩坑：函数返回 error 接口时，不要返回具体类型 nil 指针（接口非 nil）；errors.Is 比对错误值（如 io.EOF），errors.As 比对类型；defer recover 不能跨 goroutine；error 要早返回，避免嵌套；自定义错误类型实现 Is/As 方法支持深度匹配。`,
+    keyPoints: ["interface (type, value) 二元组", "nil interface 坑", "error 显式处理 + Is/As"],
+    followUps: ["error wrapping 的 %w 和 %v 区别？", "panic 何时使用？"],
     favorited: false,
   },
-  // ===== Python 基础（扩充） =====
   {
     id: "be-53",
-    nodeId: "be-python-basic",
-    question: "生成器的原理？yield 和 yield from 的区别？",
-    answer: `生成器（Generator）：一种惰性求值的迭代器，用 yield 暂停函数并返回值，下次 next() 从暂停处继续，按需生成，节省内存。
+    nodeId: "be-go-advanced",
+    question: "context.Context 如何传播取消？美团 Go 服务超时控制？",
+    bigTech: true,
+    answer: `context 四种：context.Background（根）、context.TODO（待定）、WithCancel、WithTimeout/WithDeadline、WithValue。
+传播：函数第一个参数传 context，下游操作（HTTP/DB/MQ）监听 ctx.Done()。父 ctx 取消，所有子 ctx 自动取消。
+美团规范：所有 RPC 函数第一参数 ctx；超时用 WithTimeout；requestId 用 WithValue 透传；cancel 函数必须 defer 调用防泄漏。
 
-原理：包含 yield 的函数调用时不执行，返回 generator 对象。next() 执行到 yield 暂停（保存栈帧局部变量）；再次 next() 恢复执行。
-
-\`\`\`python
-def fib():
-    a, b = 0, 1
-    while True:
-        yield a       # 暂停并返回 a
-        a, b = b, a + b
-
-g = fib()
-print([next(g) for _ in range(10)])  # 按需取 10 个，不占内存
-
-# 读取大文件按行生成
-def read_lines(path):
-    with open(path) as f:
-        for line in f:
-            yield line.strip()
+\`\`\`go
+// 美团 Go 服务：超时 + 取消传播
+func GetUser(ctx context.Context, uid string) (*User, error) {
+    ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+    defer cancel()  // 必须调用，否则子 ctx 泄漏
+    // RPC 调用自动响应 ctx 取消
+    resp, err := rpcClient.Call(ctx, "User.Get", &Req{Uid: uid})
+    if err != nil { return nil, err }
+    // 监听取消做清理
+    select {
+    case <-ctx.Done():
+        cleanup()  // 超时清理
+        return nil, ctx.Err()
+    default:
+        return resp.User, nil
+    }
+}
+// HTTP 中间件注入 traceId
+func traceMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        traceId := r.Header.Get("X-Trace-Id")
+        if traceId == "" { traceId = uuid.New().String() }
+        ctx := context.WithValue(r.Context(), "traceId", traceId)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
 \`\`\`
 
-yield from（Python 3.3）：委托给子生成器，把子生成器的 yield 直接透传给外层调用方，并接收 send/throw 返回值。
-
-\`\`\`python
-def chain(*iterables):
-    for it in iterables:
-        yield from it  # 等价于 for x in it: yield x，但支持 send/close
-
-list(chain([1,2], [3,4]))  # [1,2,3,4]
-\`\`\`
-
-应用：流式处理大文件、无限序列、协程（async/await 底层基于生成器）。
-
-关键：yield 暂停恢复省内存；yield from 委托子生成器并透传 send；生成器是协程的雏形。`,
-    keyPoints: ["yield 暂停恢复惰性求值", "省内存处理大数据", "yield from 委托子生成器"],
-    followUps: ["生成器和迭代器的区别？", "send() 如何向生成器传值？"],
+踩坑：WithValue 只传请求元数据（traceId/userId），别用来传业务参数（破坏函数签名）；cancel 不调用会泄漏子 ctx 直到超时；ctx 不要存为结构体字段，函数参数传递；net/http 自动监听 ctx 取消，但 DB driver 不一定支持；context.Value 的 key 用自定义类型防冲突。`,
+    keyPoints: ["ctx 父子传播取消", "WithTimeout + defer cancel", "WithValue 传元数据"],
+    followUps: ["context.Value 为什么不能传业务参数？", "ctx 取消后 DB 操作如何响应？"],
     favorited: false,
   },
   {
     id: "be-54",
-    nodeId: "be-python-basic",
-    question: "上下文管理器原理？写一个支持 with 的数据库连接管理器。",
-    answer: `上下文管理器（Context Manager）：配合 with 语句，保证资源（文件/连接/锁）正确获取与释放，即使抛异常也能清理。
+    nodeId: "be-go-advanced",
+    question: "Go 内存管理：逃逸分析？栈 vs 堆分配？美团如何优化？",
+    bigTech: true,
+    answer: `逃逸分析：编译器决定变量分配栈还是堆。栈分配快（函数返回自动回收），堆分配需 GC。
+逃逸场景：1）取地址且地址逃逸出函数（返回指针）；2）interface{} 动态类型；3）闭包捕获；4）大小超栈分配上限；5）被发送到 channel。
+美团优化：1）避免返回局部变量指针；2）预分配切片 make([]T, 0, n)；3）sync.Pool 复用对象减少 GC；4）[]byte 转 string 用 unsafe（避免拷贝）。
 
-实现方式：
-1. 实现 __enter__ 和 __exit__ 协议。
-2. contextlib.contextmanager 装饰器（基于生成器）。
+\`\`\`go
+// 美团 Go 内存优化
+// 1. 预分配切片（避免多次扩容）
+users := make([]User, 0, 100)  // 已知容量预分配
+for _, u := range data { users = append(users, u) }
 
-\`\`\`python
-# 方式1：实现协议
-class DBConn:
-    def __init__(self, dsn):
-        self.dsn = dsn
-    def __enter__(self):
-        self.conn = connect(self.dsn)  # 获取资源
-        return self.conn
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()  # 必然执行
-        return False  # False 表示不吞异常，True 表示吞掉
+// 2. sync.Pool 复用 buffer
+var bufPool = sync.Pool{
+    New: func() interface{} { return new(bytes.Buffer) },
+}
+func handle(w http.ResponseWriter, r *http.Request) {
+    buf := bufPool.Get().(*bytes.Buffer)
+    buf.Reset()
+    defer bufPool.Put(buf)
+    json.NewEncoder(buf).Encode(data)
+    w.Write(buf.Bytes())
+}
 
-with DBConn(dsn) as conn:
-    conn.execute("SELECT 1")  # 即使抛异常，__exit__ 也会 close
-
-# 方式2：contextmanager 装饰器
-from contextlib import contextmanager
-
-@contextmanager
-def db_conn(dsn):
-    conn = connect(dsn)
-    try:
-        yield conn          # yield 前是 __enter__，后是 __exit__
-    finally:
-        conn.close()
+// 3. 检查逃逸
+// go build -gcflags="-m -l" main.go
 \`\`\`
 
-__exit__ 返回 True 会吞掉异常（慎用）；返回 False/None 异常继续抛出。
-
-contextlib.suppress、contextlib.redirect_stdout 是内置实用上下文管理器。
-
-Asynccontextmanager（async with）：异步版本，配合 async/__aexit__。
-
-关键：with 保证资源释放；__enter__ 获取、__exit__ 释放；contextmanager 装饰器更简洁。`,
-    keyPoints: ["__enter__/__exit__ 协议", "contextmanager 装饰器简化", "__exit__ 返回 True 吞异常"],
-    followUps: ["contextmanager 装饰器原理？", "async with 和 with 区别？"],
+踩坑：返回指针虽方便但触发逃逸，热路径考虑值返回；interface 参数（如 fmt.Println）会让参数逃逸；[]byte 转 string 默认拷贝，用 unsafe.String 零拷贝（不能修改原 byte）；sync.Pool 对象在 GC 时可能被清空，不能保证常驻；大对象用指针避免值拷贝但要权衡 GC 压力。`,
+    keyPoints: ["逃逸分析决定栈/堆", "返回指针/interface 逃逸", "sync.Pool 复用"],
+    followUps: ["如何用 -gcflags 看逃逸？", "sync.Pool 为什么 GC 时清空？"],
     favorited: false,
   },
   {
     id: "be-55",
-    nodeId: "be-python-basic",
-    question: "元类（metaclass）的作用？__new__ 和 __init__ 的区别？",
-    answer: `元类（Metaclass）：创建类的类。普通类用 type 创建（type 是默认元类）。元类用于在类创建时定制类的行为（如 ORM 模型字段收集、单例、接口校验）。
+    nodeId: "be-go-advanced",
+    question: "Go GC：三色标记 + 混合写屏障？低延迟如何调优？",
+    bigTech: true,
+    answer: `Go GC：并发三色标记 + 混合写屏障。
+三色：白（未访问）→ 灰（已访问未扫描）→ 黑（已扫描）。从根出发标记可达对象，最后清除白色。
+写屏障：标记期间修改指针时，把新对象标灰，避免漏标。Go 1.8+ 混合写屏障（Dijkstra + Yuasa），无需 STW 第二阶段。
+调优：GOGC=100（默认，堆翻倍触发 GC），低延迟调 GOGC=200 或 GOMEMLIMIT；Go 1.19+ 软内存限制 GOMEMLIMIT。
 
-类创建过程：metaclass.__new__ → metaclass.__init__ → （实例化时）class.__new__ → class.__init__。
-
-\`\`\`python
-# 元类：自动收集子类字段（ORM 风格）
-class ModelMeta(type):
-    def __new__(mcs, name, bases, ns):
-        fields = {k: v for k, v in ns.items() if isinstance(v, Field)}
-        ns['_fields'] = fields
-        return super().__new__(mcs, name, bases, ns)
-
-class Field: pass
-class User(metaclass=ModelMeta):
-    name = Field()
-    age = Field()
-print(User._fields)  # {'name':..., 'age':...}
-
-# type 动态创建类
-Dog = type('Dog', (object,), {'bark': lambda self: 'woof'})
-Dog().bark()  # 'woof'
+\`\`\`go
+// 字节 Go GC 调优
+// 1. 设置 GOGC（默认 100，即堆翻倍触发）
+// GOGC=200 减少频率，提升吞吐，但内存翻 3 倍
+// 2. GOMEMLIMIT 软限制（Go 1.19+）
+// GOMEMLIMIT=8GiB 限制堆到 8G，超限时 GOGC 失效，按内存限制调度
+// 3. 看 GC 日志
+// GODEBUG=gctrace=1 打印每次 GC
+// runtime.ReadMemStats 监控
+var m runtime.MemStats
+runtime.ReadMemStats(&m)
+fmt.Printf("Alloc=%d HeapInuse=%d NumGC=%d\\n", m.Alloc, m.HeapInuse, m.NumGC)
+// 4. 设置 GC 百分比
+debug.SetGCPercent(200)
+// 5. 强制 GC（测试用）
+runtime.GC()
 \`\`\`
 
-__new__ vs __init__：
-- __new__：创建实例（分配内存返回对象），是类方法，第一个参数是 cls。不可变类型（str/tuple）只能在 __new__ 修改值。
-- __init__：初始化实例（已创建），第一个参数是 self，返回 None。
-
-\`\`\`python
-class Singleton:
-    _inst = None
-    def __new__(cls, *a, **kw):
-        if cls._inst is None:
-            cls._inst = super().__new__(cls)
-        return cls._inst  # __new__ 控制实例创建实现单例
-\`\`\`
-
-关键：元类定制类创建（type 是根元类）；__new__ 创建对象（单例/不可变类型），__init__ 初始化。`,
-    keyPoints: ["元类创建类，type 是默认元类", "ORM 用元类收集字段", "__new__ 创建/__init__ 初始化"],
-    followUps: ["Django ORM 的 Model 如何用元类？", "type() 创建类和 class 语句的关系？"],
+踩坑：GOGC 调大减少 GC 频率但内存涨；GOMEMLIMIT 接近容器内存限制时频繁 GC，留 10% buffer；Go 1.5 三色并发后 STW < 10ms，无需纠结 STW；大量小对象用 sync.Pool 减少 GC 压力；指针越少 GC 越快，大数组用值类型而非指针切片；pprof heap 看分配热点。`,
+    keyPoints: ["三色标记 + 混合写屏障", "GOGC 触发阈值", "GOMEMLIMIT 软限制"],
+    followUps: ["三色标记为什么需要写屏障？", "GOMEMLIMIT 和 GOGC 关系？"],
     favorited: false,
   },
   {
     id: "be-56",
-    nodeId: "be-python-basic",
-    question: "Python 的垃圾回收机制？引用计数 + 分代回收如何配合？",
-    answer: `Python GC（CPython）三种机制配合：
+    nodeId: "be-go-advanced",
+    question: "Go 并发模式：worker pool / fan-in fan-out / pipeline？字节如何用？",
+    bigTech: true,
+    answer: `常见模式：1）Worker Pool：固定 goroutine 数消费任务，控制并发防爆炸；2）Fan-out/Fan-in：分发任务到多个 worker，再合并结果；3）Pipeline：阶段式流水线，每阶段一组 goroutine；4）Tee：广播一个 channel 到多个；5）Done Channel：可取消的生成器。
+字节抖音 Feed 流：用户请求 fan-out 到推荐/关注/热门三个 worker 并发拉数据，fan-in 合并排序后返回。
 
-1. 引用计数（主要）：
-- 每个对象有 ob_refcnt，引用 +1/释放 -1，归零立即回收。
-- 优点：即时、简单。缺点：无法处理循环引用；频繁增减有开销。
-
-\`\`\`python
-import sys
-a = [1,2,3]
-sys.getrefcount(a)  # 2（a + getrefcount 参数）
-
-# 循环引用：引用计数无法回收
-a = []; b = []
-a.append(b); b.append(a)
-del a; del b  # refcnt 仍为 1，靠分代回收
+\`\`\`go
+// 字节 Feed 流：fan-out + fan-in
+func fetchFeed(ctx context.Context, uid string) ([]Feed, error) {
+    ctx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
+    defer cancel()
+    // fan-out
+    recommendCh := fetchRecommend(ctx, uid)
+    followCh := fetchFollow(ctx, uid)
+    hotCh := fetchHot(ctx, uid)
+    // fan-in：合并三个 channel
+    merged := fanIn(ctx, recommendCh, followCh, hotCh)
+    var feeds []Feed
+    for feed := range merged {
+        feeds = append(feeds, feed)
+    }
+    sort.Slice(feeds, func(i, j int) bool { return feeds[i].Score > feeds[j].Score })
+    return feeds, nil
+}
+func fanIn(ctx context.Context, channels ...<-chan Feed) <-chan Feed {
+    var wg sync.WaitGroup
+    out := make(chan Feed)
+    multiplex := func(c <-chan Feed) {
+        defer wg.Done()
+        for v := range c { select { case out <- v: case <-ctx.Done(): return } }
+    }
+    wg.Add(len(channels))
+    for _, c := range channels { go multiplex(c) }
+    go func() { wg.Wait(); close(out) }()
+    return out
+}
 \`\`\`
 
-2. 标记-清除（分代回收）：
-- 专门处理容器对象（list/dict/实例）的循环引用。
-- 从根对象出发标记可达对象，清除不可达的循环引用环。
-
-3. 分代回收（优化）：
-- 对象分三代（0/1/2），新建对象在第 0 代。
-- 第 0 代回收阈值触发 → 存活晋升第 1 代 → 第 1 代触发回收 → 晋升第 2 代。
-- 老对象回收频率低，因为"越老越可能存活"。
-
-\`\`\`python
-import gc
-gc.get_threshold()  # (700, 10, 10) 第0代分配700次触发
-gc.collect()         # 手动全代回收
-gc.disable()         # 禁用分代（仅引用计数，循环引用会泄漏）
-\`\`\`
-
-关键：引用计数即时回收但无法处理循环引用；分代标记清除补位；weakref 可避免循环引用。`,
-    keyPoints: ["引用计数即时回收", "分代标记清除处理循环引用", "三代回收越老越少"],
-    followUps: ["weakref 如何避免循环引用？", "为什么 CPython 用引用计数而 Java 不用？"],
+踩坑：fan-out 数量限制（用 semaphore 或 worker pool）防止 goroutine 爆炸；fan-in 合并时一定 close 输出 channel；ctx 取消要让所有 goroutine 退出（select ctx.Done）；pipeline 阶段间缓冲 channel 大小要平衡；errgroup.WithContext 简化错误传播和取消。`,
+    keyPoints: ["Worker Pool / Fan-out / Fan-in / Pipeline", "fanIn 合并多 channel", "ctx 取消传播"],
+    followUps: ["errgroup 和 sync.WaitGroup 区别？", "Pipeline 模式如何处理错误？"],
     favorited: false,
   },
-  // ===== Python Web（扩充） =====
+
+  // ===== 9. be-mysql-index MySQL 索引与优化 =====
   {
     id: "be-57",
-    nodeId: "be-python-web",
-    question: "Django ORM 的查询优化？select_related 和 prefetch_related 区别？",
-    answer: `Django ORM 默认 lazy loading，访问外键关联才查 DB，易产生 N+1 问题。两个方法预加载关联：
+    nodeId: "be-mysql-index",
+    question: "MySQL 为什么用 B+ 树不用 B 树/红黑树/跳表？",
+    bigTech: true,
+    answer: `B+ 树优势：1）非叶子节点不存数据，扇出大（InnoDB 默认 16KB 页，单页可存 1000+ 索引项，3 层 B+ 树可存千万级数据）；2）数据有序链表，范围查询高效；3）所有数据在叶子节点，查询稳定 O(log n)。
+B 树：非叶子存数据，扇出小，相同数据树更深 IO 多；红黑树：二叉树高度高，IO 次数多；跳表：内存结构优秀，磁盘 IO 不如 B+ 树。
+Redis 用跳表（内存访问），MySQL 用 B+ 树（磁盘 IO）。
 
-- select_related：一对一/外键（正向），用 JOIN 一次查询带出，SQL 一条。
-- prefetch_related：多对多/反向外键，用额外 IN 查询，Python 层组装，两条 SQL。
-
-\`\`\`python
-# N+1 问题：100 本书逐本查作者
-books = Book.objects.all()        # 1 次
-for b in books:
-    print(b.author.name)          # 100 次！共 101 次 SQL
-
-# select_related：JOIN 一次查出（外键正向）
-books = Book.objects.select_related('author').all()  # 1 次 JOIN
-for b in books:
-    print(b.author.name)          # 0 次额外查询
-
-# prefetch_related：反向外键/多对多，额外 IN 查询
-authors = Author.objects.prefetch_related('book_set').all()
-# 2 次：SELECT * FROM author; SELECT * FROM book WHERE author_id IN (...)
-
-# 链式 + 多层
-Book.objects.select_related('author__country').prefetch_related('tags')
+\`\`\`sql
+-- InnoDB 主键索引（聚簇）：叶子存整行数据
+-- 二级索引（非聚簇）：叶子存主键值，需回表
+-- 看索引结构
+SHOW INDEX FROM orders;
+-- 索引高度（InnoDB 16KB 页）
+-- 3 层 B+ 树：根页 + 中间页 + 叶子页
+-- 单页索引项 ≈ 16KB / (索引键大小 + 指针 6B)
 \`\`\`
 
-其他优化：
-- only/defer：只取需要的字段，延迟加载大字段。
-- values/values_list：取字典/元组，跳过模型实例化，更快。
-- bulk_create/bulk_update：批量操作。
-- count()/exists()：用 SELECT COUNT / LIMIT 1 替代 len()/if qs。
-
-关键：正向外键用 select_related（JOIN），反向/多对多用 prefetch_related（IN）；避免在循环里访问关联。`,
-    keyPoints: ["select_related 用 JOIN 一次", "prefetch_related 用 IN 两次", "避免循环内访问外键"],
-    followUps: ["Django ORM 和 SQLAlchemy 的区别？", "only/defer 何时使用？"],
+踩坑：InnoDB 主键索引和数据一起存（聚簇），所以主键选型重要（自增 ID > UUID，UUID 让 B+ 树频繁分裂）；二级索引查询需回表，覆盖索引避免回表；页大小 innodb_page_size 默认 16KB，可调大减少 IO；B+ 树高度通常 3-4 层，查询 3-4 次 IO。`,
+    keyPoints: ["B+ 树非叶子扇出大", "叶子链表范围查询优", "InnoDB 聚簇 + 二级回表"],
+    followUps: ["InnoDB 主键为什么推荐自增？", "B+ 树高度怎么算？"],
     favorited: false,
   },
   {
     id: "be-58",
-    nodeId: "be-python-web",
-    question: "FastAPI 异步原理？async 路由和同步路由混用有什么坑？",
-    answer: `FastAPI 基于 Starlette + asyncio，单进程事件循环内协程并发处理请求，IO 时切换协程而非线程，IO 密集场景吞吐高。
+    nodeId: "be-mysql-index",
+    question: "聚簇索引 vs 二级索引？回表是什么？覆盖索引如何避免？",
+    bigTech: true,
+    answer: `聚簇索引（Clustered）：叶子节点存整行数据，InnoDB 主键索引即聚簇，一张表只有一个。无主键时 InnoDB 选唯一非空索引或生成隐式 ROWID。
+二级索引（Secondary）：叶子节点存主键值，查询需回表（用主键再查聚簇索引拿完整行）。
+覆盖索引（Covering）：查询字段都在索引里（包括主键），不用回表，explain 显示 Extra: Using index。
 
-异步原理：
-- 事件循环（uvloop，比默认 asyncio 快 2-4 倍）监听 IO 就绪。
-- async def 路由是协程，遇到 await 让出执行权。
-- 阻塞 IO 必须用异步库（asyncpg/aiohttp/httpx async）。
+\`\`\`sql
+-- 美团订单表索引设计
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY,           -- 聚簇索引
+    user_id BIGINT NOT NULL,
+    status TINYINT,
+    amount DECIMAL(10,2),
+    created_at DATETIME,
+    INDEX idx_user_status(user_id, status),       -- 联合索引
+    INDEX idx_created(created_at, id, amount)     -- 覆盖索引：按时间排序 + 拿 amount
+);
+-- 覆盖索引示例：查询字段全在 idx_created 里
+EXPLAIN SELECT id, amount, created_at FROM orders
+WHERE created_at > '2024-01-01' ORDER BY created_at LIMIT 100;
+-- Extra: Using index（覆盖索引，无回表）
 
-\`\`\`python
-from fastapi import FastAPI
-import httpx, asyncio
-
-app = FastAPI()
-
-# 异步路由：协程，await 时让出
-@app.get("/users/{uid}")
-async def get_user(uid: int):
-    async with httpx.AsyncClient() as c:
-        r = await c.get(f"https://api.test/{uid}")  # 非阻塞
-    return r.json()
-
-# 同步路由：FastAPI 放到线程池跑，不阻塞事件循环
-@app.get("/sync/{uid}")
-def get_user_sync(uid: int):
-    return db.query(uid)  # 同步 DB 驱动
+-- 二级索引回表示例
+EXPLAIN SELECT * FROM orders WHERE user_id = 100;
+-- Extra: NULL（回表）
 \`\`\`
 
-混用坑：
-1. async 路由里调用同步阻塞代码（requests/同步 DB 驱动）→ 阻塞整个事件循环，所有请求卡住！必须用 run_in_executor 或换异步库。
-2. 同步路由会占用线程池（默认 40 线程），高并发同步路由耗尽线程池。
-3. 混用同步/异步 DB 驱动需分别管理连接池。
-
-并发模型：uvicorn 多 worker（进程）× 单进程事件循环 × 协程。CPU 密集仍需多进程（gunicorn -k uvicorn.workers.UvicornWorker -w 4）。
-
-关键：async 路由必须全程非阻塞，同步阻塞代码会卡死事件循环；CPU 密集用多进程。`,
-    keyPoints: ["async 路由协程并发", "阻塞调用会卡死事件循环", "同步路由走线程池"],
-    followUps: ["uvloop 为什么比 asyncio 快？", "如何把同步库用在 async 路由？"],
+踩坑：SELECT * 强制回表，只查需要的字段；联合索引最左前缀原则，(a,b,c) 索引 a/b/c/ab/abc 可用，b/ac 不用 a；范围查询右侧字段失效（a=1 and b>2 and c=3，c 用不到索引）；ORDER BY 字段尽量进索引避免 filesort。`,
+    keyPoints: ["聚簇存整行 / 二级存主键", "回表是二级查聚簇", "覆盖索引 Using index"],
+    followUps: ["最左前缀原则怎么用？", "SELECT * 为什么慢？"],
     favorited: false,
   },
   {
     id: "be-59",
-    nodeId: "be-python-web",
-    question: "Django/FastAPI 中间件原理？如何实现一个请求耗时日志中间件？",
-    answer: `中间件（Middleware）：洋葱模型，请求按顺序穿过各中间件到达视图，响应反向穿过，可在前后做统一处理（鉴权/日志/CORS/限流）。
+    nodeId: "be-mysql-index",
+    question: "索引下推 ICP 是什么？MySQL 5.6 后哪些场景受益？",
+    bigTech: true,
+    answer: `索引下推（Index Condition Pushdown, ICP）：MySQL 5.6 引入，把 WHERE 条件"下推"到存储引擎层在索引上过滤，减少回表次数。
+无 ICP：存储引擎按索引取出所有满足最左前缀的记录，回表后 Server 层再过滤。
+有 ICP：存储引擎在索引上先用 WHERE 其他条件过滤，只对真正满足的记录回表。
 
-Django 中间件：基于可调用对象，实现 __init__ + __call__（新式）或 process_request/process_response（旧式）。
+\`\`\`sql
+-- 索引 (name, age, addr)
+CREATE INDEX idx_name_age_addr ON users(name, age, addr);
+-- 查询：name 用索引，age 用索引，addr 因 name 是 LIKE 范围查询本不能用索引
+-- 但 ICP 让 addr 在索引层过滤
+EXPLAIN SELECT * FROM users
+WHERE name LIKE '张%' AND age = 25 AND addr LIKE '北京%';
+-- Extra: Using index condition（ICP 生效）
 
-\`\`\`python
-# Django 新式中间件
-import time
-class TimingMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-    def __call__(self, request):
-        start = time.time()
-        response = self.get_response(request)  # 进入视图
-        cost = (time.time() - start) * 1000
-        response['X-Response-Time'] = f'{cost:.0f}ms'
-        log.info(f'{request.path} {cost:.0f}ms')
-        return response
+-- 关闭 ICP 对比
+SET optimizer_switch='index_condition_pushdown=off';
+EXPLAIN SELECT * FROM users WHERE name LIKE '张%' AND age = 25 AND addr LIKE '北京%';
+-- Extra: Using where（无 ICP，回表后过滤）
 
-# settings.py
-MIDDLEWARE = [
-    ...,
-    'myapp.middleware.TimingMiddleware',
-]
+-- 联合索引 (a,b,c) 上的查询
+-- a = 1 AND b > 5 AND c = 3
+-- 无 ICP：用 a + b 取记录，全部回表后过滤 c
+-- 有 ICP：在索引上同时过滤 c，只对真正满足的回表
 \`\`\`
 
-FastAPI 中间件：基于 ASGI，用 @app.middleware 或纯 ASGI 中间件。
-
-\`\`\`python
-from fastapi import FastAPI, Request
-import time
-
-app = FastAPI()
-
-@app.middleware("http")
-async def timing(request: Request, call_next):
-    start = time.time()
-    response = await call_next(request)  # 等待路由处理
-    cost = (time.time() - start) * 1000
-    response.headers["X-Response-Time"] = f"{cost:.0f}ms"
-    log.info(f"{request.url.path} {cost:.0f}ms")
-    return response
-\`\`\`
-
-执行顺序：Django 请求阶段从上到下，响应从下到上；FastAPI add_middleware 后注册的反向包裹（洋葱式）。
-
-关键：洋葱模型，前后都能处理；统一处理横切关注点；注意中间件顺序（鉴权应靠前）。`,
-    keyPoints: ["洋葱模型前后处理", "Django __call__ 新式中间件", "FastAPI @app.middleware"],
-    followUps: ["中间件和装饰器的区别？", "CORS 中间件原理？"],
+踩坑：ICP 仅对二级索引生效，聚簇索引不需要；ICP 减少回表次数不减少索引扫描次数；ICP 对 LIKE 'xx%'（前缀匹配）有效，对 LIKE '%xx'（左模糊）无效；EXPLAIN 显示 Using index condition 表示 ICP 生效，Using where 是 Server 层过滤。`,
+    keyPoints: ["ICP 把 WHERE 下推到引擎层", "减少回表次数", "5.6+ 引入"],
+    followUps: ["ICP 对哪些 LIKE 有效？", "Using index 和 Using index condition 区别？"],
     favorited: false,
   },
   {
     id: "be-60",
-    nodeId: "be-python-web",
-    question: "Celery 的架构？如何保证异步任务的可靠性？",
-    answer: `Celery：Python 分布式任务队列，常用于异步任务（发邮件/导出/定时任务）。
+    nodeId: "be-mysql-index",
+    question: "explain 各字段含义？阿里 DBA 如何分析慢 SQL？",
+    bigTech: true,
+    answer: `explain 关键字段：
+- type：访问类型，从好到差 system > const > eq_ref > ref > range > index > ALL，至少到 range，禁 ALL。
+- key：实际用的索引；possible_keys：可能用的；rows：估算扫描行数。
+- Extra：Using index（覆盖）/ Using where（Server 过滤）/ Using temporary（临时表）/ Using filesort（额外排序）/ Using index condition（ICP）。
+- key_len：索引使用长度，判断联合索引用了几列。
 
-架构：Producer（生产者）→ Broker（消息代理 Redis/RabbitMQ）→ Worker（消费者）→ Backend（结果存储 Redis/DB）。
-
-\`\`\`python
-from celery import Celery
-
-app = Celery('tasks', broker='redis://localhost:6379/0',
-             backend='redis://localhost:6379/1')
-
-@app.task(bind=True, max_retries=3, acks_late=True)
-def send_email(self, to, subject):
-    try:
-        smtp.send(to, subject)
-    except SMTPError as exc:
-        raise self.retry(exc=exc, countdown=60)  # 失败重试
-
-# 调用
-result = send_email.delay('a@b.com', 'hi')  # 异步
-result.get(timeout=30)  # 等待结果
+\`\`\`sql
+-- 阿里 DBA 慢 SQL 分析
+-- 1. 开启慢日志
+SET GLOBAL slow_query_log = ON;
+SET GLOBAL long_query_time = 1;
+-- 2. 用 pt-query-digest 分析
+-- pt-query-digest /var/lib/mysql/slow.log
+-- 3. explain 慢 SQL
+EXPLAIN SELECT * FROM orders WHERE user_id = 100 AND status = 1 ORDER BY created_at DESC LIMIT 10;
+-- type=ref, key=idx_user_status, rows=1, Extra=Using filesort
+-- filesort 意味着额外排序，需优化
+-- 4. 优化：联合索引加 created_at
+CREATE INDEX idx_user_status_created ON orders(user_id, status, created_at);
+-- 再 explain：filesort 消失
+-- 5. 强制索引（特殊情况）
+SELECT * FROM orders FORCE INDEX(idx_user_status_created) WHERE ...;
 \`\`\`
 
-可靠性保证：
-1. acks_late=True：任务执行完才 ack 消息，worker 崩溃消息重投。
-2. 任务重试：max_retries + retry(countdown) 指数退避。
-3. 幂等：任务可能重复执行，业务需幂等（去重表/状态机）。
-4. 死信队列：超过重试次数进死信，人工处理。
-5. 任务超时：time_limit（硬超时，SIGKILL）/ soft_time_limit（软超时，抛异常）。
-6. 持久化 broker：RabbitMQ 持久化队列 + 消息 delivery_mode=2。
-
-定时任务：Celery Beat 调度器，读 schedule 配置定时投递任务。
-
-常见问题：
-- 任务堆积：加 worker/并发数，或拆分大任务。
-- 内存泄漏：worker 长跑泄漏，配置 max_tasks_per_child 定期重启 worker。
-
-关键：acks_late + 重试 + 幂等保证可靠；Beat 做定时；max_tasks_per_child 防泄漏。`,
-    keyPoints: ["Broker+Worker+Backend 架构", "acks_late + 重试保可靠", "幂等防重复执行"],
-    followUps: ["Celery 和 RQ/Dramatiq 区别？", "如何监控 Celery 任务？"],
+踩坑：rows 是估算值，可能偏差大，看 filtered 字段（过滤后剩余比例）；Using temporary + Using filesort 是性能杀手，必优化；type=ALL 全表扫描是禁忌，加索引或限制条件；FORCE INDEX 谨慎用，统计信息过期会让优化器选错索引，先 ANALYZE TABLE；OPTIMIZER_TRACE 看优化器决策过程。`,
+    keyPoints: ["type/key/rows/Extra 关键字段", "Using filesort/temporary 要优化", "联合索引 key_len 判断"],
+    followUps: ["filesort 如何消除？", "FORCE INDEX 何时用？"],
     favorited: false,
   },
-  // ===== Go 基础（扩充） =====
   {
     id: "be-61",
-    nodeId: "be-go-basic",
-    question: "Go 的 GMP 调度模型？goroutine 为什么轻量？",
-    answer: `GMP 模型：
-- G（goroutine）：用户态协程，~2KB 起始栈可动态增长，由 runtime 调度。
-- M（Machine/Thread）：操作系统线程，真正执行 G。
-- P（Processor）：逻辑处理器，持本地 G 队列，GOMAXPROCS 决定数量。M 必须绑定 P 才能执行 G。
+    nodeId: "be-mysql-index",
+    question: "索引失效场景？阿里订单查询 LIKE/函数/类型转换失效案例？",
+    bigTech: true,
+    answer: `索引失效场景：1）LIKE 左模糊（'%xx'）；2）对索引列做运算/函数（WHERE YEAR(create_time) = 2024）；3）隐式类型转换（VARCHAR 列 WHERE phone = 13800000000 数字）；4）OR 两边非全索引；5）!=、<>、NOT IN（数据分布差大时）；6）联合索引非最左前缀；7）ORDER BY 与索引顺序不一致；8）索引列 IS NULL（取决于 MySQL 版本，5.6+ 可用）。
 
-调度流程：
-1. 新建 goroutine 放入当前 P 的本地队列（满则放全局队列）。
-2. M 绑定 P，从本地队列取 G 执行。
-3. 本地空了 → 从全局队列取 → 从其他 P 偷（work stealing）。
-4. G 阻塞（系统调用）→ M 解绑 P，P 给其他 M 用；阻塞返回后 M 尝试找空闲 P，找不到则 G 入全局队列，M 休眠。
+\`\`\`sql
+-- 阿里案例：电话号隐式转换失效
+-- phone 是 VARCHAR，查询传数字，MySQL 把 phone 转 number，索引失效
+EXPLAIN SELECT * FROM users WHERE phone = 13800000000;
+-- type=ALL（全表扫描，索引失效）
+-- 修复：传字符串
+EXPLAIN SELECT * FROM users WHERE phone = '13800000000';
+-- type=ref
 
-\`\`\`go
-func main() {
-    runtime.GOMAXPROCS(4) // P 数量，默认 = CPU 核数
-    for i := 0; i < 100; i++ {
-        go func(i int) { // 创建 G
-            time.Sleep(time.Second)
-            fmt.Println(i)
-        }(i)
-    }
-    select {} // 阻塞主 goroutine
-}
+-- 函数失效：按月查询
+EXPLAIN SELECT * FROM orders WHERE DATE(created_at) = '2024-01-15';
+-- type=ALL（函数让索引失效）
+-- 修复：范围查询
+EXPLAIN SELECT * FROM orders
+WHERE created_at >= '2024-01-15' AND created_at < '2024-01-16';
+-- type=range
+
+-- LIKE 左模糊：用全文索引或 ES
+EXPLAIN SELECT * FROM goods WHERE name LIKE '%手机%';
+-- type=ALL
+-- 修复：前缀匹配或全文索引
+ALTER TABLE goods ADD FULLTEXT INDEX ft_name(name);
+SELECT * FROM goods WHERE MATCH(name) AGAINST('手机');
 \`\`\`
 
-goroutine 轻量原因：
-1. 栈小（2KB 起步，按需扩缩），线程栈固定 MB 级。
-2. 用户态调度，切换只需保存少量寄存器，无内核态切换开销。
-3. 创建/销毁在 runtime 内完成，不经过系统调用。
-
-关键：GMP 中 P 是核心（本地队列+调度权限）；work stealing 均衡负载；系统调用阻塞时 P 让渡保持并行。`,
-    keyPoints: ["G 协程/M 线程/P 逻辑处理器", "work stealing 均衡负载", "goroutine 2KB 栈用户态切换"],
-    followUps: ["系统调用阻塞时 GMP 如何处理？", "GOMAXPROCS 设多少合适？"],
+踩坑：隐式转换最隐蔽，参数类型必须和列一致；函数失效改用范围或生成列索引（5.7+）；OR 改 UNION ALL；!= 在小结果集可用，大表慎用；索引列允许 NULL 影响索引效率，建议 NOT NULL DEFAULT；监控慢日志定期优化。`,
+    keyPoints: ["LIKE 左模糊/函数/隐式转换失效", "OR/!=/最左前缀", "范围查询替代函数"],
+    followUps: ["隐式转换如何排查？", "生成列索引怎么用？"],
     favorited: false,
   },
   {
     id: "be-62",
-    nodeId: "be-go-basic",
-    question: "Go 的 error 处理机制？error 和 panic 的区别？如何自定义错误？",
-    answer: `Go 错误处理哲学：error 是值，显式处理而非异常。函数多返回值，调用方必须检查 err。
+    nodeId: "be-mysql-index",
+    question: "联合索引最左前缀？MySQL 索引合并？(a,b,c) 索引哪些查询能用？",
+    bigTech: true,
+    answer: `最左前缀：联合索引 (a,b,c) 按字段顺序匹配，可用的查询：a / a,b / a,b,c / a,b,c like 'xx%'；不可用：b / b,c / a,c 的 c（a 用，c 不用，因 a 范围查询后 c 失效）。
+索引合并（Index Merge）：MySQL 5.0+ 多个单列索引可以用 OR/AND 合并结果。但效率低于联合索引，生产建议建联合索引。
 
-\`\`\`go
-// 标准模式：多返回值
-func divide(a, b int) (int, error) {
-    if b == 0 {
-        return 0, errors.New("divide by zero") // 创建错误
-    }
-    return a / b, nil
-}
+\`\`\`sql
+-- 联合索引 (user_id, status, created_at)
+CREATE INDEX idx_user_status_created ON orders(user_id, status, created_at);
+-- 能用
+SELECT * FROM orders WHERE user_id = 100;                          -- 用 a
+SELECT * FROM orders WHERE user_id = 100 AND status = 1;           -- 用 a,b
+SELECT * FROM orders WHERE user_id = 100 AND status = 1 AND created_at > '2024-01-01';  -- 用 a,b,c
+SELECT * FROM orders WHERE user_id = 100 AND created_at > '2024-01-01';  -- 用 a，c 不用（跳过 b）
+SELECT * FROM orders WHERE user_id = 100 AND status > 1;          -- 用 a,b（status 范围）
+SELECT * FROM orders WHERE user_id = 100 AND status > 1 AND created_at > '2024-01-01';  -- 用 a,b，c 不用（status 是范围）
+-- 不能用（最左前缀不满足）
+SELECT * FROM orders WHERE status = 1;                             -- 不用索引
+SELECT * FROM orders WHERE created_at > '2024-01-01';              -- 不用索引
+SELECT * FROM orders WHERE status = 1 AND created_at > '2024-01-01'; -- 不用索引
 
-if r, err := divide(10, 0); err != nil {
-    log.Println(err) // 显式处理
-    return
-}
-
-// 自定义错误类型
-type BizError struct {
-    Code int
-    Msg  string
-}
-func (e *BizError) Error() string { return fmt.Sprintf("[%d] %s", e.Code, e.Msg) }
-
-func find(id int) (*User, error) {
-    if id <= 0 {
-        return nil, &BizError{Code: 400, Msg: "invalid id"}
-    }
-    return &User{}, nil
-}
-
-// errors.Is / errors.As 判断（Go 1.13+）
-if errors.Is(err, sql.ErrNoRows) { ... }
-var be *BizError
-if errors.As(err, &be) { fmt.Println(be.Code) }
-
-// fmt.Errorf 包装 + %w 保留链
-fmt.Errorf("find user: %w", err)
+-- 索引合并（少用）
+SELECT * FROM orders WHERE user_id = 100 OR status = 1;
+-- type=index_merge，user_id 索引 + status 索引合并，效率低于联合索引
 \`\`\`
 
-error vs panic：
-- error：可预期的业务错误，调用方处理。
-- panic：不可恢复的严重错误（数组越界/nil 指针/初始化失败），向上传播直到 recover 或崩溃。
-- panic/recover 类似 try/catch，但仅用于不可恢复场景，不用于业务流程。
-
-\`\`\`go
-defer func() {
-    if r := recover(); r != nil {
-        log.Println("recovered:", r) // 防止崩溃
-    }
-}()
-panic("fatal") // 仅严重错误
-\`\`\`
-
-关键：error 是值需显式检查；自定义错误实现 Error()；errors.Is/As 判断；panic 仅不可恢复场景。`,
-    keyPoints: ["error 是值显式处理", "自定义错误实现 Error() 接口", "panic 仅不可恢复+recover"],
-    followUps: ["Go 1.13 的错误包装（%w）原理？", "为什么 Go 不用异常而用 error？"],
+踩坑：联合索引字段顺序按"区分度高 + 查询频繁"放前；范围查询（>、<、BETWEEN、LIKE 'xx%'）右侧字段失效；ORDER BY 字段顺序要和索引一致才能避免 filesort；覆盖索引 + 最左前缀是日常优化核心；OR 改 UNION ALL 往往更快。`,
+    keyPoints: ["最左前缀按字段顺序", "范围查询右侧失效", "索引合并效率低"],
+    followUps: ["联合索引字段顺序怎么定？", "OR 改 UNION ALL 何时更快？"],
     favorited: false,
   },
   {
     id: "be-63",
-    nodeId: "be-go-basic",
-    question: "Go map 为什么并发不安全？sync.Map 和加锁 map 怎么选？",
-    answer: `Go 内置 map 不是并发安全的：并发读写会触发 fatal error: concurrent map read and map write（直接 panic，且无法 recover），因为 map 内部没有锁，扩容/搬迁时并发访问会破坏结构。
+    nodeId: "be-mysql-index",
+    question: "阿里双 11 订单表十亿级如何分库分表？分片键怎么选？",
+    bigTech: true,
+    answer: `分库分表策略：1）垂直分库（按业务：订单库/库存库）；2）水平分表（按 user_id hash 取模分 N 张表）；3）时间分表（按月分 orders_202401/orders_202402）。
+分片键选择：高频查询字段（user_id）作为分片键，保证单用户查询直击单库单表。
+范围分片 vs Hash 分片：范围分片（按时间/id 区间）易扩容但有热点；Hash 分片均匀但扩容需 rehash。
 
-\`\`\`go
-// 并发不安全：fatal error
-m := make(map[int]int)
-go func() { for i := 0; i < 1000; i++ { m[1] = i } }()
-go func() { for i := 0; i < 1000; i++ { _ = m[1] } }()
+\`\`\`java
+// 阿里 TDDL/ShardingSphere 分库分表
+// 1. 分片规则：user_id % 16 取表，user_id / 16 % 4 取库
+// 配置 ShardingSphere
+// shardingsphere.yaml
+// actualDataNodes: ds_${0..3}.orders_${0..15}
+// databaseStrategy:
+//   standard:
+//     shardingColumn: user_id
+//     shardingAlgorithm: db_hash_mod
+// tableStrategy:
+//   standard:
+//     shardingColumn: user_id
+//     shardingAlgorithm: table_hash_mod
 
-// 方案1：sync.RWMutex + map（读多写少）
-var (
-    mu sync.RWMutex
-    m  = make(map[string]int)
-)
-func get(k string) int {
-    mu.RLock(); defer mu.RUnlock()
-    return m[k]
+// 2. Java 注入分片键
+@ShardingKey("userId")
+public List<Order> queryOrders(Long userId, Date start, Date end) {
+    return orderMapper.selectByUserAndTime(userId, start, end);
 }
-func set(k string, v int) {
-    mu.Lock(); defer mu.Unlock()
-    m[k] = v
-}
+
+// 3. 全局查询（不带分片键）走 ES 或 TiDB
+// 双 11 历史订单查询走 HBase（按时间归档）
 \`\`\`
 
-sync.Map：官方并发安全 map，用空间换时间，适合读多写少且 key 稳定。
-
-\`\`\`go
-var sm sync.Map
-sm.Store("a", 1)
-v, ok := sm.Load("a")
-sm.LoadOrStore("b", 2) // 不存在则存
-sm.Range(func(k, v any) bool { return true })
-sm.Delete("a")
-\`\`\`
-
-选型：
-- 写多/通用：sync.RWMutex + map（更灵活，类型安全需自己包装）。
-- 读多写少、key 稳定、高并发：sync.Map（无锁读路径，性能好）。
-- 强类型：用泛型封装或第三方 concurrent-map。
-
-sync.Map 原理：read map（无锁 atomic 读）+ dirty map（有锁写），miss 多时 dirty 升级为 read。
-
-关键：map 并发读写直接 fatal；读多写少用 sync.Map；通用用 RWMutex+map。`,
-    keyPoints: ["map 并发读写直接 fatal", "RWMutex+map 通用", "sync.Map 读多写少无锁读"],
-    followUps: ["sync.Map 的 read/dirty 结构？", "如何用泛型封装并发安全 map？"],
+踩坑：跨库 JOIN 困难，业务层组装或冗余字段；分布式事务成本高，避免跨库事务；不带分片键查询会扫所有库（广播），高 QPS 场景禁用；扩容用一致性 hash 或预分库（提前建好 1024 库）；冷热分离：热数据 MySQL + 冷数据 HBase/TiDB；分片键一旦定难改，设计阶段要慎重。`,
+    keyPoints: ["水平/垂直分库分表", "分片键选高频查询字段", "扩容需预分库"],
+    followUps: ["分库分表后如何扩容？", "跨库 JOIN 怎么解决？"],
     favorited: false,
   },
+
+  // ===== 10. be-mysql-transaction MySQL 事务 =====
   {
     id: "be-64",
-    nodeId: "be-go-basic",
-    question: "Go defer 的执行顺序和参数求值时机？defer 有哪些陷阱？",
-    answer: `defer：函数返回前（LIFO 后进先出）执行，常用于资源释放。defer 参数在 defer 语句时求值，不是执行时。
+    nodeId: "be-mysql-transaction",
+    question: "MySQL 四种隔离级别？阿里为什么选 RC 不选 RR？",
+    bigTech: true,
+    answer: `四种隔离级别（隔离性从弱到强）：读未提交（Read Uncommitted）/ 读已提交（Read Committed，RC）/ 可重复读（Repeatable Read，RR，MySQL 默认）/ 串行化（Serializable）。
+并发问题：脏读（读未提交）/ 不可重复读（同一事务两次读结果不同）/ 幻读（范围查询结果变化）。
+MySQL RR 用 MVCC + 间隙锁解决幻读，但 RR 在 binlog statement 格式下有主从一致问题，所以阿里/美团生产用 RC + row binlog。
 
-\`\`\`go
-// 1. LIFO 顺序：3 2 1
-func main() {
-    defer fmt.Println(1)
-    defer fmt.Println(2)
-    defer fmt.Println(3)
-}
+\`\`\`sql
+-- 查看/设置隔离级别
+SELECT @@transaction_isolation;  -- 默认 REPEATABLE-READ
+-- 阿里规约：生产用 READ-COMMITTED
+SET GLOBAL transaction_isolation = 'READ-COMMITTED';
+-- 配置文件
+[mysqld]
+transaction-isolation = READ-COMMITTED
+binlog_format = ROW  -- RC 必须配 ROW binlog
 
-// 2. 参数立即求值（defer 语句时，非执行时）
-func a() {
-    i := 1
-    defer fmt.Println(i) // 打印 1（立即求值）
-    i = 10
-    return
-}
-
-// 3. 闭包引用变量（执行时取最新值）
-func b() {
-    i := 1
-    defer func() { fmt.Println(i) }() // 打印 10（闭包引用）
-    i = 10
-    return
-}
+-- RC vs RR 区别
+-- RC：每条 SELECT 重新生成 read view，看到最新已提交数据
+-- RR：事务首次 SELECT 生成 read view，整个事务复用，保证可重复读
 \`\`\`
 
-defer 与 return 值：return 先赋值返回值，再执行 defer，最后返回。命名返回值会被 defer 修改。
-
-\`\`\`go
-func c() (result int) {
-    defer func() { result++ }() // 命名返回值，defer 可改
-    return 5  // result=5 → defer 改成 6 → 返回 6
-}
-// 匿名返回值 defer 改不了
-func d() int {
-    r := 5
-    defer func() { r++ }() // 改的是局部 r，不影响返回值
-    return r  // 返回 5
-}
-\`\`\`
-
-性能：defer 有开销（注册/调用），Go 1.14+ 对简单 defer 做了内联优化（open-coded defer），开销大幅降低，但循环内 defer 仍有成本，建议循环内用闭包或显式释放。
-
-陷阱：
-1. defer 在 for 循环累积，资源延迟到函数结束才释放 → 用匿名函数立即释放。
-2. defer 闭包捕获循环变量（Go 1.22 前）→ 全是最后一个值。
-3. defer nil 函数 panic。
-
-关键：defer LIFO + 参数立即求值；命名返回值可被 defer 修改；循环内 defer 注意及时释放。`,
-    keyPoints: ["LIFO 后进先出", "参数 defer 时求值，闭包执行时取值", "命名返回值可被 defer 改"],
-    followUps: ["Go 1.22 循环变量作用域变化？", "defer 的性能开销？"],
+踩坑：RC 不防幻读（范围查询会看到新数据），需加锁 SELECT ... FOR UPDATE；RR 的间隙锁在高并发写时易死锁；RR binlog statement 模式主从不一致；Serializable 性能差，几乎不用；隔离级别越高并发越低，权衡一致性和性能。`,
+    keyPoints: ["RU/RC/RR/Serializable", "MySQL 默认 RR，阿里用 RC", "RC 配 ROW binlog"],
+    followUps: ["RR 如何解决幻读？", "RC 为什么不防幻读？"],
     favorited: false,
   },
-  // ===== Go 并发（扩充） =====
   {
     id: "be-65",
-    nodeId: "be-go-concurrent",
-    question: "channel 什么时候该关闭？关闭 channel 的原则和陷阱？",
-    answer: `channel 关闭原则：只由发送方关闭，接收方不应关闭。关闭表示"不再有数据"，用于通知接收方结束（如 range 退出）。
+    nodeId: "be-mysql-transaction",
+    question: "MVCC 原理？undo log 版本链？美团订单查询如何工作？",
+    bigTech: true,
+    answer: `MVCC（多版本并发控制）：每行隐藏字段 trx_id（最近修改事务 ID）、roll_pointer（指向 undo log 版本）。事务读取时生成 read view，按可见性算法选版本。
+read view 可见性：行的 trx_id < 最小活跃事务 ID（已提交）可见；trx_id > 最大事务 ID（未来事务）不可见；trx_id 在活跃列表中不可见，沿 roll_pointer 找前一个版本直到可见。
 
-\`\`\`go
-// 正确：发送方 close，接收方 range 退出
-func producer(ch chan<- int) {
-    defer close(ch) // 发送完关闭
-    for i := 0; i < 10; i++ { ch <- i }
-}
+\`\`\`sql
+-- 美团订单查询 MVCC 工作流程
+-- 1. 行结构（隐藏字段）
+-- id | user_id | amount | trx_id | roll_pointer
+-- 100| 1001    | 99.00  | 200    | -> undo log
+-- 2. undo log 版本链
+-- 版本1: amount=99.00, trx_id=200 (当前)
+-- 版本2: amount=88.00, trx_id=180 (旧)
+-- 版本3: amount=77.00, trx_id=150 (更旧)
 
-func consumer(ch <-chan int) {
-    for v := range ch { // close 后 range 自动退出
-        fmt.Println(v)
-    }
-}
+-- 3. 事务 A (trx_id=210) SELECT * FROM orders WHERE id = 100
+--    生成 read view: [活跃事务=190, 200, 210], 最大=210, 最小=190
+--    行 trx_id=200 在活跃列表中 → 不可见
+--    沿 roll_pointer 找版本2 trx_id=180 < 最小活跃 190 → 可见
+--    返回 amount=88.00
 
-// 判断 channel 是否关闭
-v, ok := <-ch // ok=false 表示已关闭且无数据
+-- 4. 验证 MVCC
+SELECT * FROM orders WHERE id = 100;  -- 看到旧版本
+-- 另一个事务提交修改后，本事务仍看到旧值（RR）
 \`\`\`
 
-关闭陷阱：
-1. 重复 close：panic: close of closed channel。
-2. 向已关闭 channel 发送：panic: send on closed channel。
-3. 关闭 nil channel：永久阻塞（不会 panic，但 close(nil) 会 panic）。
-4. 多个发送者关闭：无法确定谁该 close → 用额外"停止"信号 channel 或 sync.Once。
-
-\`\`\`go
-// 多生产者优雅退出：额外 done channel
-func worker(id int, ch chan<- int, done <-chan struct{}) {
-    for {
-        select {
-        case <-done:
-            return // 收到停止信号
-        case ch <- produce(id):
-        }
-    }
-}
-// 协调者：关闭 done 通知所有 worker 退出，最后一个再 close ch
-\`\`\`
-
-从已关闭 channel 接收：不会 panic，返回零值 + ok=false，可无限接收。所以接收方无需关心是否关闭，range/for-select 配合 ok 判断即可。
-
-关键：发送方 close；多发送者用 done channel 协调；接收已关闭 channel 返回零值不 panic。`,
-    keyPoints: ["只发送方关闭", "重复 close/send on closed 会 panic", "多发送者用 done channel 协调"],
-    followUps: ["如何安全关闭多发送者 channel？", "nil channel 在 select 中的用途？"],
+踩坑：长事务持有 read view，导致 undo log 无法回收（purge 阻塞），表空间膨胀；长事务还会阻塞其他事务的更新（旧版本不能清除）；监控 information_schema.innodb_trx 找长事务；RC 每条 SELECT 新建 read view，RR 仅首次新建；MVCC 仅在快照读（普通 SELECT）生效，当前读（SELECT FOR UPDATE）走锁。`,
+    keyPoints: ["MVCC 隐藏 trx_id + roll_pointer", "read view 可见性算法", "长事务阻塞 purge"],
+    followUps: ["长事务有什么危害？", "快照读和当前读区别？"],
     favorited: false,
   },
   {
     id: "be-66",
-    nodeId: "be-go-concurrent",
-    question: "sync.Mutex 和 sync.RWMutex 的区别？读写锁什么场景反而更慢？",
-    answer: `sync.Mutex：互斥锁，同一时刻只有一个 goroutine 持有（读/写都互斥）。
+    nodeId: "be-mysql-transaction",
+    question: "行锁/间隙锁/Next-Key 锁？美团订单死锁案例分析？",
+    bigTech: true,
+    answer: `InnoDB 锁：1）记录锁（Record Lock）：锁单行索引；2）间隙锁（Gap Lock）：锁索引区间但不锁记录，防幻读，仅在 RR 生效；3）Next-Key Lock：记录锁 + 前面间隙锁（默认），锁左开右闭区间。
+死锁：两个事务互相持有对方需要的锁，InnoDB 检测到死锁回滚代价小的事务。
+美团案例：两事务同时 INSERT 不同订单但 user_id 在同一间隙，都拿间隙锁互等，InnoDB 杀一个事务。
 
-sync.RWMutex：读写锁，允许多个读同时持有，写独占。读多写少场景提升并发读吞吐。
+\`\`\`sql
+-- 美团订单死锁案例
+-- 表 orders INDEX(user_id)，已有 user_id=100,200
+-- 事务 A: INSERT orders(user_id) VALUES(150);  -- 持 (100,200) 间隙锁
+-- 事务 B: INSERT orders(user_id) VALUES(180);  -- 持 (100,200) 间隙锁
+-- A 等 B 释放，B 等 A 释放 → 死锁
 
-\`\`\`go
-var (
-    mu   sync.Mutex
-    rwmu sync.RWMutex
-    data = make(map[string]int)
-)
+-- 查看死锁日志
+SHOW ENGINE INNODB STATUS\\G
+-- LATEST DETECTED DEADLOCK
+-- *** (1) TRANSACTION: INSERT INTO orders ...
+-- *** (1) WAITING FOR LOCK: lock_mode X insert intention waiting
+-- *** (2) TRANSACTION: INSERT INTO orders ...
+-- *** (2) HOLDS THE LOCK(S): lock_mode X
+-- *** WE ROLL BACK TRANSACTION (2)
 
-// Mutex：读写都互斥
-func getMutex(k string) int {
-    mu.Lock(); defer mu.Unlock()
-    return data[k]
-}
-
-// RWMutex：读用 RLock（可并发），写用 Lock（独占）
-func getRW(k string) int {
-    rwmu.RLock(); defer rwmu.RUnlock() // 多个读并发
-    return data[k]
-}
-func setRW(k string, v int) {
-    rwmu.Lock(); defer rwmu.Unlock() // 写独占
-    data[k] = v
-}
+-- 修复：1) 改 RC 隔离（无间隙锁）2) user_id 用唯一索引 3) 重试机制
 \`\`\`
 
-RWMutex 反而更慢的场景：
-1. 写多读少：写要等所有读释放，且写饥饿（Go RWMutex 写优先），读被阻塞，开销比 Mutex 大。
-2. 临界区极短：RWMutex 内部维护 reader 计数（atomic + semaphore），RLock/RUnlock 开销 > Mutex.Lock/Unlock，临界区短时得不偿失。
-3. 低并发：单 goroutine 时读写锁额外开销无收益。
-
-RWMutex 注意：
-- 不可重入（同 goroutine 重复 RLock 可能死锁，若中间有写等待）。
-- 不要在持有读锁时升级为写锁（会死锁）。
-- 写锁优先（防读饥饿），但读多时写延迟高。
-
-关键：Mutex 简单通用；RWMutex 仅读多写少 + 临界区较长时才划算；否则 Mutex 更优。`,
-    keyPoints: ["Mutex 读写都互斥", "RWMutex 读共享写独占", "写多/临界区短 Mutex 更优"],
-    followUps: ["RWMutex 读写饥饿如何处理？", "Go 锁不可重入的原因？"],
+踩坑：间隙锁只在 RR 生效，RC 无间隙锁无此死锁；唯一索引等值查询命中记录降级为记录锁，无间隙锁；INSERT 触发 insert intention lock，与间隙锁冲突；减少事务长度（不嵌套 RPC）、固定加锁顺序（按主键升序）防死锁；死锁后业务层重试。`,
+    keyPoints: ["记录锁/间隙锁/Next-Key", "间隙锁防幻读仅 RR", "insert intention 与间隙锁冲突"],
+    followUps: ["唯一索引等值命中为什么无间隙锁？", "如何避免死锁？"],
     favorited: false,
   },
   {
     id: "be-67",
-    nodeId: "be-go-concurrent",
-    question: "sync.Pool 的作用和原理？为什么不能用来做缓存？",
-    answer: `sync.Pool：临时对象池，复用对象减少 GC 压力，适合"短生命周期、高频创建"的对象（如 bytes.Buffer、JSON 序列化缓冲）。
+    nodeId: "be-mysql-transaction",
+    question: "binlog / redo log / undo log 区别？两阶段提交是什么？",
+    bigTech: true,
+    answer: `三种日志：
+- redo log（InnoDB 引擎层）：物理日志，记录"某页某偏移改成什么"，crash 后恢复已提交事务，循环写。
+- undo log（InnoDB 引擎层）：逻辑日志，记录"反向操作"，回滚事务 + MVCC 版本链。
+- binlog（Server 层）：逻辑日志，记录 SQL/行变更，主从复制 + 时间点恢复，追加写。
+两阶段提交（2PC）：写 redo log（prepare）→ 写 binlog → 写 redo log（commit），保证 binlog 和 redo log 一致。
 
-\`\`\`go
-var bufPool = sync.Pool{
-    New: func() any { return new(bytes.Buffer) },
-}
+\`\`\`sql
+-- 两阶段提交流程
+-- 1. 事务执行，修改 buffer pool
+-- 2. 写 redo log（prepare 状态）
+-- 3. 写 binlog
+-- 4. 写 redo log（commit 状态）
+-- 5. 事务提交成功
 
-func writeJSON(v any) ([]byte, error) {
-    buf := bufPool.Get().(*bytes.Buffer)
-    defer func() {
-        buf.Reset()            // 用完重置
-        bufPool.Put(buf)       // 放回池
-    }()
-    enc := json.NewEncoder(buf)
-    if err := enc.Encode(v); err != nil {
-        return nil, err
-    }
-    out := make([]byte, buf.Len())
-    copy(out, buf.Bytes())
-    return out, nil
-}
+-- crash 恢复
+-- redo log 有 commit 标记 → 已提交，恢复
+-- redo log prepare 但 binlog 完整 → 提交（binlog 可能已复制到从库）
+-- redo log prepare 且 binlog 不完整 → 回滚（用 undo log）
+
+-- 查看 binlog
+SHOW BINLOG EVENTS IN 'mysql-bin.000001';
+-- 查看参数
+SHOW VARIABLES LIKE 'innodb_flush_log_at_trx_commit';  -- 1 = 每事务刷盘
+SHOW VARIABLES LIKE 'sync_binlog';  -- 1 = 每事务刷盘
 \`\`\`
 
-原理：
-- 每个 P 有本地池（poolLocal，无锁），Get/Put 优先本地，miss 时从其他 P 偷，再 miss 调 New。
-- GC 时 Pool 中对象会被清除（victim 缓存一轮后清），所以 Pool 不保证对象常驻。
-
-不能做缓存的原因：
-1. GC 时清空：Pool 设计就是"临时"复用，GC 会清掉对象，不保证命中率，不适合持久缓存。
-2. 无容量/过期控制：不能像 LRU 设大小和 TTL。
-3. 对象可能随时消失：Get 可能返回新对象（New），不可靠。
-
-正确用途：复用可重置的临时对象（buffer/临时结构体），减少分配和 GC。不要存"状态对象"或期望长期保留的数据。
-
-关键：sync.Pool 是 GC 友好的临时对象复用池；GC 会清空，不能当缓存；用完必须 Reset 再 Put。`,
-    keyPoints: ["复用临时对象减 GC", "P 本地池无锁 + 偷取", "GC 清空，不能当缓存"],
-    followUps: ["sync.Pool 在 GC 时如何清理？", "为什么 Put 前要 Reset？"],
+踩坑：innodb_flush_log_at_trx_commit=1 + sync_binlog=1 是双 1 配置保证不丢数据，但性能略降；redo log 循环写有覆盖风险，要够大；binlog 三种格式：statement（SQL）、row（行变更，推荐）、mixed；row 格式 binlog 大但准确，主从一致好；GTID 模式主从切换更简单。`,
+    keyPoints: ["redo 物理/undo 逻辑/binlog 逻辑", "2PC 保证 binlog 与 redo 一致", "双 1 配置防丢数据"],
+    followUps: ["binlog 三种格式区别？", "redo log 循环写如何不覆盖？"],
     favorited: false,
   },
   {
     id: "be-68",
-    nodeId: "be-go-concurrent",
-    question: "sync.WaitGroup 的用法？有哪些常见错误？",
-    answer: `sync.WaitGroup：等待一组 goroutine 完成。主 goroutine 调 Add(n) 增加计数，子 goroutine 完成调 Done()（即 Add(-1)），Wait() 阻塞到计数归零。
+    nodeId: "be-mysql-transaction",
+    question: "美团外卖订单状态流转如何保证一致性？分布式事务方案？",
+    bigTech: true,
+    answer: `美团外卖订单状态：待支付 → 已支付 → 商家接单 → 制作中 → 骑手取餐 → 配送中 → 已送达。状态流转涉及订单服务、支付服务、商家服务、骑手服务多系统。
+一致性方案：1）状态机引擎（防非法状态迁移）；2）本地消息表 + MQ 最终一致；3）TCC 业务层补偿；4）Saga 长事务。
+美团实际：核心交易用 TCC（保证强一致），辅助流程用本地消息表（最终一致）。
 
-\`\`\`go
-func fetchAll(urls []string) []string {
-    var wg sync.WaitGroup
-    results := make([]string, len(urls))
-
-    for i, url := range urls {
-        wg.Add(1) // 必须在 goroutine 外 Add
-        go func(i int, url string) {
-            defer wg.Done()        // 完成时 Done
-            results[i] = fetch(url) // 各写各的索引，无竞争
-        }(i, url)
-    }
-    wg.Wait() // 等待全部完成
-    return results
+\`\`\`java
+// 美团 TCC：订单状态流转
+// Try: 预占资源（订单标记 PAYING，扣减预占库存）
+@TwoPhaseBusinessAction(name = "payOrder", commitMethod = "confirm", rollbackMethod = "cancel")
+public void tryPay(OrderContext ctx) {
+    orderDao.updateStatus(ctx.getOrderId(), OrderStatus.PAYING);
+    stockService.freeze(ctx.getSkuId(), ctx.getQty());  // 预占库存
+}
+// Confirm: 真正扣减
+public void confirm(OrderContext ctx) {
+    orderDao.updateStatus(ctx.getOrderId(), OrderStatus.PAID);
+    stockService.deduct(ctx.getSkuId(), ctx.getQty());  // 真扣
+}
+// Cancel: 释放预占
+public void cancel(OrderContext ctx) {
+    orderDao.updateStatus(ctx.getOrderId(), OrderStatus.CANCELED);
+    stockService.unfreeze(ctx.getSkuId(), ctx.getQty());
 }
 
-// 优雅退出 + 超时
-func fetchWithTimeout(urls []string) {
-    var wg sync.WaitGroup
-    for _, u := range urls {
-        wg.Add(1)
-        go func(u string) { defer wg.Done(); fetch(u) }(u)
-    }
-    done := make(chan struct{})
-    go func() { wg.Wait(); close(done) }()
-    select {
-    case <-done:
-        fmt.Println("all done")
-    case <-time.After(5 * time.Second):
-        fmt.Println("timeout") // 超时放弃等待（goroutine 仍在跑）
-    }
+// 本地消息表（辅助流程）
+@Transactional
+public void paid(Long orderId) {
+    orderDao.updateStatus(orderId, OrderStatus.PAID);
+    msgDao.insert(new LocalMsg("ORDER_PAID", orderId));  // 同事务插消息表
 }
+// 定时扫消息表发 MQ
 \`\`\`
 
-常见错误：
-1. Add 在 goroutine 内：可能 Wait 已执行时 Add 还没调用 → panic: sync: negative WaitGroup counter 或 Wait 提前返回。必须在启动 goroutine 前在主 goroutine Add。
-2. 忘记 Done：用 defer wg.Done() 避免遗漏。
-3. 计数器变负：Done 次数 > Add 次数 → panic。
-4. Wait 后复用：WaitGroup 不可重用（Go 1.20 前会 panic），如需复用每次新建或确保 Wait 返回后再 Add。
-5. WaitGroup 不能 Copy：必须传指针。
-
-关键：Add 在 goroutine 外；defer Done；传指针不能 copy；Wait 后别复用。`,
-    keyPoints: ["Add 在 goroutine 外", "defer Done 防遗漏", "传指针不能 copy"],
-    followUps: ["WaitGroup 和 errgroup 区别？", "WaitGroup 能否复用？"],
+踩坑：TCC Try/Confirm/Cancel 必须幂等（网络重试）；Confirm/Cancel 失败要重试 + 人工兜底；空回滚（Try 未执行但 Cancel 调用）需事务记录表判断；悬挂（Cancel 先于 Try）也要事务记录；Saga 补偿要可逆；状态机用枚举 + 校验防非法迁移。`,
+    keyPoints: ["状态机防非法迁移", "TCC 强一致 + 本地消息表最终一致", "TCC 幂等 + 空回滚 + 悬挂"],
+    followUps: ["TCC 空回滚怎么处理？", "Saga 补偿如何设计？"],
     favorited: false,
   },
-  // ===== MySQL（扩充） =====
   {
     id: "be-69",
-    nodeId: "be-mysql",
-    question: "什么是索引下推（ICP）？覆盖索引如何避免回表？",
-    answer: `索引下推（Index Condition Pushdown，ICP，MySQL 5.6+）：把部分 WHERE 条件下推到存储引擎层，在遍历二级索引时就过滤，减少回表次数。
-
-无 ICP：二级索引找到匹配记录 → 逐条回表取整行 → server 层过滤。
-有 ICP：二级索引遍历时先用可下推条件过滤 → 只对满足的记录回表。
-
-\`\`\`sql
--- 联合索引 (a, b)
-SELECT * FROM t WHERE a = 1 AND b LIKE '%abc';
--- 无 ICP：a=1 的所有记录都回表，再 server 层过滤 b
--- 有 ICP：在索引上用 b LIKE 过滤，减少回表
-
--- explain Extra 看到 "Using index condition" 表示用了 ICP
-\`\`\`
-
-覆盖索引（Covering Index）：查询的列全部包含在索引中，无需回表（聚簇索引）。explain Extra 显示 "Using index"。
+    nodeId: "be-mysql-transaction",
+    question: "MySQL 主从延迟如何排查？美团读写分离一致性问题？",
+    bigTech: true,
+    answer: `主从延迟原因：1）大事务（binlog 单条耗时）；2）从库单线程回放（5.7+ 并行复制）；3）从库硬件差；4）网络抖动；5）从库查询压力。
+排查：SHOW SLAVE STATUS\\G 看 Seconds_Behind_Master；pt-heartbeat 监控真实延迟（不受系统时间影响）。
+美团方案：1）从库 5.7+ 并行复制（LOGICAL_CLOCK）；2）强一致读走主库；3）关键操作后短延迟内读主库；4）分库降低单库压力。
 
 \`\`\`sql
--- 索引 (name, age)
-SELECT name, age FROM user WHERE name = 'tom'; -- 覆盖索引，不回表
-SELECT * FROM user WHERE name = 'tom';          -- 需回表取其他列
+-- 排查主从延迟
+SHOW SLAVE STATUS\\G
+-- 关注：Seconds_Behind_Master, Slave_IO_Running, Slave_SQL_Running
+-- 真实延迟监控
+-- pt-heartbeat --daemonize -D test --create-table
+-- pt-heartbeat --check --master-server-id 1
 
--- 优化：建联合索引覆盖高频查询列
-ALTER TABLE user ADD INDEX idx_name_age_city (name, age, city);
-SELECT name, age, city FROM user WHERE name = 'tom'; -- 覆盖索引
+-- 5.7+ 并行复制
+CHANGE MASTER TO MASTER_DELAY = 0;
+SET GLOBAL slave_parallel_type = 'LOGICAL_CLOCK';
+SET GLOBAL slave_parallel_workers = 16;
+SET GLOBAL binlog_transaction_dependency_tracking = 'WRITESET';
+
+-- 从库读不到刚写入的数据（延迟）解决：强制读主
+// 业务代码
+public Order readOrder(Long id) {
+    if (justWritten(id)) {  // 刚写强制读主
+        return readFromMaster(id);
+    }
+    return readFromSlave(id);
+}
 \`\`\`
 
-回表代价：二级索引存主键，需再查聚簇索引（一次额外 IO）。覆盖索引消除回表，大幅提升。
-
-关键：ICP 在索引层过滤减少回表；覆盖索引直接从索引取数据不回表；explain 看 Using index/index condition。`,
-    keyPoints: ["ICP 索引层过滤减回表", "覆盖索引 Using index 不回表", "联合索引覆盖查询列"],
-    followUps: ["最左前缀原则？", "ICP 在什么条件下触发？"],
+踩坑：Seconds_Behind_Master 不可靠（受系统时间影响）；大事务拆分；从库并行复制对 DDL 无效；半同步复制（semi-sync）保证主从一致但降低主库性能；写后读一致性用 GTID_session 或客户端缓存；分库后跨库事务难，业务层组装。`,
+    keyPoints: ["主从延迟 5 大原因", "并行复制 LOGICAL_CLOCK", "强一致读走主库"],
+    followUps: ["半同步复制如何工作？", "pt-heartbeat 为什么比 SBM 准？"],
     favorited: false,
   },
   {
     id: "be-70",
-    nodeId: "be-mysql",
-    question: "InnoDB 的行锁、间隙锁、临键锁？如何解决幻读？",
-    answer: `InnoDB 锁（RR 隔离级别下）：
-1. 记录锁（Record Lock）：锁住索引上的单条记录。
-2. 间隙锁（Gap Lock）：锁住索引区间（开区间），防止插入，解决幻读。
-3. 临键锁（Next-Key Lock）：记录锁 + 前面的间隙锁（左开右闭），RR 默认加临键锁。
+    nodeId: "be-mysql-transaction",
+    question: "MySQL 死锁如何排查？information_schema 哪些表有用？",
+    answer: `排查步骤：1）SHOW ENGINE INNODB STATUS\\G 看 LATEST DETECTED DEADLOCK；2）开启 innodb_print_all_deadlocks 把所有死锁日志写 error log；3）结合 binlog/业务日志定位事务 SQL。
+information_schema：INNODB_TRX（当前事务）、INNODB_LOCKS（锁信息，8.0 改 performance_schema.data_locks）、INNODB_LOCK_WAITS（锁等待）。
 
 \`\`\`sql
--- 表数据 id: 1, 5, 10, 15
--- 事务 A（RR）
-BEGIN;
-SELECT * FROM t WHERE id BETWEEN 5 AND 10 FOR UPDATE;
--- 加锁：临键 (1,5], (5,10], (10,15) → 锁住 5/10 记录 + 间隙
+-- 1. 开启完整死锁日志
+SET GLOBAL innodb_print_all_deadlocks = ON;
+-- 错误日志路径
+SHOW VARIABLES LIKE 'log_error';
 
--- 事务 B
-INSERT INTO t VALUES (7);  -- 阻塞（间隙 (5,10) 被锁）→ 防幻读
-INSERT INTO t VALUES (12); -- 阻塞（间隙 (10,15) 被锁）
-INSERT INTO t VALUES (20); -- 成功（间隙 (15, +∞) 未锁，除非范围查询到 15+）
+-- 2. 查看当前事务
+SELECT * FROM information_schema.INNODB_TRX;
+-- trx_id, trx_state, trx_started, trx_rows_locked, trx_query
+
+-- 3. 查看锁信息（MySQL 8.0）
+SELECT * FROM performance_schema.data_locks;
+-- 8.0 前: SELECT * FROM information_schema.INNODB_LOCKS;
+
+-- 4. 查看锁等待
+SELECT * FROM performance_schema.data_lock_waits;
+
+-- 5. 找阻塞源
+SELECT r.trx_id AS waiting_trx, r.trx_query AS waiting_query,
+       b.trx_id AS blocking_trx, b.trx_query AS blocking_query
+FROM performance_schema.data_lock_waits w
+JOIN information_schema.INNODB_TRX b ON b.trx_id = w.blocking_engine_transaction_id
+JOIN information_schema.INNODB_TRX r ON r.trx_id = w.requesting_engine_transaction_id;
+
+-- 6. 杀事务
+KILL <connection_id>;
 \`\`\`
 
-幻读解决：
-- 快照读（普通 SELECT）：MVCC，事务内读同一快照，不会看到新插入。
-- 当前读（SELECT ... FOR UPDATE / UPDATE / DELETE）：临键锁锁住间隙，阻止其他事务插入，保证再读结果一致。
-
-\`\`\`sql
--- 当前读防幻读
-BEGIN;
-SELECT * FROM t WHERE id > 5 FOR UPDATE; -- 临键锁 (5,+∞)，阻止插入 id>5
--- 其他事务 INSERT id=8 阻塞
-SELECT * FROM t WHERE id > 5; -- 再读结果不变
-COMMIT;
-\`\`\`
-
-RC 隔离级别：无间隙锁，只有记录锁，会有幻读（但并发更高）。
-
-死锁：多个事务间隙锁交叉等待 → 死锁。InnoDB 自动检测回滚代价小的事务。减少死锁：按固定顺序加锁、缩短事务、用 RC。
-
-关键：RR 用临键锁（记录+间隙）解决当前读幻读；MVCC 解决快照读幻读；间隙锁可能引发死锁。`,
-    keyPoints: ["临键锁=记录锁+间隙锁", "RR 当前读防幻读", "间隙锁可能死锁"],
-    followUps: ["RC 为什么没有间隙锁？", "如何减少死锁？"],
+踩坑：死锁日志要看 RECORD LOCKS 部分定位具体锁；事务持有锁长但不阻塞时不在 LOCK_WAITS；KILL 仅断连接，事务需等下次 SQL 才回滚；预防：缩短事务、固定加锁顺序、避免大事务、用 RC 减少间隙锁；监控死锁次数超阈值告警。`,
+    keyPoints: ["SHOW ENGINE INNODB STATUS", "innodb_print_all_deadlocks", "INNODB_TRX/LOCKS/WAITS"],
+    followUps: ["如何预防死锁？", "死锁后事务如何回滚？"],
     favorited: false,
   },
+
+  // ===== 11. be-redis-data Redis 数据结构与应用 =====
   {
     id: "be-71",
-    nodeId: "be-mysql",
-    question: "MySQL 主从复制原理？binlog 三种格式如何选？主从延迟怎么解决？",
-    answer: `主从复制流程：
-1. 主库执行事务，写 binlog（二进制日志）。
-2. 主库 dump 线程将 binlog 发给从库 IO 线程。
-3. 从库 IO 线程写 relay log（中继日志）。
-4. 从库 SQL 线程读 relay log 重放，数据同步。
+    nodeId: "be-redis-data",
+    question: "Redis 五大数据结构底层实现？美团用哪些？",
+    bigTech: true,
+    answer: `五大数据结构及底层：
+- String：SDS（动态字符串），存 int/embstr/raw 三种编码。
+- List：quicklist（双向链表 + ziplist 节点，7.0 后 listpack）。
+- Hash：ziplist（小）或 hashtable（大）。
+- Set：intset（纯整数）或 hashtable。
+- ZSet：ziplist（小）或 skiplist + hashtable（大，跳表支持范围，hashtable 支持 O(1) 查分值）。
+美团场景：购物车 Hash、商品排序 ZSet、关注列表 Set、消息流 List、库存 String。
 
 \`\`\`bash
-# 主库配置
-[mysqld]
-server-id = 1
-log-bin = mysql-bin
-binlog_format = ROW          # 推荐 ROW
-# binlog-do-db / binlog-ignore-db 过滤
+# 美团购物车
+HSET cart:user:1001 sku_001 2 sku_002 1   # 商品ID → 数量
+HGET cart:user:1001 sku_001
+HINCRBY cart:user:1001 sku_001 1
 
-# 从库配置
-[mysqld]
-server-id = 2
-relay-log = relay-bin
-read-only = 1                # 从库只读
-# CHANGE MASTER TO MASTER_HOST='...', MASTER_LOG_FILE='...', MASTER_LOG_POS=...
+# 商品销量排行（ZSet）
+ZADD sales_rank 100 sku_001 200 sku_002
+ZREVRANGE sales_rank 0 9 WITHSCORES      # TOP10
+
+# 库存扣减（String + Lua 原子）
+SET stock:sku_001 100
+EVAL "if redis.call('GET', KEYS[1]) >= ARGV[1] then return redis.call('DECRBY', KEYS[1], ARGV[1]) else return -1 end" 1 stock:sku_001 1
 \`\`\`
 
-binlog 三种格式：
-1. STATEMENT：记 SQL 语句，体积小，但非确定函数（NOW/UUID/RAND）导致不一致。
-2. ROW：记每行变更（默认推荐），数据一致性好，但体积大。
-3. MIXED：自动选择，折中。
-
-主从延迟原因：
-- 从库单 SQL 线程串行重放，跟不上主库并发写。
-- 大事务/DDL 慢。
-- 从库硬件差/网络抖动。
-
-延迟解决：
-1. MySQL 5.7+ 并行复制（基于组提交 group commit / WRITESET），多线程重放。
-2. 大事务拆小。
-3. 从库 SSD/升配。
-4. 读写分离时关键写后读走主库（强制读主/延迟判断）。
-5. 半同步复制（semi-sync）：主库等至少一个从库 ack 才返回，保证不丢（但降性能）。
-
-关键：binlog → relay log → 重放；ROW 格式一致性最好；并行复制缓解延迟。`,
-    keyPoints: ["binlog/relay log/SQL 线程重放", "ROW 格式一致性最好", "并行复制缓解延迟"],
-    followUps: ["半同步复制原理？", "GTID 复制相比传统位点有什么优势？"],
+踩坑：String 存对象别用 JSON 大字符串，Hash 拆字段便于部分更新；大 Hash/ZSet 内存优化用 ziplist 编码（hash-max-ziplist-entries）；ZSet 跳表内存比红黑树大；Set 集合运算（SUNION/SINTER）大数据阻塞 Redis，用 SCAN 替代。`,
+    keyPoints: ["5 种结构 + 底层编码", "ZSet = 跳表 + hashtable", "购物车/排行/库存场景"],
+    followUps: ["ZSet 为什么用跳表？", "Hash 何时从 ziplist 转 hashtable？"],
     favorited: false,
   },
-  // ===== Redis（扩充） =====
   {
     id: "be-72",
-    nodeId: "be-redis",
-    question: "Redis 主从、哨兵、Cluster 三种架构的区别？",
-    answer: `1. 主从复制：一主多从，主写从读，读写分离。
-- 简单，主库负责写+同步，从库负责读。
-- 无自动故障转移：主库挂了需手动切换，可用性低。
+    nodeId: "be-redis-data",
+    question: "Redis 跳表为什么用？比红黑树好在哪？",
+    bigTech: true,
+    answer: `跳表（SkipList）：多层链表，最底层全量数据有序，上层每隔几个节点抽一层（概率 1/2），查询从最高层往下走 O(log n)。
+Redis ZSet 选跳表原因：1）实现简单（链表 + 随机层数）比红黑树好实现；2）范围查询天然支持（zrange 直接走底层链表）红黑树需中序遍历；3）并发友好（链表 CAS）红黑树平衡需旋转锁；4）内存可接受（每节点 1.33 指针平均）；5）缓存友好（连续访问）。
 
-2. 哨兵（Sentinel）：主从 + 哨兵监控，自动故障转移。
-- Sentinel 进程监控主从存活，主库挂了自动选举从库升主。
-- 客户端连 Sentinel 获取主库地址。
-- 仍单主写入，受单机内存限制；哨兵本身要高可用（3+ 节点）。
+\`\`\`c
+// Redis 跳表结构（简化）
+typedef struct zskiplistNode {
+    sds ele;                          // 元素
+    double score;                     // 分值
+    struct zskiplistNode *backward;   // 后退指针
+    struct zskiplistLevel {
+        struct zskiplistNode *forward; // 前进指针
+        unsigned long span;            // 跨度（用于 rank）
+    } level[];                         // 多层
+} zskiplistNode;
 
-3. Cluster：分片集群，多主多从，数据分散。
-- 16384 个哈希槽（slot），CRC16(key) % 16384 定位节点。
-- 每个主节点负责一部分槽，配从节点做高可用。
-- 主挂由从顶上（集群内置故障检测）。
-- 支持水平扩展，突破单机内存/性能上限。
-
-\`\`\`bash
-# Cluster 创建（6 节点 3主3从）
-redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 ... \
-  --cluster-replicas 1
-
-# 客户端（带 MOVED/ASK 重定向）
-redis-cli -c -p 7000 set k v  # -c 自动跟随重定向
-
-# 扩容：添加节点 + 迁移 slot
-redis-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000
-redis-cli --cluster reshard 127.0.0.1:7000  # 迁移槽
+// ZRANGE 范围查询：定位起点后走底层链表，O(log n + M)
+// ZRANGEBYSCORE sales_rank 100 500 LIMIT 0 10
 \`\`\`
 
-Cluster 限制：
-- 不支持跨 slot 的多键操作（除非 hash tag 同 slot）。
-- 事务/Lua 脚本需在单 slot。
-- 客户端需感知集群拓扑。
-
-选型：数据量小用主从/哨兵；数据量大需扩展用 Cluster。
-
-关键：主从无容灾、哨兵自动故障转移单主、Cluster 分片扩展多主。`,
-    keyPoints: ["主从读写分离无容灾", "哨兵自动故障转移", "Cluster 16384 槽分片扩展"],
-    followUps: ["Cluster 的 Gossip 协议？", "hash tag 怎么让多 key 在同 slot？"],
+踩坑：跳表最大层数 ZSKIPLIST_MAXLEVEL=32（Redis 7+ 64），概率 0.25；跳表 + hashtable 双结构：跳表负责排序范围，hashtable 负责 O(1) 查分值；红黑树范围查询需要中序遍历效率低；Java ConcurrentSkipListMap 也是跳表，并发安全。`,
+    keyPoints: ["跳表多层链表 O(log n)", "范围查询天然支持", "实现简单并发友好"],
+    followUps: ["跳表为什么最大 32 层？", "ZSet 为什么还要 hashtable？"],
     favorited: false,
   },
   {
     id: "be-73",
-    nodeId: "be-redis",
-    question: "Redis 的过期策略和内存淘汰策略？",
-    answer: `过期策略（key 到期如何删除）：
-1. 惰性删除：访问 key 时检查过期，过期则删。优点省 CPU，缺点过期 key 不访问会堆积。
-2. 定期删除：每隔一段时间随机抽一批 key 检查过期，删过期的。配合惰性删除兜底。
-Redis 同时用两者：惰性 + 定期（每 100ms 抽样）。
+    nodeId: "be-redis-data",
+    question: "微信红包 Redis 设计？如何防超发、防重复领？",
+    bigTech: true,
+    answer: `微信红包场景：发红包（拆分为多个子红包）+ 抢红包（原子扣减库存 + 随机金额）+ 拆红包记录。
+设计：1）红包总库存 String，Lua 脚本原子扣减防超发；2）已抢用户 Set 防重复；3）拆分红包用 List（红包个数=List 长度，rpop 取一个）；4）领取记录 Hash 存用户→金额。
 
-\`\`\`redis
-SET token:abc "data" EX 3600   # 3600 秒过期
-EXPIRE key 60                   # 设置过期
-TTL key                          # 剩余时间（-1 永久，-2 不存在/已过期）
-PERSIST key                      # 移除过期
+\`\`\`lua
+-- 抢红包 Lua 脚本（原子操作）
+-- KEYS[1]=红包库存 key, KEYS[2]=已抢用户 Set key, KEYS[3]=红包明细 List key
+-- ARGV[1]=userId, ARGV[2]=红包 ID
+local stock = redis.call('GET', KEYS[1])
+if not stock or tonumber(stock) <= 0 then return -1 end  -- 库存不足
+if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then return -2 end  -- 已领过
+local amount = redis.call('RPOP', KEYS[3])  -- 取随机金额
+if not amount then return -3 end  -- 红包已抢完
+redis.call('SADD', KEYS[2], ARGV[1])  -- 标记已领
+redis.call('DECR', KEYS[1])           -- 扣库存
+redis.call('HSET', 'redpacket:log:' .. ARGV[2], ARGV[1], amount)  -- 记录
+return amount
 \`\`\`
 
-内存淘汰策略（内存满 maxmemory 时如何淘汰）：8 种
-- noeviction：不淘汰，写入报错（默认）。
-- allkeys-lru / volatile-lru：所有/有过期 key 中 LRU 淘汰。
-- allkeys-lfu / volatile-lfu：LFU（频率）淘汰（Redis 4.0+）。
-- allkeys-random / volatile-random：随机淘汰。
-- volatile-ttl：优先淘汰 TTL 短的。
-
-\`\`\`conf
-# redis.conf
-maxmemory 4gb
-maxmemory-policy allkeys-lru   # 缓存场景推荐
-\`\`\`
-
-LRU 实现：Redis 用近似 LRU（采样），默认随机抽 5 个淘汰最久未用，sample 越大越精确越慢（maxmemory-samples）。
-LFU：用 Morris 计数器概率性记录访问频率，更精准反映热点。
-
-选型：纯缓存用 allkeys-lru/lfu；混合存储（部分持久数据）用 volatile-lru 只淘汰有过期的。
-
-关键：惰性+定期删除过期；内存满按淘汰策略；缓存推荐 allkeys-lru/lfu。`,
-    keyPoints: ["惰性+定期删除过期", "8 种淘汰策略", "近似 LRU/LFU 采样"],
-    followUps: ["LRU 和 LFU 哪个更适合缓存？", "Redis 近似 LRU 为什么不用双向链表？"],
+踩坑：Lua 脚本保证原子但执行慢影响吞吐，红包高峰拆分到多 key 分片；SISMEMBER + SADD 非原子，必须 Lua 包裹；随机金额算法用二倍均值法（剩余金额 = (剩余金额/剩余人数) × 2 随机）避免最后一个人抢光；异步落库 + 对账兜底；热点红包用本地缓存预扣减。`,
+    keyPoints: ["Lua 脚本原子防超发", "Set 防重复领", "List 存拆分红包"],
+    followUps: ["随机金额算法？", "热点红包如何分片？"],
     favorited: false,
   },
   {
     id: "be-74",
-    nodeId: "be-redis",
-    question: "Redlock 算法的原理和争议？单节点 Redis 分布式锁有哪些坑？",
-    answer: `单节点 Redis 分布式锁：SET key value NX PX 30000，value 用唯一 requestId，释放用 Lua 校验 requestId 防误删。
-
-\`\`\`lua
--- 释放锁的 Lua 脚本（原子：校验 + 删除）
-if redis.call('get', KEYS[1]) == ARGV[1] then
-    return redis.call('del', KEYS[1])
-else
-    return 0
-end
-\`\`\`
-
-单节点锁的坑：
-1. 锁过期业务未完成 → 别人拿到锁，并发。解决：Redisson 看门狗（watchdog）自动续期。
-2. 主从切换丢锁：主库加锁后未同步到从库就宕机，从库升主后锁丢失 → Redlock 解决。
-3. 误删别人锁 → Lua 校验 requestId。
-
-Redlock（Antirez 提出）：在 N（通常 5）个独立 Redis 主节点上同时加锁，超过半数（N/2+1）成功且耗时小于锁 TTL，则加锁成功。
+    nodeId: "be-redis-data",
+    question: "Redis 持久化 RDB vs AOF？美团选哪个？",
+    bigTech: true,
+    answer: `RDB：二进制快照，bgsave fork 子进程 dump，恢复快但可能丢数据（间隔期内）。
+AOF：追加命令日志，appendfsync always（每次写同步，最安全但慢）/ everysec（每秒同步，默认，最多丢 1 秒）/ no（OS 决定）。AOF 文件大，重写压缩。
+混合持久化（4.0+）：AOF 重写时基础部分用 RDB，增量部分用 AOF，兼具两者优势。
+美团：主从架构下从库不持久化，主库用 AOF everysec + RDB 兜底，混合持久化是首选。
 
 \`\`\`bash
-# Redlock 流程（5 节点）
-1. 记录开始时间 T1。
-2. 依次向 5 个节点 SET NX PX 加锁（短超时）。
-3. 加锁成功数 >= 3 且 (TTL - (T2-T1)) > 0 → 加锁成功。
-4. 失败则向所有节点释放锁。
+# 美团推荐配置
+# redis.conf
+save 900 1                # RDB 触发条件（生产可关闭 save ""）
+appendonly yes            # 开 AOF
+appendfsync everysec      # 每秒刷盘
+auto-aof-rewrite-percentage 100  # AOF 重写触发
+auto-aof-rewrite-min-size 64mb
+aof-use-rdb-preamble yes  # 4.0+ 混合持久化
+
+# 触发 AOF 重写
+BGREWRITEAOF
+# 查看持久化状态
+INFO persistence
 \`\`\`
 
-争议（Martin Kleppmann 批评）：
-1. 依赖时钟：节点时钟漂移/跳变会导致锁提前过期或判断错误。
-2. GC 暂停：客户端 STW 期间锁过期，恢复后仍以为持有锁，导致并发。
-3. Redlock 既不是 AP 也不是严格 CP：网络分区时仍有问题。
-
-实践建议：
-- 大多数场景单节点 Redis 锁（+Redisson 看门狗）足够，兜底用业务幂等。
-- 强一致要求用 ZooKeeper/etcd 临时顺序节点锁。
-- Redlock 适合对可靠性有要求但不极端的场景。
-
-关键：单节点锁用 NX+Lua+看门狗；Redlock 多数派但对时钟/GC 敏感；强一致用 ZK。`,
-    keyPoints: ["单节点 NX+Lua 防误删+看门狗续期", "Redlock 多数派加锁", "争议：时钟/GC/分区"],
-    followUps: ["Redisson 看门狗如何续期？", "ZooKeeper 锁为什么更可靠？"],
+踩坑：RDB fork 大内存实例时复制页表慢（COW 优化但仍 STW 几百 ms）；AOF 重写也 fork，同样问题；AOF 文件损坏用 redis-check-aof --fix 修复；不要同时依赖 RDB 和 AOF 都开（增加 fork 开销）；持久化到 SSD 或独立磁盘避免和业务 IO 竞争。`,
+    keyPoints: ["RDB 快照快恢复可能丢", "AOF 日志安全文件大", "混合持久化最佳"],
+    followUps: ["fork 大内存实例为什么慢？", "AOF 重写如何工作？"],
     favorited: false,
   },
-  // ===== 消息队列（扩充） =====
   {
     id: "be-75",
-    nodeId: "be-mq",
-    question: "如何保证消息的顺序性？全局有序和分区有序的区别？",
-    answer: `顺序消息分两类：
-1. 全局有序：整个 Topic 单分区（单队列），所有消息严格有序。吞吐低（无并行），很少用。
-2. 分区/分片有序：同一业务 key 的消息发到同一分区，分区内有序，不同分区并行。主流方案。
+    nodeId: "be-redis-data",
+    question: "Redis 缓存淘汰策略？美团如何选 noeviction 还是 allkeys-lru？",
+    bigTech: true,
+    answer: `8 种淘汰策略：
+- noeviction：不淘汰，写直接报错（默认）。
+- allkeys-lru/allkeys-lfu/allkeys-random：所有 key 中淘汰（LRU/LFU/随机）。
+- volatile-lru/volatile-lfu/volatile-random/volatile-ttl：仅淘汰设了 expire 的 key。
+美团选型：缓存场景用 allkeys-lru（缓存可丢）；混合场景（缓存+持久数据）用 volatile-lru（只淘汰可过期的）；LFU（4.0+）比 LRU 抗"冷数据被刷"更优。
 
-Kafka/RocketMQ 顺序保证：
-- 生产端：相同 key 用相同 hash → 同一 partition（Kafka）/queue（RocketMQ）。
-- 消费端：单分区单消费者串行消费。
+\`\`\`bash
+# 美团推荐配置
+maxmemory 8gb
+maxmemory-policy allkeys-lru  # 纯缓存
+# 或 volatile-lru（缓存 + 持久数据共存）
 
-\`\`\`java
-// Kafka：按 key 路由到同一分区
-ProducerRecord<String, String> rec = new ProducerRecord<>(
-    "orders", orderId, payload); // key=orderId，同订单同分区
-producer.send(rec);
+# LFU 配置（4.0+）
+maxmemory-policy allkeys-lfu
+lfu-log-factor 10  # 越大访问次数衰减越慢
+lfu-decay-time 1   # 衰减周期（分钟）
 
-// RocketMQ：MessageQueueSelector
-producer.send(msg, (mqs, m, arg) -> {
-    int idx = Math.abs(arg.hashCode()) % mqs.size();
-    return mqs.get(idx); // 同 orderId 选同 queue
-}, orderId);
+# 查看淘汰情况
+INFO stats | grep evicted
+# evicted_keys: 12345  # 已淘汰数量
 \`\`\`
 
-消费有序的坑：
-1. 消费端多线程：分区分配给多线程会乱序 → 必须单线程串行，或按 key 二级分发（HashedWheelTimer/锁）。
-2. 消费失败重试：失败消息重投到队尾会破坏顺序 → 阻塞等待或本地排队。
-3. 扩容缩容：rebalance 时分区重分配，瞬间可能乱序。
-
-RocketMQ 顺序消费：MessageListenerOrderly（单线程消费一个队列），vs 并发消费 MessageListenerConcurrently。
-
-权衡：顺序消费牺牲并行度，吞吐下降。需在"顺序"和"吞吐"间取舍，多数业务只需分区有序（同 key 有序）。
-
-关键：全局有序单分区吞吐低；分区有序按 key 路由 + 单线程消费；消费失败处理影响顺序。`,
-    keyPoints: ["全局有序单分区吞吐低", "分区有序按 key 路由+串行消费", "消费失败重试破坏顺序"],
-    followUps: ["Kafka rebalance 会不会破坏顺序？", "如何兼顾顺序和吞吐？"],
+踩坑：noeviction 写失败业务要处理（重试或降级）；LRU 是近似 LRU（采样 5 个），增大 maxmemory-samples 提升精度但耗 CPU；volatile-* 只淘汰设 TTL 的，永久 key 不淘汰可能撑爆内存；大 key 淘汰单次阻塞（4.0+ 异步淘汰 lazyfree-lazy-eviction）；缓存预热避免冷启动雪崩。`,
+    keyPoints: ["8 种策略：noeviction/allkeys/volatile", "缓存用 allkeys-lru", "LFU 比 LRU 抗扫描"],
+    followUps: ["LRU 近似算法如何实现？", "LFU 衰减如何工作？"],
     favorited: false,
   },
   {
     id: "be-76",
-    nodeId: "be-mq",
-    question: "消息堆积如何处理？消费者追不上生产者怎么办？",
-    answer: `消息堆积：生产速度 > 消费速度，消息在 broker 堆积，影响延迟和磁盘。
+    nodeId: "be-redis-data",
+    question: "Redis Stream 替代 Kafka 做轻量消息队列？美团怎么选？",
+    answer: `Redis Stream（5.0+）：支持多消费者组、ACK 机制、消息持久化、可回溯，比 Pub/Sub 可靠，比 Kafka 轻量。
+适用场景：QPS < 10 万、消息量小、不需要分区的轻量队列。Kafka 适合高吞吐、分区、大数据流。
+美团：内部小流量业务用 Redis Stream（如订单事件、配置变更通知），核心交易用 Kafka/RocketMQ。
 
-应急处理：
-1. 临时扩容消费者（注意分区数限制：Kafka 消费者数不能超过分区数，否则多余消费者空闲）。
-2. 增加分区数（Kafka 可动态增分区，但会破坏 key 顺序）。
-3. 消费端降级：非核心逻辑跳过/异步化，只处理关键字段。
-
-\`\`\`java
-// 临时快速消费：跳过非关键处理，先清积压
-@KafkaListener(topics = "orders")
-public void on(Message msg) {
-    if (isBacklog()) {
-        saveToDB(msg);           // 只存，不执行重逻辑
-        // 后台任务补偿处理
-    } else {
-        processFully(msg);       // 正常处理
-    }
-}
+\`\`\`bash
+# Redis Stream 生产消费
+# 生产
+XADD orders * user_id 1001 amount 99.00
+# 消费者组
+XGROUP CREATE orders order_group $ MKSTREAM
+# 消费（阻塞 + 组）
+XREADGROUP GROUP order_group consumer_1 COUNT 10 BLOCK 5000 STREAMS orders >
+# ACK
+XACK orders order_group <message_id>
+# 查看未 ACK（PEL）
+XPENDING orders order_group
+# 死信处理：claim 转移给其他消费者
+XCLAIM orders order_group consumer_2 60000 <message_id>
+# 限制最大长度（保留最近 N 条）
+XADD orders MAXLEN 10000 * user_id 1001 amount 99.00
 \`\`\`
 
-长期方案：
-1. 提升单机消费能力：批量消费（一次拉一批）、异步处理（消费后丢线程池）、业务优化（减少 DB 操作/缓存）。
-2. 水平扩容：增加分区 + 消费者。
-3. 死信队列：处理失败的消息转 DLQ，不阻塞主流程。
-4. 削峰填谷：消费者按能力拉取（max.poll.records 控制批量），避免压垮下游。
-
-Kafka 跳过堆积（极端情况）：重置消费位点到最新（跳过历史），丢失数据但恢复实时。
-
-RocketMQ：堆积超过阈值可临时调大 consumeThreadMin/Max，或用 PUSH 模式自适应。
-
-关键：应急扩消费者/分区+降级；长期提单机吞吐+水平扩容；失败转死信不阻塞。`,
-    keyPoints: ["扩消费者受分区数限制", "批量+异步提单机吞吐", "死信队列防阻塞"],
-    followUps: ["Kafka 消费者数超过分区数会怎样？", "如何监控消息堆积？"],
+踩坑：Stream 内存占用大，长度无限制会撑爆，用 MAXLEN 限制；PEL（pending entries list）需定期 XCLAIM 处理死信；消费者崩溃后未 ACK 消息不能被其他消费者自动接管，要 XCLAIM；高可靠场景用 Kafka/RocketMQ，Stream 仅适合轻量；Stream 不支持分区，单实例 QPS 上限低。`,
+    keyPoints: ["Stream 多消费组 + ACK + 持久化", "适合轻量队列", "PEL 死信 XCLAIM"],
+    followUps: ["Stream 和 Pub/Sub 区别？", "Stream 如何处理消费者崩溃？"],
     favorited: false,
   },
   {
     id: "be-77",
-    nodeId: "be-mq",
-    question: "Kafka、RocketMQ、RabbitMQ 的对比与选型？",
-    answer: `三者定位不同：
+    nodeId: "be-redis-data",
+    question: "Redis 大 key / 热 key 如何处理？阿里双 11 案例？",
+    bigTech: true,
+    answer: `大 key：单 key 体积大（String > 10KB、Hash/List/Set > 1 万元素）。危害：阻塞主线程、网络阻塞、集群迁移卡顿、淘汰一次清空慢。
+热 key：单 key QPS 极高（如热门商品 ID）。危害：单分片 CPU 瓶颈、集群倾斜。
+处理大 key：1）拆分（按时间/哈希分多个 key）；2）删除用 UNLINK 异步；3）压缩（gzip）。
+处理热 key：1）本地缓存（Caffeine）；2）多副本（写多份 key 分散读）；3）读写分离。
 
-Kafka：高吞吐流式消息平台。
-- 顺序写磁盘 + 零拷贝 + 批量，百万级 TPS。
-- 拉模式（消费者主动拉），适合日志/大数据/流处理。
-- 顺序消息按 partition，事务支持弱（有事务但开销大）。
-- 生态强（Kafka Streams/Connect/Flink 集成）。
+\`\`\`bash
+# 阿里双 11 大 key 排查
+# 1. 找大 key
+redis-cli --bigkeys
+# 2. 找热 key
+redis-cli --hotkeys   # 需开 LFU
+# 3. memory usage 看具体 key
+MEMORY USAGE user:followers:1001
+# 4. 异步删除大 key
+UNLINK user:followers:1001
 
-RocketMQ：阿里开源，金融级可靠。
-- 基于 Kafka 思想优化，支持事务消息（半消息+回查）。
-- 支持定时/延迟消息、顺序消息、死信队列。
-- 单机吞吐低于 Kafka（十万级），但延迟消息/事务更强。
-- 适合电商交易/金融场景。
-
-RabbitMQ：AMQP 协议，路由能力强。
-- 丰富的交换器（direct/fanout/topic/headers），灵活路由。
-- 推模式，低延迟，吞吐万级。
-- 消息确认（ack/nack）、死信、TTL、镜像队列高可用。
-- 适合复杂路由/低延迟/小规模业务。
-
-\`\`\`text
-| 维度     | Kafka        | RocketMQ     | RabbitMQ     |
-|----------|--------------|--------------|--------------|
-| 吞吐     | 百万级       | 十万级       | 万级         |
-| 延迟     | ms 级        | ms 级        | μs~ms 级     |
-| 顺序     | 分区有序     | 分区有序     | 队列有序     |
-| 事务消息 | 弱           | 强（半消息） | 无           |
-| 延迟消息 | 无原生       | 原生支持     | 插件/TTL+DLX |
-| 路由     | 弱           | 一般         | 强           |
-| 场景     | 日志/大数据  | 交易/金融    | 业务路由     |
+# 热 key 多副本方案
+# 写时同步到多个 key
+SET hot_key_0 value
+SET hot_key_1 value
+SET hot_key_2 value
+# 读时随机选
+local idx = math.random(0, 2)
+redis.call('GET', 'hot_key_' .. idx)
 \`\`\`
 
-选型：
-- 日志采集/大数据流：Kafka。
-- 电商交易/事务/延迟：RocketMQ。
-- 复杂路由/低延迟/中小规模：RabbitMQ。
-
-关键：Kafka 吞吐王，RocketMQ 事务/延迟强，RabbitMQ 路由灵活。`,
-    keyPoints: ["Kafka 高吞吐日志流", "RocketMQ 事务/延迟消息", "RabbitMQ 路由强低延迟"],
-    followUps: ["RocketMQ 事务消息原理？", "RabbitMQ 的镜像队列与 quorum queue？"],
+踩坑：大 key 删除 DEL 会阻塞主线程几秒，必须 UNLINK；集群 slot 迁移时大 key 卡住整个迁移；热 key 监控用 redis-cli --hotkeys（需 maxmemory-policy LFU）或代理层统计；本地缓存注意一致性（订阅 key 失效）；拆分大 key 注意事务性丢失（多 key 非原子）。`,
+    keyPoints: ["大 key 拆分 + UNLINK 异步删", "热 key 本地缓存 + 多副本", "redis-cli --bigkeys/hotkeys"],
+    followUps: ["大 key 怎么拆分？", "热 key 本地缓存一致性？"],
     favorited: false,
   },
+
+  // ===== 12. be-redis-cluster Redis 集群与高可用 =====
   {
     id: "be-78",
-    nodeId: "be-mq",
-    question: "死信队列和延迟消息的实现原理？",
-    answer: `死信队列（DLQ，Dead Letter Queue）：消息变成"死信"后被转发到的特殊队列，用于后续排查/重试。
+    nodeId: "be-redis-cluster",
+    question: "Redis 主从复制原理？全量 + 增量？美团故障切换？",
+    bigTech: true,
+    answer: `主从复制：1）全量同步：从库连主库发 PSYNC，主库 BGSAVE 生成 RDB 发给从库，期间写命令缓存在 repl_backlog，RDB 发完后再发缓冲命令；2）增量同步：从库断线重连，主库根据 offset 从 repl_backlog 发送增量命令。
+故障切换：主库宕机，需 Sentinel 自动选从库升级为主库；客户端订阅 +switch-master 事件重连新主库。
+美团：主从 + Sentinel + VIP（或 DNS），故障切换秒级；核心业务用 Cluster。
 
-消息变死信的条件（RabbitMQ）：
-1. 消息被 nack/reject 且 requeue=false。
-2. 消息 TTL 过期。
-3. 队列长度超限。
+\`\`\`bash
+# 主从配置
+# redis.conf
+slaveof 10.0.0.1 6379        # 或 replicaof 5.0+
+masterauth <password>        # 主库密码
+# 从库只读
+replica-read-only yes
 
-\`\`\`python
-# RabbitMQ：绑定死信交换器
-args = {
-    "x-dead-letter-exchange": "dlx.exchange",
-    "x-dead-letter-routing-key": "dlx.key",
-    "x-message-ttl": 60000,  # 60s 后进死信 → 实现延迟
-}
-channel.queue_declare("orders", arguments=args)
+# Sentinel 配置
+sentinel monitor mymaster 10.0.0.1 6379 2  # 主库地址 + quorum
+sentinel down-after-milliseconds mymaster 30000  # 30s 不可达判定下线
+sentinel failover-timeout mymaster 180000
+sentinel parallel-syncs mymaster 1  # 同时同步的从库数
+
+# 查看主从状态
+INFO replication
+# role:master / slave
+# master_link_status:up
 \`\`\`
 
-延迟消息实现：
-1. RabbitMQ：TTL + DLX。消息进带 TTL 的队列，过期转死信队列被消费 = 延迟。
-   缺点：TTL 队列头阻塞（队头未过期，后面过期也出不去）→ 用 rabbitmq_delayed_message_exchange 插件。
-2. RocketMQ：原生延迟消息（开源版固定 18 个延迟级别 1s/5s/...2h；5.x 支持任意时间）。
-3. Redis：ZSet（score=到期时间）轮询，或 Redisson DelayedQueue。
-4. 时间轮：本地/分布式时间轮，精确延迟。
-
-\`\`\`java
-// RocketMQ 延迟消息
-Message msg = new Message("topic", "delay demo".getBytes());
-msg.setDelayTimeLevel(3); // 1s/5s/10s/... 第 3 级 = 10s
-producer.send(msg);
-
-// Redis ZSet 延迟任务
-long execAt = System.currentTimeMillis() + 60_000;
-jedis.zadd("delay_tasks", execAt, taskId);
-// 定时轮询
-Set<String> due = jedis.zrangeByScore("delay_tasks", 0, now);
-\`\`\`
-
-死信处理：消费死信队列 → 人工介入/告警/有限次重试后丢弃，避免无限重试堆积。
-
-关键：死信队列接收失败/过期/超长消息；延迟靠 TTL+DLX/原生延迟/ZSet/时间轮。`,
-    keyPoints: ["死信：nack/TTL/超长", "延迟：TTL+DLX/原生/ZSet", "死信需有限重试+告警"],
-    followUps: ["RabbitMQ TTL 队列头阻塞问题？", "RocketMQ 5.x 任意延迟怎么实现？"],
+踩坑：全量同步时主库 fork 阻塞，大库影响整个集群；repl_backlog 默认 1MB 易丢增量，大流量调大到 256MB；网络分区时从库仍可读旧数据，业务要容忍；Sentinel quorum 必须 > 节点/2 防脑裂；故障切换后客户端要重新路由到新主库。`,
+    keyPoints: ["全量 BGSAVE+RDB+缓冲命令", "增量 repl_backlog+offset", "Sentinel quorum 防脑裂"],
+    followUps: ["repl_backlog 作用？", "Sentinel 选举算法？"],
     favorited: false,
   },
-  // ===== 微服务（扩充） =====
   {
     id: "be-79",
-    nodeId: "be-microservice",
-    question: "分布式链路追踪的原理？TraceId/SpanId 如何传递？",
-    answer: `链路追踪：记录一个请求经过各微服务的调用链，用于排查延迟/故障定位。
+    nodeId: "be-redis-cluster",
+    question: "Redis Cluster 16384 槽位原理？为什么是 16384 不是 65536？",
+    bigTech: true,
+    answer: `Cluster：所有节点分片存储，每个节点负责一部分槽位（slot），共 16384 个槽。key 用 CRC16(key) mod 16384 计算槽位，节点间 Gossip 协议同步拓扑。
+为什么 16384 不是 65536：1）心跳包小（每节点 16384/8=2KB 槽位 bitmap，65536 是 8KB）；2）集群节点数实际不超过 1000；3）CRC16 高位偏移不够（数据集中度问题）。
+客户端：MOVED 重定向（永久迁移）/ ASK 重定向（临时迁移）。
 
-核心概念（OpenTracing/OpenTelemetry）：
-- Trace：一次完整请求链路，唯一 TraceId。
-- Span：一次操作（一个服务调用），有 SpanId + ParentSpanId，组成有向无环树。
-- 上下文传播：TraceId/SpanId 通过请求头跨服务传递。
+\`\`\`bash
+# Cluster 搭建
+# 1. 启动 6 个 Redis 实例（3 主 3 从）
+redis-server --port 7000 --cluster-enabled yes --cluster-config-file nodes.conf
+# 2. 创建集群
+redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \\
+  127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 --cluster-replicas 1
+# 3. 查看集群
+redis-cli -p 7000 CLUSTER NODES
+redis-cli -p 7000 CLUSTER INFO
+# 4. 槽位分配
+CLUSTER ADDSLOTS 0..5460     # 节点 7000
+CLUSTER ADDSLOTS 5461..10922 # 节点 7001
+CLUSTER ADDSLOTS 10923..16383 # 节点 7002
 
-\`\`\`java
-// OpenTelemetry 注入/提取（HTTP 头）
-// 服务 A 调用服务 B 时，注入 trace 上下文
-TextMapPropagator prop = openTelemetry.getPropagators().getTextMapPropagator();
-prop.inject(Context.current(), headers, (c, k, v) -> c.put(k, v));
-// headers 带 traceparent: 00-{traceId}-{spanId}-01
-
-// 服务 B 接收时提取
-Context ctx = prop.extract(Context.current(), headers, getter);
-Span span = tracer.spanBuilder("handleB").setParent(ctx).startSpan();
+# 5. 客户端重定向
+SET key value
+# (error) MOVED 5474 127.0.0.1:7001  # 重定向到 7001
 \`\`\`
 
-传递方式：
-- HTTP：W3C traceparent 头（00-<traceId>-<spanId>-<flags>）。
-- RPC/gRPC：metadata。
-- MQ：消息属性（生产者注入，消费者提取）。
-- 异步线程：需手动透传 Context（或用 ThreadLocal/TransmittableThreadLocal）。
-
-采样：全量采集开销大，通常采样 1-10%，慢请求/错误必采（tail-based sampling）。
-
-主流方案：SkyWalking（Java agent 无侵入）、Jaeger、Zipkin、阿里 ARMS。OpenTelemetry 是统一标准。
-
-关键：TraceId 贯穿全链路，SpanId 构成父子树；跨服务靠请求头传播；采样降低开销。`,
-    keyPoints: ["Trace/Span 组成调用树", "traceparent 头跨服务传递", "采样降开销"],
-    followUps: ["OpenTelemetry 和 SkyWalking 区别？", "异步线程如何透传 trace？"],
+踩坑：跨槽位操作不支持（MSET/MULTI 多 key），用 hash tag {} 让相关 key 在同槽位；集群最少 3 主 3 从（投票选主需 >N/2）；扩容时槽位迁移期间 ASK 重定向；客户端缓存槽位映射表减少重定向；节点故障从库升级需 Gossip 选主，期间该槽位不可用。`,
+    keyPoints: ["16384 槽 + CRC16", "Gossip 同步拓扑", "MOVED/ASK 重定向"],
+    followUps: ["hash tag 怎么用？", "集群最少几节点？"],
     favorited: false,
   },
   {
     id: "be-80",
-    nodeId: "be-microservice",
-    question: "API 网关的作用？Spring Cloud Gateway 的核心概念？",
-    answer: `API 网关：微服务统一入口，承担横切关注点：
-- 路由转发（按路径转发到后端服务）。
-- 鉴权（统一 JWT/Token 校验）。
-- 限流熔断。
-- 日志监控/链路追踪。
-- 协议转换（HTTP→gRPC）、请求/响应改写。
-- 灰度发布（按头/权重路由）。
+    nodeId: "be-redis-cluster",
+    question: "Sentinel vs Cluster 区别？美团如何选？",
+    bigTech: true,
+    answer: `Sentinel：主从架构 + 哨兵监控，单主多从，主库宕机选从库升级。容量受单主限制，适合中等规模（< 30GB）。
+Cluster：分片架构，多主多从，数据分散到多节点，可水平扩展，适合大规模（> 100GB / 高 QPS）。
+美团选型：1）小业务（< 10GB）用 Sentinel；2）大业务用 Cluster；3）超大规模用 Codis/Tair（阿里）。
 
-Spring Cloud Gateway 核心：
-- Route：路由（id + predicate + filter）。
-- Predicate：断言（Path/Method/Header/Host/Query/After 等）。
-- Filter：过滤器（前置/后置，全局/路由级）。
-- 基于 Netty + Reactor 异步非阻塞，性能优于 Zuul 1.x。
+\`\`\`bash
+# Sentinel 部署（1 主 2 从 3 哨兵）
+# redis-7000 (master)
+# redis-7001, redis-7002 (slave)
+# sentinel-26379, 26380, 26381 (sentinel)
+# 客户端连 Sentinel 获取主库地址
+redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster
 
-\`\`\`java
-// 配置式路由
-spring.cloud.gateway.routes:
-  - id: order-service
-    uri: lb://order-service        # 负载均衡
-    predicates:
-      - Path=/api/orders/**
-    filters:
-      - StripPrefix=1              # 去掉 /api 前缀
-      - AddRequestHeader=X-Trace,abc
+# Cluster 部署（3 主 3 从）
+# 自动分片 + 高可用
+redis-cli --cluster create 7000 7001 7002 7003 7004 7005 --cluster-replicas 1
 
-// 编程式 + 全局过滤器（鉴权）
-@Component
-public class AuthFilter implements GlobalFilter {
-  public Mono<Void> filter(ServerWebExchange ex, GatewayFilterChain chain) {
-    String token = ex.getRequest().getHeaders().getFirst("Authorization");
-    if (!jwtUtil.verify(token)) {
-      ex.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-      return ex.getResponse().setComplete();
-    }
-    return chain.filter(ex); // 放行
-  }
-}
+# Cluster 扩容
+redis-cli --cluster add-node 7006 7000      # 加入新节点
+redis-cli --cluster reshard 7000            # 迁移槽位
+redis-cli --cluster rebalance 7000          # 自动平衡
 \`\`\`
 
-限流：内置 RequestRateLimiter（基于 Redis + Lua 令牌桶）。
-服务发现：集成 Nacos/Eureka，uri 用 lb://service-name 自动负载均衡。
-
-关键：网关统一入口做鉴权/限流/路由；Gateway 基于 Reactor 异步高性能；Predicate 路由 + Filter 增强。`,
-    keyPoints: ["网关统一鉴权/限流/路由", "Gateway Route+Predicate+Filter", "Reactor 异步高性能"],
-    followUps: ["Gateway 和 Zuul 区别？", "网关如何做灰度发布？"],
+踩坑：Sentinel 单主瓶颈，写入 QPS 受单实例限制；Cluster 不支持跨槽事务/多 key 操作，业务要适配；Codis/Tair 比 Cluster 多了 Proxy 层（客户端不用感知集群），但代理层增加延迟；Codis 的 Rehash 在线迁移慢，Cluster 槽位迁移快；Tair 阿里内部增强版，支持冷热分离、持久内存。`,
+    keyPoints: ["Sentinel 主从+哨兵 / Cluster 分片", "Sentinel 适合中等规模", "Cluster 水平扩展"],
+    followUps: ["Codis 和 Cluster 区别？", "Cluster 如何在线扩容？"],
     favorited: false,
   },
   {
     id: "be-81",
-    nodeId: "be-microservice",
-    question: "配置中心的作用？Nacos 如何实现配置动态推送？",
-    answer: `配置中心：集中管理各环境/服务配置，支持动态更新（不重启生效）、版本回滚、灰度发布、命名空间隔离。
+    nodeId: "be-redis-cluster",
+    question: "缓存与数据库一致性：双删、Canal、消息订阅？阿里方案？",
+    bigTech: true,
+    answer: `一致性方案：1）Cache Aside：先更新 DB 再删缓存（最常用，最终一致）；2）延迟双删：更新 DB 前删一次，更新后异步延迟再删一次（防读到旧值缓存）；3）订阅 binlog：Canal 订阅 MySQL binlog 异步删缓存（解耦）；4）消息队列：更新 DB 后发 MQ，消费者删缓存。
+阿里方案：核心业务用 Canal 订阅 binlog 删缓存 + 兜底延迟双删，强一致用分布式锁串行化。
 
-解决的问题：
-1. 配置散落各服务，难统一管理。
-2. 改配置需重新打包部署。
-3. 多环境（dev/test/prod）配置切换。
-4. 敏感配置安全管控。
+\`\`\`java
+// 阿里 Cache Aside + 延迟双删
+@Transactional
+public void updateUser(User user) {
+    redis.del("user:" + user.getId());       // 1. 先删缓存
+    userDao.update(user);                     // 2. 更新 DB
+    // 3. 延迟再删（异步，防并发读旧值）
+    scheduledExecutor.schedule(() -> {
+        redis.del("user:" + user.getId());
+    }, 500, TimeUnit.MILLISECONDS);
+}
 
-Nacos 配置模型：Namespace（环境隔离）→ Group（业务分组）→ DataId（配置文件）。
-
-\`\`\`yaml
-# bootstrap.yml
-spring:
-  application:
-    name: order-service
-  cloud:
-    nacos:
-      config:
-        server-addr: nacos:8848
-        namespace: prod
-        group: ORDER
-        file-extension: yaml
-
-# 注入配置
-@Value("\${order.timeout:3000}")
-private int timeout;
-
-// 配置变更自动刷新
-@RefreshScope
-@RestController
-public class OrderController {
-  @Value("\${order.timeout:3000}")
-  private int timeout; // 配置变更后自动更新
+// Canal 订阅 binlog 删缓存
+@Component
+public class CanalClient {
+    @Subscribe
+    public void onRowChange(CanalEntry.Entry entry) {
+        if (entry.getHeader().getTableName().equals("users")) {
+            for (CanalEntry.RowData row : rowChange.getRowDatasList()) {
+                String id = getAfterColumn(row, "id");
+                redis.del("user:" + id);
+            }
+        }
+    }
 }
 \`\`\`
 
-动态推送原理（长轮询）：
-1. 客户端启动拉取配置并缓存本地。
-2. 客户端发起长轮询（hold 住请求 30s），监听配置变化。
-3. 服务端配置变更 → 持有的长轮询立即返回 → 客户端拉取新配置。
-4. 推送变更内容到 @RefreshScope Bean（销毁重建）。
-
-对比：Apollo 也是长轮询；Spring Cloud Config 需配合 Bus（MQ 广播）或 webhook。
-
-关键：配置中心集中管理+动态推送；Nacos 用长轮询实现准实时推送；@RefreshScope 让 Bean 感知变更。`,
-    keyPoints: ["集中管理+动态推送不重启", "Namespace/Group/DataId 模型", "长轮询准实时推送"],
-    followUps: ["Nacos 和 Apollo 区别？", "@RefreshScope 如何实现配置刷新？"],
+踩坑：先删缓存再更新 DB，并发读可能把旧值写回缓存，所以要先更新 DB 再删缓存；删缓存失败要重试（消息队列 + 死信兜底）；强一致场景用分布式锁串行化读写（牺牲并发）；过期时间是兜底，所有 key 必须设 TTL；Canal 单点故障要 HA。`,
+    keyPoints: ["Cache Aside 先更新 DB 再删缓存", "延迟双删防并发读旧值", "Canal 订阅 binlog 解耦"],
+    followUps: ["先删缓存还是后删缓存？", "Canal 单点如何 HA？"],
     favorited: false,
   },
   {
     id: "be-82",
-    nodeId: "be-microservice",
-    question: "微服务间通信方式？gRPC 和 REST 如何选型？",
-    answer: `微服务通信两大类：
+    nodeId: "be-redis-cluster",
+    question: "Redis 主从切换脑裂如何防止？min-slaves-to-write 是什么？",
+    answer: `脑裂：网络分区时主库仍接受写入，从库被选为新主，原主恢复后写入丢失。
+防止：min-slaves-to-write（5.7+ 改 min-replicas-to-write）：主库至少有 N 个从库同步成功才接受写入，否则拒绝写入（保护主库）。
+配合 min-replicas-max-lag：从库延迟超 N 秒不计入有效从库。
 
-1. 同步通信：
-- REST（HTTP/JSON）：通用、易调试、跨语言、生态好。性能一般（文本序列化、HTTP 开销）。
-- gRPC（HTTP/2 + Protobuf）：二进制高效、强类型、双向流、跨语言。需 proto 定义，调试稍复杂。
-- Dubbo（TCP + 自定义协议）：阿里 RPC 框架，高性能，Java 生态。
+\`\`\`bash
+# 主库配置
+min-replicas-to-write 1        # 至少 1 个从库同步
+min-replicas-max-lag 10        # 从库延迟超 10s 不算有效
 
-2. 异步通信：
-- 消息队列（Kafka/RocketMQ）：解耦、削峰、最终一致。适合非实时业务。
+# Sentinel 配置（防脑裂）
+sentinel deny-scripts-reconfig yes
+sentinel client-reconfig-script mymaster /usr/bin/notify.sh  # 切换通知
 
-\`\`\`protobuf
-// gRPC：proto 定义
-syntax = "proto3";
-service OrderService {
-  rpc GetOrder(OrderReq) returns (OrderResp);
-}
-message OrderReq { int64 id = 1; }
-message OrderResp { int64 id = 1; string name = 2; }
+# 客户端故障切换
+# 1. 订阅 +switch-master 事件
+redis-cli -p 26379 SUBSCRIBE +switch-master
+# 2. 收到事件后重连新主库
+# 3. Jedis/Lettuce 内置 Sentinel 支持
 \`\`\`
 
-\`\`\`java
-// gRPC 调用（强类型 stub）
-OrderServiceGrpc.OrderServiceBlockingStub stub =
-    OrderServiceGrpc.newBlockingStub(channel);
-OrderResp resp = stub.getOrder(OrderReq.newBuilder().setId(1L).build());
-
-// REST 调用
-Order order = restTemplate.getForObject("/orders/1", Order.class);
-\`\`\`
-
-选型：
-- 对外 API / 前端交互 / 简单查询：REST（通用易用）。
-- 内部服务间高频调用 / 低延迟 / 大数据量：gRPC（Protobuf 比 JSON 快 3-10 倍）。
-- 解耦 / 异步 / 削峰：消息队列。
-- Java 全栈追求性能：Dubbo。
-
-gRPC 优势：HTTP/2 多路复用（单连接多请求）、Protobuf 紧凑、流式传输。
-REST 优势：浏览器/curl 直接调、文档化、无需 stub。
-
-关键：对外 REST，对内 gRPC，异步用 MQ；gRPC 性能强但需 proto，REST 通用易调试。`,
-    keyPoints: ["REST 通用易调试", "gRPC Protobuf 高性能强类型", "异步用 MQ 解耦"],
-    followUps: ["gRPC 为什么比 REST 快？", "Dubbo 和 gRPC 区别？"],
+踩坑：min-replicas-to-write 设过高（如 2）会牺牲可用性，主从架构至少 1 主 1 从配 1；网络分区时主库拒绝写入业务要降级（写入 MQ 暂存）；Sentinel 故障切换期间有秒级写入丢失（旧主写入未同步）；客户端要支持 Sentinel 自动故障切换；多机房部署用 Sentinel 跨机房部署。`,
+    keyPoints: ["脑裂主库继续写丢数据", "min-replicas-to-write 拒绝写", "Sentinel 自动切换"],
+    followUps: ["min-replicas-to-write 设多少？", "多机房如何部署 Sentinel？"],
     favorited: false,
   },
-  // ===== 分布式（扩充） =====
   {
     id: "be-83",
-    nodeId: "be-distributed",
-    question: "分布式事务的方案？2PC、TCC、Seata 各有什么优缺点？",
-    answer: `分布式事务：跨库/跨服务保证数据一致性。
-
-1. 2PC（两阶段提交）：
-- 阶段一：协调者通知各参与者"准备"，各参与者锁资源写 undo/redo 并 ready。
-- 阶段二：全部 ready → commit；任一 no → rollback。
-- 缺点：同步阻塞、协调者单点、超时不确定、性能差。XA 协议是其实现。
-
-2. TCC（Try-Confirm-Cancel）：
-- Try：预留资源（冻结库存/冻结余额）。
-- Confirm：确认提交（扣减冻结）。
-- Cancel：取消（解冻）。
-- 业务侵入大，但性能好，最终一致。
-
-\`\`\`java
-// TCC 示例（Seata @TwoPhaseBusinessAction）
-@TwoPhaseBusinessAction(name = "deduct", commitMethod = "confirm", rollbackMethod = "cancel")
-public boolean tryDeduct(BusinessActionContext ctx, long acctId, BigDecimal amt) {
-    // Try：冻结金额（记录 frozen 字段）
-    accountMapper.freeze(acctId, amt);
-    return true;
-}
-public boolean confirm(BusinessActionContext ctx) {
-    accountMapper.deductFrozen(ctx.getActionContext("acctId"), amt); // 扣减冻结
-    return true;
-}
-public boolean cancel(BusinessActionContext ctx) {
-    accountMapper.unfreeze(...); // 解冻
-    return true;
-}
-\`\`\`
-
-3. Seata 模式：
-- AT 模式（默认）：基于本地事务 + undo log 自动补偿，业务无侵入。一阶段提交本地事务+记录 undo，二阶段异步提交/回滚（回滚用 undo 反向补偿）。有全局锁，性能中等。
-- TCC 模式：手动实现 Try/Confirm/Cancel，性能高。
-- Saga 模式：长事务，正向 + 补偿，适合多步骤业务。
-- XA 模式：强一致，性能差。
-
-4. 本地消息表 / 事务消息（最终一致）：
-- 本地事务 + 消息表同库写入 → 定时/MQ 投递 → 消费方幂等处理。最终一致，性能好，主流电商方案。
-
-选型：强一致短事务用 Seata AT；高性能用 TCC；长流程用 Saga；最终一致用事务消息。
-
-关键：2PC 强一致但阻塞；TCC 性能好侵入大；Seata AT 无侵入；消息表最终一致最常用。`,
-    keyPoints: ["2PC 阻塞强一致", "TCC Try/Confirm/Cancel 侵入大", "Seata AT 无侵入+消息表最终一致"],
-    followUps: ["Seata AT 的全局锁原理？", "事务消息如何保证最终一致？"],
-    favorited: false,
-  },
-  {
-    id: "be-84",
-    nodeId: "be-distributed",
-    question: "一致性哈希的原理？如何解决数据倾斜和节点扩容迁移？",
-    answer: `一致性哈希：把节点和 key 都映射到 0~2³² 的哈希环上，key 顺时针找到的第一个节点即为归属节点。相比 hash % N，节点增减只影响相邻段数据，迁移量小。
-
-\`\`\`python
-import hashlib
-
-def hash_fn(s):
-    return int(hashlib.md5(s.encode()).hexdigest(), 16) % (2**32)
-
-class ConsistentHash:
-    def __init__(self, nodes=None, replicas=3):
-        self.ring = {}       # 哈希值 → 节点
-        self.replicas = replicas  # 虚拟节点数
-        for n in (nodes or []):
-            self.add_node(n)
-
-    def add_node(self, node):
-        for i in range(self.replicas):
-            h = hash_fn(f"{node}#{i}")   # 虚拟节点
-            self.ring[h] = node
-        self._sorted = sorted(self.ring)
-
-    def remove_node(self, node):
-        for i in range(self.replicas):
-            self.ring.pop(hash_fn(f"{node}#{i}"), None)
-        self._sorted = sorted(self.ring)
-
-    def get_node(self, key):
-        h = hash_fn(key)
-        # 顺时针找第一个 >= h 的节点
-        for slot in self._sorted:
-            if slot >= h:
-                return self.ring[slot]
-        return self.ring[self._sorted[0]]  # 环回 0
-\`\`\`
-
-虚拟节点（Virtual Node）：解决数据倾斜。每个物理节点映射多个虚拟节点（如 150 个）分散到环上，使数据分布均匀。节点少时尤其重要。
-
-扩容：新节点加入，只需迁移环上新节点到前一个节点之间的 key，迁移量 ≈ 总数据/N。
-缩容：移除节点，其数据迁到顺时针下一个节点。
-
-对比 hash % N：N 变化时几乎所有 key 要重新分布（迁移量大）；一致性哈希只迁移相邻段。
-
-应用：Redis Cluster 用 hash slot（16384 槽，类似思想但固定槽）；Memcached 一致性哈希；Dubbo 负载均衡。
-
-关键：哈希环顺时针找节点；虚拟节点解决倾斜；增减只迁移相邻段。`,
-    keyPoints: ["哈希环顺时针定位", "虚拟节点解决倾斜", "增减节点只迁移相邻段"],
-    followUps: ["Redis Cluster 为什么用固定槽而非一致性哈希环？", "虚拟节点数设多少合适？"],
-    favorited: false,
-  },
-  {
-    id: "be-85",
-    nodeId: "be-distributed",
-    question: "分布式 ID 生成方案？Snowflake 的时钟回拨问题如何解决？",
-    answer: `分布式 ID 要求：全局唯一、趋势递增、高性能、高可用。
-
-主流方案：
-1. UUID：本地生成无依赖，但无序（影响 B+ 树索引性能）、长（36 字符）。
-2. 数据库自增/号段：简单，但单点瓶颈。号段模式（一次取一批）缓解。
-3. Snowflake（雪花）：64 位 = 1 符号位 + 41 时间戳 + 10 机器位 + 12 序列位，每毫秒 4096 个。
-4. Redis INCR：原子自增，但依赖 Redis。
-5. 美团 Leaf / 百度 UidGenerator：综合方案。
-
-\`\`\`java
-// Snowflake 结构
-// | 1bit 符号 | 41bit 毫秒时间戳 | 10bit 机器ID | 12bit 序列 |
-// 0 | 000...41 位时间 | 0000000000 机器 | 000000000000 序列 |
-
-public synchronized long nextId() {
-    long now = System.currentTimeMillis();
-    if (now < lastTs) {
-        // 时钟回拨！
-        throw new ClockBackwardsException(now - lastTs);
-    }
-    if (now == lastTs) {
-        seq = (seq + 1) & 0xFFF; // 4095
-        if (seq == 0) now = tilNextMillis(lastTs); // 同毫秒溢出等下一毫秒
-    } else {
-        seq = 0;
-    }
-    lastTs = now;
-    return (now - EPOCH) << 22 | machineId << 12 | seq;
-}
-\`\`\`
-
-时钟回拨问题：机器时钟回退（NTP 同步/手动调），导致生成的时间戳 < 上次，可能生成重复 ID。
-
-解决：
-1. 回拨小（如 <5ms）：等待追平（sleep 回拨时长）。
-2. 回拨大：抛异常/告警。
-3. 拨号借用：用之前记录的最大时间戳 + 序列继续（百度 UidGenerator 思路）。
-4. 不依赖时间：美团的雪花号段模式，每次取号段。
-5. Leaf-Snowflake：用 ZooKeeper 持久化上次时间戳，启动时校验回拨。
-
-机器位分配：数据库/ZK 分配唯一 workerId，避免冲突。
-
-关键：Snowlake 时间戳+机器+序列；时钟回拨用等待/异常/ZK 持久化解决；机器位需唯一分配。`,
-    keyPoints: ["Snowflake = 时间戳+机器ID+序列", "时钟回拨等待/异常/ZK", "workerId 唯一分配"],
-    followUps: ["Snowflake 为什么趋势递增？", "号段模式相比雪花有什么优势？"],
-    favorited: false,
-  },
-  {
-    id: "be-86",
-    nodeId: "be-distributed",
-    question: "Raft 协议的原理？Leader 选举和日志复制过程？",
-    answer: `Raft：易于理解的一致性算法（比 Paxos 简单），用于 etcd/Consul/TiKV。通过"选主 + 日志复制"实现强一致。
-
-三种角色：Follower、Candidate、Leader。
-Term（任期）：单调递增的逻辑时钟，防止过期 Leader。
-
-Leader 选举：
-1. 初始都是 Follower，超时未收到心跳 → 变 Candidate，Term+1，投自己，发 RequestVote。
-2. 获多数票 → 成为 Leader，周期发心跳维持权威。
-3. 同 Term 多 Candidate 分裂 → 超时重选（随机超时避免活锁）。
-
-日志复制：
-1. Leader 收到写请求，追加到本地日志（Uncommitted）。
-2. 并发 AppendEntries 复制到所有 Follower。
-3. 多数 Follower 确认 → Leader 标记 Committed，应用到状态机，返回客户端成功。
-4. Leader 下次心跳告知 Follower commitIndex，Follower 应用。
-
-\`\`\`text
-写流程（3 节点）：
-Client → Leader: SET x=5
-Leader 日志: [x=5](uncommitted)
-Leader → Follower1: AppendEntries [x=5]  ✓
-Leader → Follower2: AppendEntries [x=5]  ✓  (含 Leader 自身 = 多数)
-Leader commit [x=5] → 应用状态机 → 返回 Client OK
-Leader 下次心跳 → Follower commit 并应用
-\`\`\`
-
-安全性保证：
-- 一个 Term 只有一个 Leader。
-- 已 commit 的日志不会丢：新 Leader 必含所有已 commit 日志（选举约束：候选人的日志至少和多数派一样新）。
-- 日志连续匹配：AppendEntries 带 prevLogIndex/prevLogTerm，不匹配则 Follower 截断重发。
-
-对比 Paxos：Raft 强 Leader，更易实现；Multi-Paxos 更通用但复杂。
-
-关键：Raft 选主+多数派日志复制=强一致；已 commit 不丢；随机超时防活锁。`,
-    keyPoints: ["选主+多数派日志复制", "已 commit 日志不丢", "Term 防过期 Leader"],
-    followUps: ["Raft 脑裂如何处理？", "Raft 和 Paxos 的区别？"],
-    favorited: false,
-  },
-  // ===== 系统设计（扩充） =====
-  {
-    id: "be-87",
-    nodeId: "be-system-design",
-    question: "设计一个短链系统（短 URL 生成与跳转）？",
-    answer: `短链系统：长 URL → 短码 → 跳转回长 URL。
-
-核心流程：
-1. 生成：长 URL → 唯一短码（如 7 位 Base62）。
-2. 存储：短码 → 长 URL 映射（DB/缓存）。
-3. 跳转：访问短码 → 查长 URL → 302 重定向。
-
-短码生成方案：
-1. 哈希：MD5/MurmurHash 长URL 取前几位 + Base62。需处理冲突。
-2. 自增 ID + Base62：发号器（Snowflake）分配自增 ID，转 Base62。无冲突，可预测。
-3. 预生成：离线生成一批随机码存池，用时取。防预测。
-
-\`\`\`java
-// 自增 ID 转 Base62
-String BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-String toBase62(long id) {
-    StringBuilder sb = new StringBuilder();
-    while (id > 0) {
-        sb.insert(0, BASE62.charAt((int)(id % 62)));
-        id /= 62;
-    }
-    return sb.toString(); // id=1000000000 → "15FTGf"
-}
-\`\`\`
-
-\`\`\`python
-# 跳转服务
-@app.get("/{code}")
-def redirect(code):
-    url = redis.get(f"url:{code}")  # 缓存优先
-    if not url:
-        record = db.query("SELECT long_url FROM url_map WHERE code=?", code)
-        url = record.long_url if record else None
-        if not url: return 404
-        redis.setex(f"url:{code}", 86400, url)  # 缓存1天
-    db.execute("UPDATE url_map SET clicks=clicks+1 WHERE code=?", code)  # 统计
-    return RedirectResponse(url, status_code=302)
-\`\`\`
-
-存储估算：100 亿条 URL，每条 500 字节 ≈ 5TB，分库分表（按短码 hash）。
-性能：读多写少，Redis 缓存热点短码；布隆过滤器防穿透。
-
-关键点：
-- 302（临时）vs 301（永久）：301 浏览器缓存不经过服务端，无法统计；302 每次跳转可统计点击。
-- 自定义短码：用户指定，需查重。
-- 防滥用：频控/黑名单。
-
-关键：发号器+Base62 生成无冲突短码；Redis 缓存 + 分库分表；302 便于统计。`,
-    keyPoints: ["发号器+Base62 生成短码", "Redis 缓存+分库分表", "302 重定向便于统计"],
-    followUps: ["如何防止短码被预测？", "短链过期如何处理？"],
-    favorited: false,
-  },
-  {
-    id: "be-88",
-    nodeId: "be-system-design",
-    question: "设计一个秒杀系统？如何应对瞬间高并发？",
-    answer: `秒杀特点：瞬间流量峰值极高（万倍日常）、库存有限、防超卖、防黄牛。
-
-架构核心：层层削峰，让尽量少请求到 DB。
-
-1. 前端/CDN：
-- 静态页面 CDN 缓存，按钮防重复点击（点击后置灰倒计时）。
-- 答题/验证码错峰 + 防机器人。
-
-2. 网关层：
-- 限流（令牌桶/滑动窗口），超出直接拒绝。
-- 黑名单（黄牛 IP/设备）。
-
-3. 缓存层（核心）：
-- 商品/库存预热到 Redis。
-- 库存扣减用 Lua 原子操作（查库存 + 扣减 + 记录用户），防超卖。
-
-\`\`\`lua
--- Redis Lua 原子扣库存
-local stock = tonumber(redis.call('get', KEYS[1]))
-local bought = redis.call('sismember', KEYS[2], ARGV[1]) -- 用户是否已买
-if bought == 1 then return -2 end          -- 重复购买
-if stock <= 0 then return -1 end           -- 库存不足
-redis.call('decr', KEYS[1])                -- 扣库存
-redis.call('sadd', KEYS[2], ARGV[1])       -- 记录已买
-return 1                                   -- 成功
-\`\`\`
-
-4. 异步下单：
-- 扣库存成功 → 发 MQ → 消费者异步创建订单 + 扣 DB 库存。
-- 前端轮询/长连接返回结果。
-
-\`\`\`java
-// 秒杀入口
-public Result seckill(long itemId, long userId) {
-    Long r = redis.execute(luaScript, Arrays.asList("stock:"+itemId, "bought:"+itemId), userId);
-    if (r == -1) return Result.fail("售罄");
-    if (r == -2) return Result.fail("重复购买");
-    mq.send(new OrderMsg(itemId, userId));  // 异步下单
-    return Result.ok("排队中");             // 前端轮询订单状态
-}
-\`\`\`
-
-5. DB 层：
-- 库存表乐观锁：UPDATE stock SET num=num-1 WHERE item_id=? AND num>0。
-- 分库分表分散订单写压力。
-
-6. 兜底：
-- 库存预热时只放少量库存到 Redis，DB 持久库存兜底。
-- 熔断降级：下游（支付/物流）故障时降级。
-
-关键：CDN/网关/缓存层层削峰；Redis Lua 原子扣库存防超卖；MQ 异步下单保护 DB。`,
-    keyPoints: ["层层削峰 CDN+网关+缓存", "Redis Lua 原子扣库存防超卖", "MQ 异步下单保护 DB"],
-    followUps: ["如何防止黄牛刷单？", "秒杀库存预热怎么做？"],
-    favorited: false,
-  },
-  {
-    id: "be-89",
-    nodeId: "be-system-design",
-    question: "设计一个 Feed 流系统（微博/Twitter 时间线）？推拉模式如何选？",
-    answer: `Feed 流：用户看到关注人最新内容的列表，核心是"如何高效生成收件箱时间线"。
-
-三种模式：
-
-1. 拉模式（读扩散）：
-- 发帖：只写入发帖人的"发件箱"。
-- 读 Feed：实时查所有关注人的发件箱，合并排序。
-- 优点：发帖快。缺点：读放大（关注多人时合并查询重）。适合读少/关注少。
-
-2. 推模式（写扩散）：
-- 发帖：写入自己发件箱 + 主动推送到所有粉丝的"收件箱"。
-- 读 Feed：直接读自己收件箱。
-- 优点：读极快。缺点：写放大（大 V 发帖要推百万粉丝）。适合粉丝少/普通用户。
-
-3. 推拉结合（主流）：
-- 普通用户（粉丝少）发帖用推模式，推到粉丝收件箱。
-- 大 V（粉丝多）发帖用拉模式，只写发件箱，粉丝读时再拉合并。
-- 粉丝读 Feed：收件箱（普通用户推送）+ 实时拉取关注的大 V 发件箱 → 合并排序。
-
-\`\`\`python
-# 发帖（推拉结合）
-def post(user_id, content):
-    post_id = snowflake_next()
-    # 写自己发件箱
-    redis.zadd(f"outbox:{user_id}", {post_id: now_ts})
-    db.save(Post(id=post_id, uid=user_id, content=content))
-    if is_big_v(user_id):
-        return  # 大 V 不推，粉丝拉取时合并
-    # 普通用户推到粉丝收件箱
-    for fan_id in get_fans(user_id, limit=10000):
-        redis.zadd(f"inbox:{fan_id}", {post_id: now_ts})
-        redis.zremrangebyrank(f"inbox:{fan_id}", 0, -1001)  # 只保留最近1000条
-
-# 读 Feed
-def feed(user_id):
-    inbox = redis.zrevrange(f"inbox:{user_id}", 0, 99)  # 收件箱
-    big_v_posts = []
-    for big_v in get_following_big_vs(user_id):
-        big_v_posts += redis.zrevrange(f"outbox:{big_v}", 0, 99)  # 拉大V
-    all_posts = merge_and_sort(inbox + big_v_posts)[:50]  # 合并排序
-    return [db.get(pid) for pid in all_posts]
-\`\`\`
-
-存储：收件箱/发件箱用 Redis ZSet（score=时间戳）+ DB 持久化。
-缓存：活跃用户收件箱常驻 Redis，不活跃回源。
-排序：按时间（默认）或按互动/算法（推荐流）。
-
-关键：推模式读快写放大，拉模式写快读放大；推拉结合大 V 拉、普通人推；ZSet 按时间排序。`,
-    keyPoints: ["推模式写扩散读快", "拉模式读扩散写快", "推拉结合：大V拉+普通人推"],
-    followUps: ["如何处理取关后 Feed 中的内容？", "推荐流和时间线流的区别？"],
-    favorited: false,
-  },
-  {
-    id: "be-90",
-    nodeId: "be-system-design",
-    question: "设计一个 IM（即时通讯）系统？消息如何保证可靠投递与顺序？",
-    answer: `IM 系统核心：实时推送 + 消息可靠 + 全端同步 + 顺序一致。
-
-架构分层：
-1. 接入层：长连接网关（WebSocket/TCP），维持百万连接，负载均衡。
-2. 逻辑层：消息路由、会话管理、在线状态。
-3. 存储层：消息库（按会话分片）、离线消息、未读数。
-
-\`\`\`python
-# 发消息流程（可靠投递）
-def send_msg(from_uid, to_uid, content):
-    msg_id = snowflake_next()       # 全局唯一递增
-    seq = next_seq(conversation_id(from_uid, to_uid))  # 会话内递增序号
-    msg = Message(id=msg_id, seq=seq, frm=from_uid, content=content)
-    # 1. 落库（会话按 hash 分片）
-    db.save(msg)
-    # 2. 写收件人消息队列/收件箱
-    redis.zadd(f"inbox:{to_uid}", {msg_id: seq})
-    # 3. 在线则推送
-    if is_online(to_uid):
-        push(to_uid, msg)           # 通过长连接推送
-    # 4. 写发送者 ACK 待确认
-    return msg_id
-\`\`\`
-
-可靠投递（不丢消息）：
-1. 客户端发送：带本地消息 ID，服务端去重 + 落库 + 返回服务端 msgId。
-2. 服务端推送：带 msgId，客户端收到后 ACK，服务端标记已送达；未 ACK 则重推（离线时存离线消息）。
-3. 离线消息：用户上线后拉取 > last_ack_msgId 的消息。
-
-顺序保证：
-- 全局 msgId（Snowflake）趋势递增，但跨会话无需严格顺序。
-- 会话内用 seq（单调递增），客户端按 seq 排序展示。
-- 单聊：会话 ID = min(uid) + max(uid)，消息按 seq 顺序。
-
-多端同步：
-- 每个设备维护 last_sync_seq，上线后增量拉取 > last_sync_seq 的消息。
-- 已读同步：未读数存服务端，多端同步。
-
-存储与扩展：
-- 消息按会话 ID 分库分表（hash），单会话消息顺序写入。
-- 热数据（近期）Redis ZSet，冷数据归档 DB/对象存储。
-- 群消息：写扩散（小群推到每人收件箱）vs 读扩散（大群成员拉取）。
-
-推送通道：iOS 走 APNs 离线推送，Android 走厂商推送通道（FCM/小米/华为），前台用长连接。
-
-关键：msgId 去重 + 落库 + ACK 重投保证可靠；会话内 seq 保证顺序；多端按 seq 增量同步。`,
-    keyPoints: ["msgId 去重+落库+ACK 重投", "会话内 seq 保顺序", "多端按 last_sync_seq 增量同步"],
-    followUps: ["群聊消息推拉如何选？", "如何保证消息不重复展示？"],
-    favorited: false,
-  },
-];
-
-// 生成学习计划：按拓扑顺序，每天 1-2 个节点
-function buildSchedule(): ScheduleItem[] {
-  // 拓扑顺序：语言基础 → 并发/JVM → 框架 → 数据存储 → 中间件 → 分布式 → 系统设计
-  const order = [
-    "be-java-basic",
-    "be-python-basic",
-    "be-go-basic",
-    "be-java-concurrent",
-    "be-jvm",
-    "be-spring",
-    "be-go-concurrent",
-    "be-orm",
-    "be-python-web",
-    "be-mysql",
-    "be-redis",
-    "be-mq",
-    "be-microservice",
-    "be-distributed",
-    "be-system-design",
-  ] as const;
-
-  const schedule: ScheduleItem[] = [];
-  order.forEach((nodeId, idx) => {
-    const day = Math.floor(idx / 2) + 1;
-    schedule.push({
-      day,
-      nodeId,
-      type: "learn",
-      estimatedMinutes: 50,
-      completed: false,
-    });
-    schedule.push({
-      day: day + 1,
-      nodeId,
-      type: "review",
-      estimatedMinutes: 15,
-      completed: false,
-    });
-  });
-  return schedule;
-}
-
-export const BACKEND_PRESET = {
-  topic: "后端工程师面试全攻略",
-  knowledgeTree: BACKEND_NODES,
-  questions: BACKEND_QUESTIONS,
-  schedule: buildSchedule(),
-};
+    nodeId: "be-redis-cluster",
+    question: "阿里 Tair 持久内存版 vs 开源 Redis？性能/成本差异？",
+    bigTech: true,
+    answer: `Tair（阿里云 Redis 增强版）：1）持久内存版（基于 AEP/PMEM）：内存级性能 + 持久化，重启不丢数据；2）TairZset/Doc/Vector 等扩展数据结构；3）多线程模型（开源 Redis 6.0 仅 IO 多线程，命令仍单线程）；4）冷热分离：热数据内存 + 冷数据 SSD。
+开源 Redis：单线程模型（命令执行），主从+Cluster，数据结构标准 5 种 + Stream。
+性能：Tair 持久内存版 QPS 2-3 倍开源 Redis，延迟相当；成本低于纯内存。
+
+\`\`\`bash
+# Tair 扩展数据结构
+# TairZset 支持多维分数（开

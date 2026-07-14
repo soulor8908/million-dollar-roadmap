@@ -2,7 +2,7 @@
 // 收藏管理：试题集（FavoriteDeck）+ 单题收藏
 // 逻辑函数（纯函数）+ 存储函数（IndexedDB）
 
-import { get, set, del, keys } from "idb-keyval";
+import { getItem, setItem, delItem, listKeys } from "./storage/db";
 import { nanoid } from "nanoid";
 import { nowISO } from "./time";
 import { KEY_PREFIXES } from "./types";
@@ -48,17 +48,17 @@ export function toggleQuestionInPlan(
 
 export async function createFavoriteDeck(plan: LearningPlan): Promise<FavoriteDeck> {
   const deck = buildFavoriteDeck(plan);
-  await set(KEY_PREFIXES.DECK + deck.id, deck);
+  await setItem(KEY_PREFIXES.DECK + deck.id, deck);
   return deck;
 }
 
 export async function listFavoriteDecks(): Promise<FavoriteDeck[]> {
-  const allKeys = await keys();
+  const allKeys = await listKeys();
   const deckKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.DECK)
   );
   const decks = await Promise.all(
-    deckKeys.map((k) => get<FavoriteDeck>(k))
+    deckKeys.map((k) => getItem<FavoriteDeck>(k))
   );
   return decks
     .filter((d): d is FavoriteDeck => d !== undefined)
@@ -69,11 +69,11 @@ export async function listFavoriteDecks(): Promise<FavoriteDeck[]> {
 }
 
 export async function getFavoriteDeck(id: string): Promise<FavoriteDeck | undefined> {
-  return get<FavoriteDeck>(KEY_PREFIXES.DECK + id);
+  return getItem<FavoriteDeck>(KEY_PREFIXES.DECK + id);
 }
 
 export async function deleteFavoriteDeck(id: string): Promise<void> {
-  await del(KEY_PREFIXES.DECK + id);
+  await delItem(KEY_PREFIXES.DECK + id);
 }
 
 // 从所有 plan 聚合 favorited 单题（带 planId 以便取消收藏）
@@ -84,12 +84,12 @@ export interface FavoritedQuestionWithPlan {
 }
 
 export async function listFavoritedQuestions(): Promise<FavoritedQuestionWithPlan[]> {
-  const allKeys = await keys();
+  const allKeys = await listKeys();
   const planKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.PLAN)
   );
   const plans = await Promise.all(
-    planKeys.map((k) => get<LearningPlan>(k))
+    planKeys.map((k) => getItem<LearningPlan>(k))
   );
   const favorited: FavoritedQuestionWithPlan[] = [];
   for (const plan of plans) {
@@ -103,8 +103,8 @@ export async function listFavoritedQuestions(): Promise<FavoritedQuestionWithPla
 
 // 取消单题收藏：找到对应 plan，翻转 favorited，写回
 export async function unfavorQuestion(planId: string, questionId: string): Promise<void> {
-  const plan = await get<LearningPlan>(KEY_PREFIXES.PLAN + planId);
+  const plan = await getItem<LearningPlan>(KEY_PREFIXES.PLAN + planId);
   if (!plan) return;
   const updated = toggleQuestionInPlan(plan, questionId);
-  await set(KEY_PREFIXES.PLAN + planId, updated);
+  await setItem(KEY_PREFIXES.PLAN + planId, updated);
 }

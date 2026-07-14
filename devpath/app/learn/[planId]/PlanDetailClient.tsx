@@ -20,6 +20,7 @@ export default function PlanDetailClient() {
   const [deckFavorited, setDeckFavorited] = useState(false);
   const [deckId, setDeckId] = useState<string | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [regenError, setRegenError] = useState<string | null>(null);
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function PlanDetailClient() {
     const node = plan.knowledgeTree.find((n) => n.id === oldQ.nodeId);
     if (!node) return;
     setRegeneratingId(questionId);
+    setRegenError(null);
     try {
       const res = await apiFetch("/api/regenerate", {
         method: "POST",
@@ -129,7 +131,7 @@ export default function PlanDetailClient() {
       setPlan(updated);
       await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
     } catch (e) {
-      alert(`重新生成失败：${e instanceof Error ? e.message : "未知错误"}`);
+      setRegenError(e instanceof Error ? e.message : "重新生成失败");
     } finally {
       setRegeneratingId(null);
     }
@@ -180,6 +182,11 @@ export default function PlanDetailClient() {
 
       <div className="mb-6">
         <h2 className="text-lg font-bold mb-3">面试题（{plan.questions.length}）</h2>
+        {regenError && (
+          <div className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-600">
+            重新生成失败：{regenError}
+          </div>
+        )}
         <p className="text-xs text-gray-400 mb-2">点击题目展开答案，可单题收藏或重新生成</p>
         <div className="space-y-2">
           {plan.questions.map((q) => (

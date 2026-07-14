@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { listFavoriteDecks, deleteFavoriteDeck, listFavoritedQuestions, unfavorQuestion } from "@/lib/favorite";
 import { createCard } from "@/lib/fsrs";
-import { get, set } from "idb-keyval";
+import { getItem, setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { FavoriteDeck } from "@/lib/types";
 import type { FavoritedQuestionWithPlan } from "@/lib/favorite";
@@ -13,6 +13,7 @@ export default function FavoritesPage() {
   const [tab, setTab] = useState<"decks" | "questions">("decks");
   const [decks, setDecks] = useState<FavoriteDeck[]>([]);
   const [questions, setQuestions] = useState<FavoritedQuestionWithPlan[]>([]);
+  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedDeck, setExpandedDeck] = useState<string | null>(null);
 
@@ -44,13 +45,13 @@ export default function FavoritesPage() {
     const cardKeys: string[] = [];
     for (const q of deck.questions) {
       const card = createCard(deck.id, q.nodeId, q.id, q.question, q.answer, "standard");
-      await set(KEY_PREFIXES.CARD + card.id, card);
+      await setItem(KEY_PREFIXES.CARD + card.id, card);
       cardKeys.push(KEY_PREFIXES.CARD + card.id);
     }
     // 存 key 列表供 /review 读取
-    const existing = await get<string[]>("all_card_keys").then((k) => k || []);
-    await set("all_card_keys", [...existing, ...cardKeys]);
-    alert(`已创建 ${deck.questions.length} 张复习卡片，去 /review 开始复习`);
+    const existing = await getItem<string[]>("all_card_keys").then((k) => k || []);
+    await setItem("all_card_keys", [...existing, ...cardKeys]);
+    setMessage(`已创建 ${deck.questions.length} 张复习卡片，去 /review 开始复习`);
   }
 
   if (loading) {
@@ -64,6 +65,12 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20">
       <h1 className="text-xl font-bold mb-4">收藏夹</h1>
+
+      {message && (
+        <div className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          {message}
+        </div>
+      )}
 
       {/* Tab 切换 */}
       <div className="flex gap-2 mb-4">

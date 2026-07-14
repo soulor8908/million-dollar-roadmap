@@ -16,13 +16,15 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
+    <nav aria-label="主导航" className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
       {items.map((item) => {
         const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
         return (
           <Link
             key={item.href}
             href={item.href}
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
             className={`flex flex-col items-center text-xs ${
               active ? "text-black font-medium" : "text-gray-400"
             }`}

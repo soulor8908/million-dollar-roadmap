@@ -61,7 +61,7 @@ export default function LearnPage() {
         throw new Error(err.error || `请求失败 (${res.status})`);
       }
       const { planId, plan } = (await res.json()) as { planId: string; plan: LearningPlan };
-      await set(KEY_PREFIXES.PLAN + planId, plan);
+      await setItem(KEY_PREFIXES.PLAN + planId, plan);
       router.push(`/learn/${planId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "未知错误");

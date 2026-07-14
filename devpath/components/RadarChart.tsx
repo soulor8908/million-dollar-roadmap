@@ -3,17 +3,23 @@
 // components/RadarChart.tsx
 // 能力雷达图：每个知识节点一个轴（最多 8 个），5 个维度可切换
 // 维度：掌握度 / 正确率 / 练习次数 / 活跃度 / 面试权重
+// recharts 重依赖通过 dynamic import 懒加载（D8 优化）
 
 import { useState, useMemo } from "react";
-import {
-  Radar,
-  RadarChart as RechartsRadar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-} from "recharts";
+import dynamic from "next/dynamic";
 import type { KnowledgeNode, ReviewLog, ReviewCard } from "@/lib/types";
+
+const RadarChartContent = dynamic(
+  () => import("./RadarChartContent").then((m) => m.RadarChartContent),
+  {
+    loading: () => (
+      <div className="flex h-80 items-center justify-center text-sm text-gray-400">
+        加载图表...
+      </div>
+    ),
+    ssr: false,
+  },
+);
 
 type Dimension = "mastery" | "accuracy" | "practice" | "activity" | "frequency";
 
@@ -95,14 +101,7 @@ export function RadarChart({ nodes, cards, logs, stats }: Props) {
         ))}
       </div>
       <div className="h-80 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsRadar data={chartData} outerRadius="75%">
-            <PolarGrid />
-            <PolarAngleAxis dataKey="node" tick={{ fontSize: 12 }} />
-            <PolarRadiusAxis domain={[0, 100]} tick={false} />
-            <Radar dataKey="value" stroke="#2563eb" fill="#2563eb" fillOpacity={0.4} />
-          </RechartsRadar>
-        </ResponsiveContainer>
+        <RadarChartContent data={chartData} />
       </div>
       {computedStats.length === 0 && <p className="text-center text-sm text-gray-500">暂无知识节点</p>}
     </div>

@@ -4,9 +4,10 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Heatmap } from "@/components/Heatmap";
 import { RadarChart } from "@/components/RadarChart";
-import type { PublicProfile } from "@/lib/types";
+import type { PublicProfile, KnowledgeNode } from "@/lib/types";
 import type { PublicStats } from "@/lib/storage/kv";
 import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
+import { topoSort, allocateDaily } from "@/lib/schedule";
 import { nanoid } from "nanoid";
 
 interface PublicResponse {
@@ -22,6 +23,7 @@ export default function UserPageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [followedMsg, setFollowedMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!username) return;
@@ -47,12 +49,16 @@ export default function UserPageClient() {
   async function copyPlan() {
     if (!data?.planSnapshot) return;
     const newPlanId = nanoid();
+    // 从知识树生成学习计划（修复 schedule: [] 空 bug）
+    const nodes = data.planSnapshot.knowledgeTree as KnowledgeNode[];
+    const sorted = topoSort(nodes);
+    const schedule = allocateDaily(sorted, 30, 2);
     await dbSet(`plan:${newPlanId}`, {
       id: newPlanId,
       topic: data.planSnapshot.topic,
       knowledgeTree: data.planSnapshot.knowledgeTree,
       questions: data.planSnapshot.questions,
-      schedule: [],
+      schedule,
       dailyMinutes: 30,
       maxNewPerDay: 2,
       fsrsMode: "standard",
@@ -68,7 +74,8 @@ export default function UserPageClient() {
     if (data && !list.includes(data.profile.username)) {
       list.push(data.profile.username);
       await dbSet("my:following", list);
-      alert(`已关注 ${data.profile.displayName}`);
+      setFollowedMsg(`已关注 ${data.profile.displayName}`);
+      setTimeout(() => setFollowedMsg(null), 2000);
     }
   }
 
@@ -93,6 +100,9 @@ export default function UserPageClient() {
         >
           🙏 关注 ta
         </button>
+        {followedMsg && (
+          <span className="text-sm text-green-600">{followedMsg}</span>
+        )}
       </header>
 
       <section className="grid grid-cols-2 gap-4">

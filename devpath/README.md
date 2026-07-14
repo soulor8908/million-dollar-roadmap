@@ -20,7 +20,7 @@
 
 ## 技术栈
 
-- Next.js 14 App Router + TypeScript
+- Next.js 15 App Router + TypeScript
 - Tailwind CSS（移动端优先）
 - Vercel AI SDK（ai + @ai-sdk/openai）
 - ts-fsrs（FSRS 间隔重复算法 v4）
@@ -70,7 +70,7 @@ npm run dev
 ### 4. 运行测试
 
 ```bash
-npm test           # 运行一次（86 个测试）
+npm test           # 运行一次
 npm run test:watch # 监听模式
 ```
 
@@ -107,7 +107,7 @@ npx wrangler pages deploy .vercel/output/static
 3. 在 Cloudflare Dashboard 配置环境变量：
    - `AI_PROVIDER` = `glm`
    - `GLM_API_KEY` = 你的 API Key
-   - `PUBLIC_AUTH_TOKEN` = 你的认证 token
+   - `API_TOKEN` = API 鉴权 token（通过 `wrangler pages secret put API_TOKEN` 设置，客户端在 profile 页面填入相同值）
 
 ## 项目结构
 
@@ -130,7 +130,6 @@ devpath/
 │       └── weekly/            # AI 周报生成
 ├── components/                 # React 组件
 │   ├── Nav.tsx                # 底部导航
-│   ├── StatusAssessment.tsx   # 状态评估（三形态）
 │   ├── Heatmap.tsx            # 学习热力图
 │   ├── RadarChart.tsx         # 能力雷达图
 │   ├── WeeklyReport.tsx       # AI 周报展示
@@ -160,7 +159,7 @@ devpath/
 ├── public/                     # 静态资源
 │   ├── manifest.json          # PWA manifest
 │   └── sw.js                  # Service Worker
-├── __tests__/                  # 单元测试（19 个文件，86 个测试）
+├── __tests__/                  # 单元测试
 ├── wrangler.toml              # Cloudflare Pages 配置
 ├── pages.config.json          # Cloudflare Pages 部署配置
 └── package.json

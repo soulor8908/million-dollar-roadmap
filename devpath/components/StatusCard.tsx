@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { set } from "idb-keyval";
+import { setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import { chinaDateNow } from "@/lib/time";
 import type { DailyStatus } from "@/lib/types";
@@ -24,7 +24,7 @@ export function StatusCard() {
       aiAdjustedLoad: 1.0,
       actualMinutes: 0,
     };
-    await set(KEY_PREFIXES.STATUS + status.date, status);
+    await setItem(KEY_PREFIXES.STATUS + status.date, status);
     setSelected(status);
   }
 

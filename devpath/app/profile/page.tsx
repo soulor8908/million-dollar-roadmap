@@ -18,6 +18,14 @@ import {
 
 const STORAGE_KEY = "my:profile";
 
+/** VAPID 公钥转 Uint8Array（push 订阅需要） */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from(rawData, (c) => c.charCodeAt(0));
+}
+
 const defaultProfile: PublicProfile = {
   username: "",
   displayName: "",
@@ -127,7 +135,26 @@ export default function ProfilePage() {
     const perm = await Notification.requestPermission();
     setNotifPermission(perm);
     if (perm === "granted") {
-      // 立即测试一条通知
+      // 尝试订阅 Push（需要配置 NEXT_PUBLIC_VAPID_PUBLIC_KEY）
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+          if (vapidKey) {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+            });
+          }
+        }
+        if (sub) {
+          await dbSet("push:subscription", sub);
+        }
+      } catch (e) {
+        console.warn("Push 订阅失败:", e);
+      }
+      // 测试通知
       new Notification("devpath 打卡提醒已开启", {
         body: "我们会在每日学习时段提醒你 📚",
         icon: "/icons/icon-192.png",

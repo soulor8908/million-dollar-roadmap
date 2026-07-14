@@ -33,11 +33,11 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as StatusRequestBody;
   } catch {
-    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
   }
 
   if (!body.date || !body.energy || !body.mood || typeof body.availableMinutes !== "number" || !Array.isArray(body.basePlan)) {
-    return NextResponse.json({ error: "missing fields" }, { status: 400 });
+    return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
   }
 
   const status: DailyStatus = {

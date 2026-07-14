@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { get, keys } from "idb-keyval";
+import { getItem, listKeys } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan, ReviewCard, LearnLog, ScheduleItem, DailyStatus } from "@/lib/types";
 import { chinaDateNow, chinaDateShift } from "@/lib/time";
@@ -24,17 +24,19 @@ export default function Home() {
   const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ date: string; minutes: number }[]>([]);
   const [todayEnergy, setTodayEnergy] = useState<number | null>(null);
+  const [latestPlan, setLatestPlan] = useState<{ id: string; topic: string } | null>(null);
+  const [hasPlans, setHasPlans] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
-      const allKeys = await keys();
+      const allKeys = await listKeys();
       const strKeys = allKeys.filter((k): k is string => typeof k === "string");
 
       // 读所有卡片，计算今日待复习
       const cardKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.CARD));
       const cards: ReviewCard[] = [];
       for (const k of cardKeys) {
-        const c = await get<ReviewCard>(k);
+        const c = await getItem<ReviewCard>(k);
         if (c) cards.push(c);
       }
       const due = getDueCards(cards);
@@ -44,12 +46,22 @@ export default function Home() {
       const planKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.PLAN));
       let todayLearn = 0;
       const todayItems: ScheduleItem[] = [];
+      const loadedPlans: LearningPlan[] = [];
       for (const k of planKeys) {
-        const plan = await get<LearningPlan>(k);
+        const plan = await getItem<LearningPlan>(k);
         if (!plan) continue;
+        loadedPlans.push(plan);
         const today = plan.schedule.filter((s) => s.day === 1 && !s.completed);
         todayItems.push(...today);
         todayLearn += today.filter((s) => s.type === "learn").length;
+      }
+      // 跟踪最新计划（用于"继续学习"入口）
+      if (loadedPlans.length > 0) {
+        loadedPlans.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setLatestPlan({ id: loadedPlans[0].id, topic: loadedPlans[0].topic });
+        setHasPlans(true);
+      } else {
+        setHasPlans(false);
       }
       setTodayLearnCount(todayLearn);
       setTodaySchedule(todayItems.slice(0, 3));
@@ -58,7 +70,7 @@ export default function Home() {
       const logKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.LEARN_LOG));
       const logs: LearnLog[] = [];
       for (const k of logKeys) {
-        const log = await get<LearnLog>(k);
+        const log = await getItem<LearnLog>(k);
         if (log) logs.push(log);
       }
       setRecentLogs(logs.slice(-5));
@@ -100,7 +112,7 @@ export default function Home() {
 
       // 读今日状态，用于低能量休息提示
       const todayStatusKey = KEY_PREFIXES.STATUS + chinaDateNow();
-      const todayStatus = await get<DailyStatus>(todayStatusKey);
+      const todayStatus = await getItem<DailyStatus>(todayStatusKey);
       if (todayStatus) setTodayEnergy(todayStatus.energy);
     })();
   }, []);
@@ -144,6 +156,20 @@ export default function Home() {
       <div className="mb-4">
         <CurrentTaskCard />
       </div>
+
+      {/* 新用户引导（无任何学习计划时） */}
+      {hasPlans === false && (
+        <div className="mb-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-6 text-center">
+          <p className="text-lg font-semibold mb-2">👋 欢迎来到 devpath</p>
+          <p className="mb-4 text-sm text-gray-600">告诉 AI 你想学什么，它帮你拆知识树、排计划、出面试题</p>
+          <Link
+            href="/learn"
+            className="inline-block rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
+          >
+            开始第一个学习计划
+          </Link>
+        </div>
+      )}
 
       {/* 待学/待复习 + 打卡（打卡强化） */}
       <div className="grid grid-cols-3 gap-3 mb-4">
@@ -217,6 +243,17 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* 继续学习入口 */}
+      {latestPlan && (
+        <Link
+          href={`/learn/${latestPlan.id}`}
+          className="mb-3 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-3 hover:bg-blue-100"
+        >
+          <span className="text-sm text-blue-800">📚 继续学习：{latestPlan.topic}</span>
+          <span className="text-xs text-blue-600">→</span>
+        </Link>
+      )}
 
       {/* 快捷入口 */}
       <div className="grid grid-cols-2 gap-3">

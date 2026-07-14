@@ -30,11 +30,11 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as WeeklyRequestBody;
   } catch {
-    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
   }
 
   if (!body.weekStart || !Array.isArray(body.learnLogs)) {
-    return NextResponse.json({ error: "missing fields" }, { status: 400 });
+    return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
   }
 
   const report = await generateWeeklyReport({

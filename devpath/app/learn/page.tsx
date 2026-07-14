@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { setItem, listKeys, getItem } from "@/lib/storage/db";
+import { setItem, listKeys, getItem, delItem } from "@/lib/storage/db";
 import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan } from "@/lib/types";
+import { ALGORITHM_PRESET } from "@/lib/algorithm-preset";
+import { nanoid } from "nanoid";
 
 const EXAMPLES = [
   "前端性能优化",
@@ -23,6 +25,7 @@ export default function LearnPage() {
   const [dailyMinutes, setDailyMinutes] = useState(30);
   const [maxNewPerDay, setMaxNewPerDay] = useState(1);
   const [history, setHistory] = useState<LearningPlan[]>([]);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   // 加载历史计划
   useEffect(() => {
@@ -40,6 +43,36 @@ export default function LearnPage() {
       setHistory(valid);
     })();
   }, []);
+
+  async function deletePlan(planId: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (confirmingDeleteId !== planId) {
+      setConfirmingDeleteId(planId);
+      setTimeout(() => setConfirmingDeleteId(null), 3000);
+      return;
+    }
+    await delItem(KEY_PREFIXES.PLAN + planId);
+    setHistory((h) => h.filter((p) => p.id !== planId));
+    setConfirmingDeleteId(null);
+  }
+
+  async function loadAlgorithmPreset() {
+    const plan: LearningPlan = {
+      id: nanoid(),
+      topic: ALGORITHM_PRESET.topic,
+      knowledgeTree: ALGORITHM_PRESET.knowledgeTree,
+      questions: ALGORITHM_PRESET.questions,
+      schedule: ALGORITHM_PRESET.schedule,
+      dailyMinutes,
+      maxNewPerDay,
+      fsrsMode: "standard",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await setItem(KEY_PREFIXES.PLAN + plan.id, plan);
+    router.push(`/learn/${plan.id}`);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,6 +182,20 @@ export default function LearnPage() {
         </button>
       </form>
 
+      {/* 算法题预设 */}
+      <div className="mt-6 rounded-lg border-2 border-dashed border-gray-300 p-4">
+        <p className="text-sm font-medium mb-1">🎯 算法面试必刷 15 题</p>
+        <p className="text-xs text-gray-500 mb-3">
+          内置精选题集：8 个知识专题 · 15 道高频题（含分析/答案/学习计划），无需 AI 生成，一键导入
+        </p>
+        <button
+          onClick={loadAlgorithmPreset}
+          className="w-full py-2 text-sm border border-blue-500 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+        >
+          导入算法预设 →
+        </button>
+      </div>
+
       {/* 历史计划 */}
       {history.length > 0 && (
         <div className="mt-8">
@@ -168,7 +215,20 @@ export default function LearnPage() {
                       {new Date(p.createdAt).toLocaleDateString("zh-CN")}
                     </p>
                   </div>
-                  <span className="text-xs text-gray-400 ml-2">查看 →</span>
+                  <div className="flex items-center gap-2 ml-2">
+                    <button
+                      onClick={(e) => deletePlan(p.id, e)}
+                      className={`text-xs px-2 py-1 rounded transition-colors ${
+                        confirmingDeleteId === p.id
+                          ? "bg-red-500 text-white"
+                          : "text-gray-400 hover:bg-red-50 hover:text-red-500"
+                      }`}
+                      aria-label="删除计划"
+                    >
+                      {confirmingDeleteId === p.id ? "确认删除" : "✕"}
+                    </button>
+                    <span className="text-xs text-gray-400">查看 →</span>
+                  </div>
                 </div>
               </Link>
             ))}

@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   const token = req.headers.get("x-github-token");
   if (!token) {
     return NextResponse.json({ error: "未提供 token" }, { status: 401 });
   }
 
-  const path = params.path.join("/");
+  const { path } = await params;
+  const pathStr = path.join("/");
   const owner = process.env.GITHUB_OWNER || "soulor8908";
   const repo = process.env.GITHUB_REPO || "million-dollar-roadmap";
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${pathStr}`;
 
   // 透传条件请求头，支持 ETag / If-Modified-Since 缓存验证
   const ghHeaders: Record<string, string> = {
@@ -52,17 +55,18 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   const token = req.headers.get("x-github-token");
   if (!token) {
     return NextResponse.json({ error: "未提供 token" }, { status: 401 });
   }
 
-  const path = params.path.join("/");
+  const { path } = await params;
+  const pathStr = path.join("/");
   const owner = process.env.GITHUB_OWNER || "soulor8908";
   const repo = process.env.GITHUB_REPO || "million-dollar-roadmap";
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${pathStr}`;
 
   const body = await req.text();
 

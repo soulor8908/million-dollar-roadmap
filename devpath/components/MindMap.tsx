@@ -128,7 +128,7 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
     let y = avgMid - NODE_H / 2;
     if (y < cursorY) y = cursorY;
     positions.push({ id: tn.node.id, x, y, node: tn.node });
-    return { topY, midY: y + NODE_H / 2, bottomY: y + NODE_H };
+    return { topY: y, midY: y + NODE_H / 2, bottomY: y + NODE_H };
   }
 
   roots.forEach((r) => place(r, 0));

@@ -1,5 +1,5 @@
 // lib/presets/index.ts
-// 预设知识库统一索引：算法 200 题 / 前端 / 后端 / AI
+// 预设知识库统一索引：算法 200 题 / 前端 / 后端 / AI / LLM 应用开发
 // 用户选择预设时直接导入内置数据（秒级响应），
 // 之后可在右上角点击"重新生成"调用 AI 重新生成整个知识树。
 
@@ -8,6 +8,7 @@ import { ALGORITHM_200_PRESET } from "./algorithm-200";
 import { FRONTEND_PRESET } from "./frontend";
 import { BACKEND_PRESET } from "./backend";
 import { AI_PRESET } from "./ai";
+import { LLM_APP_PRESET } from "./llm-app";
 
 // 预设元信息（用于 UI 卡片展示）
 export interface PresetMeta {
@@ -55,6 +56,14 @@ export const PRESETS: PresetMeta[] = [
     description: "ML 基础 → 经典算法 → 神经网络 → CNN/RNN/Transformer → LLM → CV/推荐",
     tags: ["AI", "ML", "LLM", "深度学习"],
     ...AI_PRESET,
+  },
+  {
+    id: "llm-app",
+    name: "LLM 应用开发",
+    icon: "🧠",
+    description: "LLM 基础 → Prompt/API → RAG/Embedding → Agent/Function Calling → LangChain/LlamaIndex → 微调/部署/评估 → 多模态/MCP → 工程实践",
+    tags: ["LLM", "RAG", "Agent", "LangChain", "MCP"],
+    ...LLM_APP_PRESET,
   },
 ];
 

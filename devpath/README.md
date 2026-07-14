@@ -13,10 +13,14 @@
 ### 增强功能
 - **能量感知调量**：每日状态评估（精力/心情/时间）→ AI 动态调整学习量（状态差减量/只复习）
 - **长期能量模式识别**：28 天能量曲线分析 → AI 发现低能量工作日 → 建议那天只复习
-- **数据可视化**：学习热力图（react-activity-calendar）+ 能力雷达图（recharts，5 维度切换）
-- **AI 周报**：每周自动生成三段式周报（时长统计 + 正确率 + AI 模式识别 + 下周建议）
+- **情绪觉察系统**：8 种情绪标签 + 6 种多巴胺干扰来源追踪，与学习时长交叉分析（高干扰日 vs 无干扰日对比）
+- **"现在该做什么"卡片**：时间表驱动，自动推断当前/下一任务，休息时段联动 /rest 入口
+- **呼吸休息工具**：478 呼吸法计时器（4 秒吸气/7 秒屏息/8 秒呼气）+ 能量评分 + 休息方法库
+- **数据可视化**：学习热力图（react-activity-calendar）+ 能力雷达图（recharts dynamic import，5 维度切换）
+- **AI 周报**：每周自动生成三段式周报（时长统计 + 正确率 + AI 模式识别 + 情绪与多巴胺模式 + 下周建议）
 - **公开学习主页**：可分享学习轨迹（/u/[username]），隐私控制，分享图生成
-- **PWA**：离线缓存 + 可安装到主屏
+- **PWA**：离线缓存 + 可安装到主屏 + Push 打卡提醒
+- **API 鉴权**：生产环境支持 token 校验中间件，6 个 API route 全部应用
 
 ## 技术栈
 
@@ -118,6 +122,7 @@ devpath/
 │   ├── onboarding/            # 首次引导（3 步）
 │   ├── learn/                 # AI 学习教练
 │   ├── review/                # 今日复习
+│   ├── rest/                  # 呼吸休息工具（478 呼吸法）
 │   ├── favorites/             # 收藏夹
 │   ├── stats/                 # 数据可视化（热力图+雷达+周报）
 │   ├── profile/               # 公开主页设置
@@ -129,10 +134,13 @@ devpath/
 │       ├── status/            # 状态评估 + AI 调量
 │       └── weekly/            # AI 周报生成
 ├── components/                 # React 组件
-│   ├── Nav.tsx                # 底部导航
+│   ├── Nav.tsx                # 底部导航（含 aria 标签）
 │   ├── Heatmap.tsx            # 学习热力图
-│   ├── RadarChart.tsx         # 能力雷达图
+│   ├── RadarChart.tsx         # 能力雷达图（dynamic import 懒加载）
+│   ├── RadarChartContent.tsx  # 雷达图渲染（recharts 重依赖）
 │   ├── WeeklyReport.tsx       # AI 周报展示
+│   ├── CurrentTaskCard.tsx    # "现在该做什么"卡片
+│   ├── BreathTimer.tsx        # 478 呼吸法计时器
 │   └── ShareCardButton.tsx    # 分享图生成
 ├── lib/                        # 核心逻辑
 │   ├── ai/                    # AI 集成
@@ -150,6 +158,9 @@ devpath/
 │   ├── schedule.ts            # 学习计划编排（拓扑排序）
 │   ├── status.ts              # 状态评估规则引擎
 │   ├── favorite.ts            # 收藏管理
+│   ├── routine.ts             # 每日时间表解析与持久化
+│   ├── auth.ts                # API token 校验中间件
+│   ├── api-client.ts          # 客户端 API 调用封装（带 token）
 │   ├── visualization.ts       # 公开主页数据聚合
 │   ├── share-image.ts         # 分享图生成
 │   ├── types.ts               # 类型定义
@@ -175,6 +186,7 @@ devpath/
 | M4 | 可视化（热力图+雷达+周报）| ✅ 完成 |
 | M5 | 公开主页 + Cloudflare KV | ✅ 完成 |
 | M6 | PWA + 部署配置 | ✅ 完成 |
+| M7 | 体验优化（情绪觉察+时间表+呼吸休息+API 鉴权+a11y+错误边界） | ✅ 完成 |
 
 ## License
 

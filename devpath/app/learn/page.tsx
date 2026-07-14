@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { set, keys, get } from "idb-keyval";
+import { setItem, listKeys, getItem } from "@/lib/storage/db";
+import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan } from "@/lib/types";
 
@@ -26,12 +27,12 @@ export default function LearnPage() {
   // 加载历史计划
   useEffect(() => {
     (async () => {
-      const allKeys = await keys();
+      const allKeys = await listKeys();
       const planKeys = allKeys.filter(
         (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.PLAN)
       );
       const plans = await Promise.all(
-        planKeys.map((k) => get<LearningPlan>(k))
+        planKeys.map((k) => getItem<LearningPlan>(k))
       );
       const valid = plans
         .filter((p): p is LearningPlan => p !== undefined)
@@ -46,7 +47,7 @@ export default function LearnPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/learn", {
+      const res = await apiFetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

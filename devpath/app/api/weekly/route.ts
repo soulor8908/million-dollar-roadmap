@@ -1,11 +1,12 @@
 // app/api/weekly/route.ts
-// 周报生成路由：接收本周数据 → 调 AI → 存 IndexedDB → 返回 markdown
+// 周报生成路由：接收本周数据 → 调 AI → 返回 markdown
 // 支持可选 emotions（来自情绪觉察流程的 EmotionEntry）
+// ⚠️ Edge runtime 无法访问客户端 IndexedDB，报告由客户端自行存储
 
 import { NextResponse } from "next/server";
 import { generateWeeklyReport } from "@/lib/ai/weekly-report";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
-import { setItem as dbSet } from "@/lib/storage/db";
+import { requireAuth } from "@/lib/auth";
 import { nanoid } from "nanoid";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
 
@@ -22,6 +23,9 @@ interface WeeklyRequestBody {
 
 export async function POST(req: Request) {
   await initCloudflareEnv();
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   let body: WeeklyRequestBody;
   try {
     body = (await req.json()) as WeeklyRequestBody;
@@ -42,13 +46,8 @@ export async function POST(req: Request) {
   });
 
   const id = nanoid();
-  await dbSet(`weekly:${id}`, {
-    id,
-    weekStart: body.weekStart,
-    content: report,
-    createdAt: new Date().toISOString(),
-  });
 
+  // 返回 id + content 让客户端自行存入 IndexedDB（edge runtime 无法访问）
   return NextResponse.json({ id, content: report, weekStart: body.weekStart });
 }
 

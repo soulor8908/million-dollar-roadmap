@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { get, set } from "idb-keyval";
+import { getItem, setItem } from "@/lib/storage/db";
+import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 import { getDueCards } from "@/lib/fsrs";
@@ -18,14 +19,15 @@ export default function ReviewPage() {
     easy: 0,
   });
   const [finished, setFinished] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadCards = useCallback(async () => {
-    const allKeys = await get<string[]>("all_card_keys").then((k) => k || []);
+    const allKeys = await getItem<string[]>("all_card_keys").then((k) => k || []);
     // 从 IndexedDB 读所有卡片
     const cards: ReviewCard[] = [];
     for (const key of allKeys) {
       if (key.startsWith(KEY_PREFIXES.CARD)) {
-        const card = await get<ReviewCard>(key);
+        const card = await getItem<ReviewCard>(key);
         if (card) cards.push(card);
       }
     }
@@ -46,20 +48,24 @@ export default function ReviewPage() {
     if (!card) return;
 
     try {
-      const res = await fetch("/api/review", {
+      const res = await apiFetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ card, rating }),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || `评分失败 (${res.status})`);
+        return;
+      }
       const { card: updatedCard, log } = (await res.json()) as {
         card: ReviewCard;
         log: ReviewLog;
       };
 
       // 存回 IndexedDB
-      await set(KEY_PREFIXES.CARD + updatedCard.id, updatedCard);
-      await set(KEY_PREFIXES.REVIEW_LOG + log.id, log);
+      await setItem(KEY_PREFIXES.CARD + updatedCard.id, updatedCard);
+      await setItem(KEY_PREFIXES.REVIEW_LOG + log.id, log);
 
       // 更新统计
       setStats((prev) => ({
@@ -76,8 +82,8 @@ export default function ReviewPage() {
       } else {
         setCurrentIndex(currentIndex + 1);
       }
-    } catch {
-      // 静默失败
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "评分失败");
     }
   }
 
@@ -124,6 +130,11 @@ export default function ReviewPage() {
           />
         </div>
       </div>
+      {error && (
+        <div className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </div>
+      )}
       <ReviewCardView card={card} onRate={handleRate} />
     </div>
   );

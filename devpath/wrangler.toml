@@ -10,9 +10,12 @@ pages_build_output_dir = ".vercel/output/static"
 [[kv_namespaces]]
 binding = "KV"
 id = "086d793456e5425bacb04836da93ad9b"
-preview_id = "086d793456e5425bacb04836da93ad9b"
+# 预览环境使用独立 namespace，避免污染生产数据
+preview_id = "preview-kv-namespace-placeholder"
 
 [vars]
-PUBLIC_AUTH_TOKEN = "dev-token-change-in-prod"
 AI_PROVIDER = "deepseek"
-# DEEPSEEK_API_KEY 通过 `wrangler pages secret put DEEPSEEK_API_KEY --project-name=devpath` 上传
+# 以下密钥通过 `wrangler pages secret put <NAME> --project-name=devpath` 上传：
+# - API_TOKEN        : API 鉴权 token（客户端在 profile 页面配置相同值）
+# - DEEPSEEK_API_KEY : DeepSeek API Key
+# - GLM_API_KEY       : 智谱 GLM API Key（如使用 glm provider）

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { get, set } from "idb-keyval";
+import { getItem, setItem } from "@/lib/storage/db";
+import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan, Question, ScheduleItem } from "@/lib/types";
 import { KnowledgeTree } from "@/components/KnowledgeTree";
@@ -23,7 +24,7 @@ export default function PlanDetailClient() {
 
   useEffect(() => {
     (async () => {
-      const p = await get<LearningPlan>(KEY_PREFIXES.PLAN + planId);
+      const p = await getItem<LearningPlan>(KEY_PREFIXES.PLAN + planId);
       if (!p) {
         router.push("/learn");
         return;
@@ -44,7 +45,7 @@ export default function PlanDetailClient() {
     if (!plan) return;
     const updated = toggleQuestionInPlan(plan, questionId);
     setPlan(updated);
-    await set(KEY_PREFIXES.PLAN + plan.id, updated);
+    await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
   }
 
   async function handleDeckFavorite() {
@@ -85,7 +86,7 @@ export default function PlanDetailClient() {
       }),
     };
     setPlan(updated);
-    await set(KEY_PREFIXES.PLAN + plan.id, updated);
+    await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
   }
 
   // 跳转到对应知识点的第一道题
@@ -106,7 +107,7 @@ export default function PlanDetailClient() {
     if (!node) return;
     setRegeneratingId(questionId);
     try {
-      const res = await fetch("/api/regenerate", {
+      const res = await apiFetch("/api/regenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ node }),
@@ -126,7 +127,7 @@ export default function PlanDetailClient() {
         questions: plan.questions.map((q) => (q.id === questionId ? newQuestion : q)),
       };
       setPlan(updated);
-      await set(KEY_PREFIXES.PLAN + plan.id, updated);
+      await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
     } catch (e) {
       alert(`重新生成失败：${e instanceof Error ? e.message : "未知错误"}`);
     } finally {

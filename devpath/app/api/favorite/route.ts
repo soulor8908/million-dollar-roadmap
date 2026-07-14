@@ -5,12 +5,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildFavoriteDeck, toggleQuestionInPlan } from "@/lib/favorite";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
+import { requireAuth } from "@/lib/auth";
 import type { LearningPlan } from "@/lib/types";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
+  const authError = requireAuth(req);
+  if (authError) return authError;
   try {
     const body = await req.json();
     const { action, plan, deckId, questionId } = body as {

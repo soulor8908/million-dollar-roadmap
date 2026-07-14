@@ -5,7 +5,8 @@
 // 扩展：从 IndexedDB 加载 EmotionEntry 一并提交给 API（用于情绪+多巴胺章节）
 
 import { useState, useEffect } from "react";
-import { listItems } from "@/lib/storage/db";
+import { listItems, setItem } from "@/lib/storage/db";
+import { apiFetch } from "@/lib/api-client";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
 import { KEY_PREFIXES } from "@/lib/types";
 
@@ -55,13 +56,15 @@ export function WeeklyReport({ learnLogs, reviewLogs, statuses }: Props) {
       const weekEndStr = weekEnd.toISOString().slice(0, 10);
       const emotions = allEmotions.filter((e) => e.date >= weekStart && e.date < weekEndStr);
 
-      const res = await fetch("/api/weekly", {
+      const res = await apiFetch("/api/weekly", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekStart, learnLogs, reviewLogs, statuses, emotions }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as WeeklyEntry;
+      // 客户端存储周报到 IndexedDB（edge runtime 无法写入）
+      await setItem(KEY_PREFIXES.WEEKLY + data.id, data);
       setCurrent(data);
       setHistory((h) => [data, ...h.filter((x) => x.id !== data.id)]);
     } finally {

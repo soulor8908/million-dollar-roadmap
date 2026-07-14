@@ -4,12 +4,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { regenerateQuestion } from "@/lib/ai/question";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
+import { requireAuth } from "@/lib/auth";
 import type { KnowledgeNode } from "@/lib/types";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
+  const authError = requireAuth(req);
+  if (authError) return authError;
   try {
     const body = await req.json();
     const { node } = body as { node?: KnowledgeNode };

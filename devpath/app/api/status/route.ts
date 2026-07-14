@@ -1,12 +1,13 @@
 // app/api/status/route.ts
-// 接收当日状态 + 基础计划 → 规则调量 → 可选 AI 增强 → 存 IndexedDB → 返回
+// 接收当日状态 + 基础计划 → 规则调量 → 可选 AI 增强 → 返回
 // 支持可选 dopamineTrigger（来自情绪觉察流程）
+// ⚠️ Edge runtime 无法访问客户端 IndexedDB，历史状态由客户端传入
 
 import { NextResponse } from "next/server";
 import { adjustDailyLoad, detectEnhanceTrigger } from "@/lib/status";
 import { enhanceAdjustment } from "@/lib/ai/status-enhance";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
-import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
+import { requireAuth } from "@/lib/auth";
 import type { DailyStatus, ScheduleItem, DopamineTrigger } from "@/lib/types";
 
 export const runtime = "edge";
@@ -19,10 +20,15 @@ interface StatusRequestBody {
   basePlan: ScheduleItem[];
   /** 多巴胺干扰来源（情绪觉察流程收集，可选） */
   dopamineTrigger?: DopamineTrigger;
+  /** 最近 7 天历史状态（由客户端从 IndexedDB 读取后传入） */
+  recentStatuses?: DailyStatus[];
 }
 
 export async function POST(req: Request) {
   await initCloudflareEnv();
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   let body: StatusRequestBody;
   try {
     body = (await req.json()) as StatusRequestBody;
@@ -51,15 +57,8 @@ export async function POST(req: Request) {
   // 规则调量
   const adjustedPlan = adjustDailyLoad(body.basePlan, status);
 
-  // 检查是否需 AI 增强：读最近 7 天状态
-  const recentStatuses: DailyStatus[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(body.date);
-    d.setDate(d.getDate() - i);
-    const key = `status:${d.toISOString().slice(0, 10)}`;
-    const s = await dbGet<DailyStatus>(key);
-    if (s) recentStatuses.push(s);
-  }
+  // 检查是否需 AI 增强：使用客户端传入的历史状态
+  const recentStatuses = body.recentStatuses ?? [];
   recentStatuses.push(status);
 
   const trigger = detectEnhanceTrigger(recentStatuses, {});
@@ -68,9 +67,8 @@ export async function POST(req: Request) {
     suggestions = await enhanceAdjustment(trigger);
   }
 
-  // 存当日状态到 IndexedDB
   status.aiAdjustedLoad = adjustedPlan.length;
-  await dbSet(`status:${body.date}`, status);
 
-  return NextResponse.json({ adjustedPlan, suggestions });
+  // 返回 status 让客户端自行存入 IndexedDB（edge runtime 无法访问）
+  return NextResponse.json({ adjustedPlan, suggestions, status });
 }

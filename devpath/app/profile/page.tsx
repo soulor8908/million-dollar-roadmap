@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import type { PublicProfile } from "@/lib/types";
 import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
+import { apiFetch, getApiToken, setApiToken } from "@/lib/api-client";
 import { ShareCardButton } from "@/components/ShareCardButton";
 import {
   loadRoutineMarkdown,
@@ -43,6 +44,10 @@ export default function ProfilePage() {
   const [notifSupported, setNotifSupported] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("unsupported");
 
+  // API Token
+  const [apiToken, setApiTokenState] = useState("");
+  const [tokenSaved, setTokenSaved] = useState(false);
+
   useEffect(() => {
     (async () => {
       const stored = await dbGet<PublicProfile>(STORAGE_KEY);
@@ -50,6 +55,10 @@ export default function ProfilePage() {
 
       const r = await loadRoutineMarkdown();
       setRoutine(r);
+
+      // 加载已存的 API Token
+      const token = await getApiToken();
+      if (token) setApiTokenState(token);
 
       // 检查 PWA 通知支持
       if (typeof window !== "undefined" && "Notification" in window) {
@@ -76,12 +85,9 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await dbSet(STORAGE_KEY, profile);
-      const res = await fetch(`/api/public/${encodeURIComponent(profile.username)}`, {
+      const res = await apiFetch(`/api/public/${encodeURIComponent(profile.username)}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_PUBLIC_AUTH_TOKEN ?? "dev-token"}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile }),
       });
       if (!res.ok && res.status !== 404) {
@@ -91,6 +97,12 @@ export default function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function saveToken() {
+    await setApiToken(apiToken);
+    setTokenSaved(true);
+    setTimeout(() => setTokenSaved(false), 2000);
   }
 
   async function saveRoutine() {
@@ -243,6 +255,32 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">API 鉴权 Token</h2>
+        <p className="text-xs text-gray-500">
+          生产环境设置了 API_TOKEN 密钥后，需在此填入相同值才能调用 AI 接口。开发模式留空即可。
+        </p>
+        <input
+          type="password"
+          value={apiToken}
+          onChange={(e) => {
+            setApiTokenState(e.target.value);
+            setTokenSaved(false);
+          }}
+          placeholder="留空=开发模式（不鉴权）"
+          className="w-full rounded border px-2 py-1"
+        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={saveToken}
+            className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+          >
+            保存 Token
+          </button>
+          {tokenSaved && <span className="text-sm text-green-600">已保存 ✓</span>}
+        </div>
       </section>
 
       <section className="space-y-3 rounded-lg border p-4">

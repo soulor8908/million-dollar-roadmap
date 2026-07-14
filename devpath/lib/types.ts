@@ -202,6 +202,8 @@ export const KEY_PREFIXES = {
   REVIEW_LOG: "review_log:",
   LEARN_LOG: "learn_log:",
   STATUS: "status:",
+  /** 周报缓存：weekly:<weekStart> */
+  WEEKLY: "weekly:",
   /** 情绪觉察条目：emotion:<date>_<id> */
   EMOTION: "emotion:",
   /** 每日时间表（用户在 profile 配置）：routine:default */

@@ -2,7 +2,11 @@
 
 // components/MindMap.tsx
 // 知识树脑图组件（水平树形布局，左→右展开）
-// 节点可点击：点击后调用 onSelectNode，用户可基于该节点开始学习
+// 修复要点：
+// 1. 节点有多个 prereq 时，挂到"最深"的父节点下（保证节点出现在最长路径末端）
+// 2. 节点垂直布局按子树叶子数分配空间，避免重叠
+// 3. 同一节点只出现一次（DAG → Tree 转换）
+// 4. 节点可点击：点击后调用 onSelectNode
 
 import { useMemo, useState } from "react";
 import type { KnowledgeNode } from "@/lib/types";
@@ -17,41 +21,77 @@ interface MindMapProps {
 interface TreeNode {
   node: KnowledgeNode;
   children: TreeNode[];
+  // 子树高度（占用多少行）
+  leafCount: number;
 }
 
-const NODE_W = 176;
-const NODE_H = 60;
-const COL_GAP = 60;
-const ROW_GAP = 14;
-const PADDING = 24;
+const NODE_W = 180;
+const NODE_H = 64;
+const COL_GAP = 80;
+const ROW_GAP = 12;
+const PADDING = 28;
 
-// 构建树：以 prerequisites 为父子关系
-// 根节点 = prereq 为空，或 prereq 全部不在 nodes 列表中（孤立节点）
+// 计算每个节点的深度（从根到此节点的最长路径长度）
+function computeDepth(
+  nodeId: string,
+  nodeMap: Map<string, KnowledgeNode>,
+  depthCache: Map<string, number>,
+  visiting: Set<string>
+): number {
+  if (depthCache.has(nodeId)) return depthCache.get(nodeId)!;
+  if (visiting.has(nodeId)) return 0; // 循环依赖，按 0 处理
+  const node = nodeMap.get(nodeId);
+  if (!node) return 0;
+  visiting.add(nodeId);
+  let maxDepth = 0;
+  for (const p of node.prerequisites) {
+    if (!nodeMap.has(p)) continue; // 未知 prereq，跳过
+    maxDepth = Math.max(maxDepth, computeDepth(p, nodeMap, depthCache, visiting) + 1);
+  }
+  visiting.delete(nodeId);
+  depthCache.set(nodeId, maxDepth);
+  return maxDepth;
+}
+
+// 构建树：每个节点挂到最深 prereq 下（保证出现在最长路径末端）
 function buildTree(nodes: KnowledgeNode[]): TreeNode[] {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-  const visited = new Set<string>();
+  const depthCache = new Map<string, number>();
+  nodes.forEach((n) =>
+    computeDepth(n.id, nodeMap, depthCache, new Set())
+  );
+
+  // 为每个节点分配唯一父节点 = 深度最深的那个 prereq
+  const parentOf = new Map<string, string | null>();
+  for (const n of nodes) {
+    const validPrereqs = n.prerequisites.filter((p) => nodeMap.has(p));
+    if (validPrereqs.length === 0) {
+      parentOf.set(n.id, null);
+    } else {
+      // 按深度降序，挑最深的作为父节点
+      const sorted = validPrereqs.sort(
+        (a, b) => (depthCache.get(b) ?? 0) - (depthCache.get(a) ?? 0)
+      );
+      parentOf.set(n.id, sorted[0]);
+    }
+  }
 
   const childrenOf = (id: string) =>
-    nodes.filter((n) => n.prerequisites.includes(id));
+    nodes
+      .filter((n) => parentOf.get(n.id) === id)
+      .sort((a, b) => (a.customOrder ?? 999) - (b.customOrder ?? 999));
 
-  const buildNode = (node: KnowledgeNode): TreeNode => {
-    visited.add(node.id);
-    const kids = childrenOf(node.id)
-      .filter((c) => !visited.has(c.id))
-      .map(buildNode);
-    return { node, children: kids };
-  };
+  function build(node: KnowledgeNode): TreeNode {
+    const kids = childrenOf(node.id).map(build);
+    // 子树叶子数：自身若无线下叶子则占 1 行
+    const leafCount = kids.length === 0 ? 1 : kids.reduce((s, k) => s + k.leafCount, 0);
+    return { node, children: kids, leafCount };
+  }
 
-  const roots = nodes.filter(
-    (n) =>
-      !visited.has(n.id) &&
-      (n.prerequisites.length === 0 ||
-        n.prerequisites.every((p) => !nodeMap.has(p)))
-  );
-  // 处理循环依赖或孤立节点：作为独立根
-  const remaining = nodes.filter((n) => !visited.has(n.id));
-
-  return [...roots.map(buildNode), ...remaining.map(buildNode)];
+  return nodes
+    .filter((n) => parentOf.get(n.id) === null)
+    .sort((a, b) => (a.customOrder ?? 999) - (b.customOrder ?? 999))
+    .map(build);
 }
 
 interface Positioned {
@@ -70,33 +110,42 @@ interface Edge {
 
 function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
   const positions: Positioned[] = [];
+  const edges: Edge[] = [];
+  const ROW_UNIT = NODE_H + ROW_GAP;
   let cursorY = 0;
 
-  function place(tn: TreeNode, depth: number): { midY: number } {
+  function place(tn: TreeNode, depth: number): { topY: number; midY: number; bottomY: number } {
     const x = depth * (NODE_W + COL_GAP);
+    const topY = cursorY;
+
     if (tn.children.length === 0) {
       const y = cursorY;
       positions.push({ id: tn.node.id, x, y, node: tn.node });
-      cursorY += NODE_H + ROW_GAP;
-      return { midY: y + NODE_H / 2 };
+      cursorY += ROW_UNIT;
+      return { topY: y, midY: y + NODE_H / 2, bottomY: y + NODE_H };
     }
+
+    // 递归放置所有子节点
     const childMids: number[] = [];
     for (const c of tn.children) {
-      const mid = place(c, depth + 1);
-      childMids.push(mid.midY);
+      const m = place(c, depth + 1);
+      childMids.push(m.midY);
     }
-    const avgMid =
-      childMids.reduce((a, b) => a + b, 0) / childMids.length;
-    const y = avgMid - NODE_H / 2;
+    // 父节点 y = 子节点中点 - NODE_H/2（但确保不小于子节点顶部）
+    const minMid = Math.min(...childMids);
+    const maxMid = Math.max(...childMids);
+    const avgMid = (minMid + maxMid) / 2;
+    let y = avgMid - NODE_H / 2;
+    // 防止负值
+    if (y < cursorY) y = cursorY;
     positions.push({ id: tn.node.id, x, y, node: tn.node });
-    return { midY: avgMid };
+    return { topY, midY: y + NODE_H / 2, bottomY: y + NODE_H };
   }
 
   roots.forEach((r) => place(r, 0));
 
-  // 计算边：父子节点中心连接
+  // 计算边：父节点右中 → 子节点左中
   const posMap = new Map(positions.map((p) => [p.id, p]));
-  const edges: Edge[] = [];
   function walkEdges(tn: TreeNode) {
     const p = posMap.get(tn.node.id);
     if (!p) return;
@@ -118,8 +167,9 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
   return { positions, edges };
 }
 
-// 难度颜色
-const DIFF_COLORS = ["#dbeafe", "#bfdbfe", "#fde68a", "#fdba74", "#fca5a5"];
+// 难度颜色（浅 → 深）
+const DIFF_BG = ["#dbeafe", "#bfdbfe", "#fde68a", "#fdba74", "#fca5a5"];
+const DIFF_BORDER = ["#3b82f6", "#60a5fa", "#f59e0b", "#f97316", "#ef4444"];
 
 export function MindMap({
   nodes,
@@ -128,7 +178,7 @@ export function MindMap({
 }: MindMapProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
 
-  const { positions, edges, width, height } = useMemo(() => {
+  const { positions, edges, width, height, maxX, maxY } = useMemo(() => {
     const roots = buildTree(nodes);
     const { positions, edges } = layout(roots);
     const maxX = positions.reduce((m, p) => Math.max(m, p.x + NODE_W), 0);
@@ -136,6 +186,8 @@ export function MindMap({
     return {
       positions,
       edges,
+      maxX,
+      maxY,
       width: maxX + PADDING * 2,
       height: maxY + PADDING * 2,
     };
@@ -156,28 +208,39 @@ export function MindMap({
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         className="block"
+        style={{ minWidth: "100%" }}
       >
         <g transform={`translate(${PADDING}, ${PADDING})`}>
           {/* 边（贝塞尔曲线） */}
-          {edges.map((e, i) => (
-            <path
-              key={i}
-              d={`M ${e.x1} ${e.y1} C ${e.x1 + 30} ${e.y1}, ${e.x2 - 30} ${e.y2}, ${e.x2} ${e.y2}`}
-              stroke="#cbd5e1"
-              strokeWidth={1.5}
-              fill="none"
-            />
-          ))}
+          {edges.map((e, i) => {
+            const ctrl = (e.x2 - e.x1) / 2;
+            return (
+              <path
+                key={i}
+                d={`M ${e.x1} ${e.y1} C ${e.x1 + ctrl} ${e.y1}, ${e.x2 - ctrl} ${e.y2}, ${e.x2} ${e.y2}`}
+                stroke="#94a3b8"
+                strokeWidth={1.5}
+                fill="none"
+              />
+            );
+          })}
           {/* 节点 */}
           {positions.map((p) => {
             const isSelected = selectedNodeId === p.id;
             const isHover = hoverId === p.id;
             const diff = p.node.difficulty;
-            const bg = isSelected ? "#1e293b" : DIFF_COLORS[diff - 1] || "#e2e8f0";
+            const bg = isSelected ? "#0f172a" : DIFF_BG[diff - 1] || "#e2e8f0";
+            const border = isSelected
+              ? "#3b82f6"
+              : isHover
+                ? DIFF_BORDER[diff - 1] || "#475569"
+                : "#cbd5e1";
             const fg = isSelected ? "#fff" : "#1e293b";
             const title = p.node.title;
+            // 标题超长截断
             const truncated =
-              title.length > 11 ? title.slice(0, 11) + "…" : title;
+              title.length > 12 ? title.slice(0, 12) + "…" : title;
+            const qCount = `${p.node.frequency} · ${"★".repeat(diff)}`;
             return (
               <g
                 key={p.id}
@@ -192,12 +255,12 @@ export function MindMap({
                   height={NODE_H}
                   rx={10}
                   fill={bg}
-                  stroke={isSelected || isHover ? "#0f172a" : "#e2e8f0"}
-                  strokeWidth={isSelected ? 2.5 : 1}
+                  stroke={border}
+                  strokeWidth={isSelected ? 2.5 : isHover ? 2 : 1}
                 />
                 <text
                   x={14}
-                  y={24}
+                  y={26}
                   fontSize={13}
                   fontWeight={600}
                   fill={fg}
@@ -206,11 +269,11 @@ export function MindMap({
                 </text>
                 <text
                   x={14}
-                  y={44}
+                  y={48}
                   fontSize={10}
                   fill={isSelected ? "#cbd5e1" : "#64748b"}
                 >
-                  {p.node.frequency} · {"★".repeat(diff)}
+                  {qCount}
                   {p.node.customOrder ? ` · #${p.node.customOrder}` : ""}
                 </text>
               </g>

@@ -423,11 +423,11 @@ function PresetMindMapModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部：标题 + 右上角操作 */}
-        <div className="flex items-start justify-between p-4 border-b bg-gradient-to-r from-gray-50 to-white">
+        <div className="shrink-0 flex items-start justify-between p-4 border-b bg-gradient-to-r from-gray-50 to-white">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-3xl">{preset.icon}</span>
@@ -473,13 +473,13 @@ function PresetMindMapModal({
 
         {/* 重新生成错误 */}
         {regenError && (
-          <div className="px-4 py-2 bg-red-50 text-red-600 text-xs border-b">
+          <div className="shrink-0 px-4 py-2 bg-red-50 text-red-600 text-xs border-b">
             重新生成失败：{regenError}
           </div>
         )}
 
         {/* 脑图 */}
-        <div className="flex-1 overflow-auto p-4 bg-gray-50 min-h-[400px]">
+        <div className="flex-1 min-h-0 overflow-auto p-4 bg-gray-50">
           {regenerating ? (
             <div className="flex flex-col items-center justify-center h-64">
               <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
@@ -501,7 +501,7 @@ function PresetMindMapModal({
         </div>
 
         {/* 底部：操作 */}
-        <div className="p-3 border-t bg-white flex items-center justify-between gap-2">
+        <div className="shrink-0 p-3 border-t bg-white flex items-center justify-between gap-2">
           <p className="text-xs text-gray-500 flex-1">
             💡 点击任意知识点可立即开始学习该节点，或导入整个知识库
           </p>

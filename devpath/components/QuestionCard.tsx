@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Question } from "@/lib/types";
+import { AnswerContent, CodeBlock } from "@/components/CodeBlock";
 
 interface Props {
   question: Question;
@@ -36,9 +37,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
 
       {expanded && question.answer && (
         <div className="mt-3 space-y-2">
-          <div className="text-sm text-gray-700 whitespace-pre-wrap">
-            {question.answer}
-          </div>
+          <AnswerContent text={question.answer} />
           {question.keyPoints.length > 0 && (
             <div>
               <p className="text-xs font-medium text-gray-500 mt-2">关键点：</p>
@@ -60,9 +59,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
             </div>
           )}
           {question.codeSnippet && (
-            <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded mt-2 overflow-x-auto">
-              <code>{question.codeSnippet}</code>
-            </pre>
+            <CodeBlock code={question.codeSnippet} language="javascript" />
           )}
         </div>
       )}

@@ -2,13 +2,13 @@
 
 // components/MindMap.tsx
 // 知识树脑图组件（水平树形布局，左→右展开）
-// 修复要点：
-// 1. 节点有多个 prereq 时，挂到"最深"的父节点下（保证节点出现在最长路径末端）
-// 2. 节点垂直布局按子树叶子数分配空间，避免重叠
-// 3. 同一节点只出现一次（DAG → Tree 转换）
-// 4. 节点可点击：点击后调用 onSelectNode
+// 功能：
+// 1. DAG → Tree 转换（节点挂到最深 prereq 下，保证唯一父节点）
+// 2. 内部缩放（滚轮 zoom + 拖拽 pan），不影响外层页面
+// 3. 节点可点击：点击后调用 onSelectNode
+// 4. 大厂标记渲染（bigTech=true 的节点用 🏢 + 黄色边框）
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import type { KnowledgeNode } from "@/lib/types";
 
 interface MindMapProps {
@@ -21,7 +21,6 @@ interface MindMapProps {
 interface TreeNode {
   node: KnowledgeNode;
   children: TreeNode[];
-  // 子树高度（占用多少行）
   leafCount: number;
 }
 
@@ -39,13 +38,13 @@ function computeDepth(
   visiting: Set<string>
 ): number {
   if (depthCache.has(nodeId)) return depthCache.get(nodeId)!;
-  if (visiting.has(nodeId)) return 0; // 循环依赖，按 0 处理
+  if (visiting.has(nodeId)) return 0; // 循环依赖
   const node = nodeMap.get(nodeId);
   if (!node) return 0;
   visiting.add(nodeId);
   let maxDepth = 0;
   for (const p of node.prerequisites) {
-    if (!nodeMap.has(p)) continue; // 未知 prereq，跳过
+    if (!nodeMap.has(p)) continue;
     maxDepth = Math.max(maxDepth, computeDepth(p, nodeMap, depthCache, visiting) + 1);
   }
   visiting.delete(nodeId);
@@ -53,22 +52,18 @@ function computeDepth(
   return maxDepth;
 }
 
-// 构建树：每个节点挂到最深 prereq 下（保证出现在最长路径末端）
+// 构建树：每个节点挂到最深 prereq 下
 function buildTree(nodes: KnowledgeNode[]): TreeNode[] {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const depthCache = new Map<string, number>();
-  nodes.forEach((n) =>
-    computeDepth(n.id, nodeMap, depthCache, new Set())
-  );
+  nodes.forEach((n) => computeDepth(n.id, nodeMap, depthCache, new Set()));
 
-  // 为每个节点分配唯一父节点 = 深度最深的那个 prereq
   const parentOf = new Map<string, string | null>();
   for (const n of nodes) {
     const validPrereqs = n.prerequisites.filter((p) => nodeMap.has(p));
     if (validPrereqs.length === 0) {
       parentOf.set(n.id, null);
     } else {
-      // 按深度降序，挑最深的作为父节点
       const sorted = validPrereqs.sort(
         (a, b) => (depthCache.get(b) ?? 0) - (depthCache.get(a) ?? 0)
       );
@@ -83,7 +78,6 @@ function buildTree(nodes: KnowledgeNode[]): TreeNode[] {
 
   function build(node: KnowledgeNode): TreeNode {
     const kids = childrenOf(node.id).map(build);
-    // 子树叶子数：自身若无线下叶子则占 1 行
     const leafCount = kids.length === 0 ? 1 : kids.reduce((s, k) => s + k.leafCount, 0);
     return { node, children: kids, leafCount };
   }
@@ -116,8 +110,6 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
 
   function place(tn: TreeNode, depth: number): { topY: number; midY: number; bottomY: number } {
     const x = depth * (NODE_W + COL_GAP);
-    const topY = cursorY;
-
     if (tn.children.length === 0) {
       const y = cursorY;
       positions.push({ id: tn.node.id, x, y, node: tn.node });
@@ -125,18 +117,15 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
       return { topY: y, midY: y + NODE_H / 2, bottomY: y + NODE_H };
     }
 
-    // 递归放置所有子节点
     const childMids: number[] = [];
     for (const c of tn.children) {
       const m = place(c, depth + 1);
       childMids.push(m.midY);
     }
-    // 父节点 y = 子节点中点 - NODE_H/2（但确保不小于子节点顶部）
     const minMid = Math.min(...childMids);
     const maxMid = Math.max(...childMids);
     const avgMid = (minMid + maxMid) / 2;
     let y = avgMid - NODE_H / 2;
-    // 防止负值
     if (y < cursorY) y = cursorY;
     positions.push({ id: tn.node.id, x, y, node: tn.node });
     return { topY, midY: y + NODE_H / 2, bottomY: y + NODE_H };
@@ -144,7 +133,6 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
 
   roots.forEach((r) => place(r, 0));
 
-  // 计算边：父节点右中 → 子节点左中
   const posMap = new Map(positions.map((p) => [p.id, p]));
   function walkEdges(tn: TreeNode) {
     const p = posMap.get(tn.node.id);
@@ -167,7 +155,6 @@ function layout(roots: TreeNode[]): { positions: Positioned[]; edges: Edge[] } {
   return { positions, edges };
 }
 
-// 难度颜色（浅 → 深）
 const DIFF_BG = ["#dbeafe", "#bfdbfe", "#fde68a", "#fdba74", "#fca5a5"];
 const DIFF_BORDER = ["#3b82f6", "#60a5fa", "#f59e0b", "#f97316", "#ef4444"];
 
@@ -177,8 +164,14 @@ export function MindMap({
   onSelectNode,
 }: MindMapProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
+  // 缩放与平移状态
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  // 拖拽中
+  const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const { positions, edges, width, height, maxX, maxY } = useMemo(() => {
+  const { positions, edges, width, height } = useMemo(() => {
     const roots = buildTree(nodes);
     const { positions, edges } = layout(roots);
     const maxX = positions.reduce((m, p) => Math.max(m, p.x + NODE_W), 0);
@@ -186,12 +179,64 @@ export function MindMap({
     return {
       positions,
       edges,
-      maxX,
-      maxY,
       width: maxX + PADDING * 2,
       height: maxY + PADDING * 2,
     };
   }, [nodes]);
+
+  // 滚轮缩放（在容器内拦截，不影响外层页面）
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = -e.deltaY * 0.0015;
+    setScale((s) => {
+      const next = Math.max(0.3, Math.min(2.5, s + delta * s));
+      return next;
+    });
+  }, []);
+
+  // 鼠标拖拽平移
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // 只对非节点的空白区域响应拖拽
+    if (e.target !== e.currentTarget && (e.target as SVGElement).tagName !== "svg") return;
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: translate.x,
+      originY: translate.y,
+    };
+  }, [translate]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setTranslate({
+      x: dragRef.current.originX + dx,
+      y: dragRef.current.originY + dy,
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
+  // 重置缩放
+  const resetView = useCallback(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  }, []);
+
+  // 放大/缩小按钮
+  const zoomIn = useCallback(() => setScale((s) => Math.min(2.5, s + 0.2)), []);
+  const zoomOut = useCallback(() => setScale((s) => Math.max(0.3, s - 0.2)), []);
+
+  // 全局 mouseup 监听（处理鼠标拖出容器的情况）
+  useEffect(() => {
+    const handler = () => { dragRef.current = null; };
+    window.addEventListener("mouseup", handler);
+    return () => window.removeEventListener("mouseup", handler);
+  }, []);
 
   if (nodes.length === 0) {
     return (
@@ -202,89 +247,128 @@ export function MindMap({
   }
 
   return (
-    <div className="overflow-auto bg-gray-50 rounded-lg">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="block"
-        style={{ minWidth: "100%" }}
+    <div className="relative bg-gray-50 rounded-lg overflow-hidden" style={{ minHeight: "400px" }}>
+      {/* 工具栏 */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur rounded-lg shadow-sm p-1">
+        <button
+          onClick={zoomOut}
+          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded"
+          aria-label="缩小"
+          title="缩小"
+        >
+          −
+        </button>
+        <span className="text-xs text-gray-500 w-10 text-center">
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          onClick={zoomIn}
+          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded"
+          aria-label="放大"
+          title="放大"
+        >
+          +
+        </button>
+        <button
+          onClick={resetView}
+          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-xs"
+          aria-label="重置"
+          title="重置视图"
+        >
+          ⟲
+        </button>
+      </div>
+
+      {/* 缩放提示 */}
+      <div className="absolute bottom-2 left-2 z-10 text-[10px] text-gray-400 bg-white/70 px-2 py-1 rounded">
+        滚轮缩放 · 拖拽平移
+      </div>
+
+      {/* SVG 画布 */}
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
+        style={{ minHeight: "400px" }}
       >
-        <g transform={`translate(${PADDING}, ${PADDING})`}>
-          {/* 边（贝塞尔曲线） */}
-          {edges.map((e, i) => {
-            const ctrl = (e.x2 - e.x1) / 2;
-            return (
-              <path
-                key={i}
-                d={`M ${e.x1} ${e.y1} C ${e.x1 + ctrl} ${e.y1}, ${e.x2 - ctrl} ${e.y2}, ${e.x2} ${e.y2}`}
-                stroke="#94a3b8"
-                strokeWidth={1.5}
-                fill="none"
-              />
-            );
-          })}
-          {/* 节点 */}
-          {positions.map((p) => {
-            const isSelected = selectedNodeId === p.id;
-            const isHover = hoverId === p.id;
-            const diff = p.node.difficulty;
-            const isBigTech = p.node.bigTech === true;
-            const bg = isSelected ? "#0f172a" : isBigTech ? "#fef3c7" : DIFF_BG[diff - 1] || "#e2e8f0";
-            const border = isSelected
-              ? "#3b82f6"
-              : isBigTech
-                ? "#f59e0b"
-                : isHover
-                  ? DIFF_BORDER[diff - 1] || "#475569"
-                  : "#cbd5e1";
-            const fg = isSelected ? "#fff" : "#1e293b";
-            const title = p.node.title;
-            // 标题超长截断
-            const truncated =
-              title.length > 12 ? title.slice(0, 12) + "…" : title;
-            const qCount = `${p.node.frequency} · ${"★".repeat(diff)}`;
-            return (
-              <g
-                key={p.id}
-                transform={`translate(${p.x}, ${p.y})`}
-                style={{ cursor: onSelectNode ? "pointer" : "default" }}
-                onClick={() => onSelectNode?.(p.node)}
-                onMouseEnter={() => setHoverId(p.id)}
-                onMouseLeave={() => setHoverId(null)}
-              >
-                <rect
-                  width={NODE_W}
-                  height={NODE_H}
-                  rx={10}
-                  fill={bg}
-                  stroke={border}
-                  strokeWidth={isSelected ? 2.5 : isBigTech ? 2 : isHover ? 2 : 1}
+        <svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${width} ${height}`}
+          className="block"
+          style={{ pointerEvents: "none" }}
+        >
+          <g transform={`translate(${PADDING + translate.x}, ${PADDING + translate.y}) scale(${scale})`}>
+            {/* 边 */}
+            {edges.map((e, i) => {
+              const ctrl = (e.x2 - e.x1) / 2;
+              return (
+                <path
+                  key={i}
+                  d={`M ${e.x1} ${e.y1} C ${e.x1 + ctrl} ${e.y1}, ${e.x2 - ctrl} ${e.y2}, ${e.x2} ${e.y2}`}
+                  stroke="#94a3b8"
+                  strokeWidth={1.5}
+                  fill="none"
+                  style={{ pointerEvents: "stroke" }}
                 />
-                <text
-                  x={14}
-                  y={26}
-                  fontSize={13}
-                  fontWeight={600}
-                  fill={fg}
+              );
+            })}
+            {/* 节点 */}
+            {positions.map((p) => {
+              const isSelected = selectedNodeId === p.id;
+              const isHover = hoverId === p.id;
+              const diff = p.node.difficulty;
+              const isBigTech = p.node.bigTech === true;
+              const bg = isSelected ? "#0f172a" : isBigTech ? "#fef3c7" : DIFF_BG[diff - 1] || "#e2e8f0";
+              const border = isSelected
+                ? "#3b82f6"
+                : isBigTech
+                  ? "#f59e0b"
+                  : isHover
+                    ? DIFF_BORDER[diff - 1] || "#475569"
+                    : "#cbd5e1";
+              const fg = isSelected ? "#fff" : "#1e293b";
+              const title = p.node.title;
+              const truncated = title.length > 12 ? title.slice(0, 12) + "…" : title;
+              const qCount = `${p.node.frequency} · ${"★".repeat(diff)}`;
+              return (
+                <g
+                  key={p.id}
+                  transform={`translate(${p.x}, ${p.y})`}
+                  style={{ cursor: onSelectNode ? "pointer" : "default", pointerEvents: "all" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectNode?.(p.node);
+                  }}
+                  onMouseEnter={() => setHoverId(p.id)}
+                  onMouseLeave={() => setHoverId(null)}
                 >
-                  {truncated}
-                </text>
-                <text
-                  x={14}
-                  y={48}
-                  fontSize={10}
-                  fill={isSelected ? "#cbd5e1" : "#64748b"}
-                >
-                  {qCount}
-                  {p.node.customOrder ? ` · #${p.node.customOrder}` : ""}
-                  {isBigTech ? ` · 🏢` : ""}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
+                  <rect
+                    width={NODE_W}
+                    height={NODE_H}
+                    rx={10}
+                    fill={bg}
+                    stroke={border}
+                    strokeWidth={isSelected ? 2.5 : isBigTech ? 2 : isHover ? 2 : 1}
+                  />
+                  <text x={14} y={26} fontSize={13} fontWeight={600} fill={fg}>
+                    {truncated}
+                  </text>
+                  <text x={14} y={48} fontSize={10} fill={isSelected ? "#cbd5e1" : "#64748b"}>
+                    {qCount}
+                    {p.node.customOrder ? ` · #${p.node.customOrder}` : ""}
+                    {isBigTech ? ` · 🏢` : ""}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+      </div>
     </div>
   );
 }

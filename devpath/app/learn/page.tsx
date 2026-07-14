@@ -593,11 +593,11 @@ function PresetMindMapModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4 pb-24"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部：标题 + 右上角操作 */}

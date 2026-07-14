@@ -22,6 +22,11 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
           onClick={() => setExpanded(!expanded)}
           className="flex-1 text-left text-sm font-medium hover:text-blue-600"
         >
+          {question.bigTech && (
+            <span className="inline-block px-1.5 py-0.5 mr-2 text-[10px] bg-amber-100 text-amber-700 rounded font-medium align-middle">
+              🏢 大厂
+            </span>
+          )}
           {question.question}
         </button>
         {onFavoriteToggle && (

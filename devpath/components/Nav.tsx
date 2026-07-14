@@ -7,9 +7,9 @@ const items = [
   { href: "/", label: "今日", icon: "🎯" },
   { href: "/learn", label: "学习", icon: "📚" },
   { href: "/review", label: "复习", icon: "🔁" },
-  { href: "/rest", label: "休息", icon: "😴" },
-  { href: "/stats", label: "统计", icon: "📊" },
-  { href: "/favorites", label: "我的", icon: "⭐" },
+  { href: "/dashboard", label: "仪表盘", icon: "📈" },
+  { href: "/favorites", label: "收藏", icon: "⭐" },
+  { href: "/profile", label: "我的", icon: "👤" },
 ];
 
 export function Nav() {

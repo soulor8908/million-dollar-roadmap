@@ -40,6 +40,8 @@ export interface Question {
   codeSnippet?: string;
   favorited: boolean;
   favoritedAt?: string;
+  // 大厂高频面试题标记
+  bigTech?: boolean;
 }
 
 // 试题集收藏

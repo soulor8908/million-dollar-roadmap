@@ -14,7 +14,8 @@ const SYSTEM_PROMPT = `你是资深技术面试官。针对给定知识点生成
 2. 答案用三段式：结论 → 展开解释 → 代码示例（200-500 字）
 3. keyPoints 3-5 个关键点
 4. followUps 2-3 个追问
-5. 如果适用，提供 codeSnippet`;
+5. 如果适用，提供 codeSnippet
+6. 标记 bigTech=true 表示这是大厂高频面试题（互联网大厂真实考察过）`;
 
 const questionSchema = z.object({
   question: z.string(),
@@ -22,6 +23,7 @@ const questionSchema = z.object({
   keyPoints: z.array(z.string()),
   followUps: z.array(z.string()),
   codeSnippet: z.string().optional(),
+  bigTech: z.boolean().describe("是否大厂高频面试题"),
 });
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -48,6 +50,7 @@ async function generateOne(node: KnowledgeNode): Promise<Question> {
       keyPoints: result.object.keyPoints,
       followUps: result.object.followUps,
       codeSnippet: result.object.codeSnippet,
+      bigTech: result.object.bigTech,
       favorited: false,
     };
   } catch (e) {
@@ -60,6 +63,7 @@ async function generateOne(node: KnowledgeNode): Promise<Question> {
       keyPoints: [],
       followUps: [],
       favorited: false,
+      bigTech: false,
     };
   }
 }

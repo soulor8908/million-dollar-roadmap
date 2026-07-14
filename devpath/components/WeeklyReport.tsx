@@ -2,10 +2,12 @@
 
 // components/WeeklyReport.tsx
 // 周报展示 + 生成按钮 + 历史列表
+// 扩展：从 IndexedDB 加载 EmotionEntry 一并提交给 API（用于情绪+多巴胺章节）
 
 import { useState, useEffect } from "react";
 import { listItems } from "@/lib/storage/db";
-import type { LearnLog, ReviewLog, DailyStatus } from "@/lib/types";
+import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
+import { KEY_PREFIXES } from "@/lib/types";
 
 interface WeeklyEntry {
   id: string;
@@ -45,10 +47,18 @@ export function WeeklyReport({ learnLogs, reviewLogs, statuses }: Props) {
     setLoading(true);
     try {
       const weekStart = getMondayStr();
+      // 加载本周 EmotionEntry（用于情绪+多巴胺章节）
+      const allEmotions = await listItems<EmotionEntry>(KEY_PREFIXES.EMOTION);
+      // 取本周（weekStart 起 7 天）内的情绪条目
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekEndStr = weekEnd.toISOString().slice(0, 10);
+      const emotions = allEmotions.filter((e) => e.date >= weekStart && e.date < weekEndStr);
+
       const res = await fetch("/api/weekly", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekStart, learnLogs, reviewLogs, statuses }),
+        body: JSON.stringify({ weekStart, learnLogs, reviewLogs, statuses, emotions }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as WeeklyEntry;

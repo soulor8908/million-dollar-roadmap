@@ -1,12 +1,13 @@
 // app/api/status/route.ts
 // 接收当日状态 + 基础计划 → 规则调量 → 可选 AI 增强 → 存 IndexedDB → 返回
+// 支持可选 dopamineTrigger（来自情绪觉察流程）
 
 import { NextResponse } from "next/server";
 import { adjustDailyLoad, detectEnhanceTrigger } from "@/lib/status";
 import { enhanceAdjustment } from "@/lib/ai/status-enhance";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
-import type { DailyStatus, ScheduleItem } from "@/lib/types";
+import type { DailyStatus, ScheduleItem, DopamineTrigger } from "@/lib/types";
 
 export const runtime = "edge";
 
@@ -16,6 +17,8 @@ interface StatusRequestBody {
   mood: "good" | "neutral" | "bad";
   availableMinutes: number;
   basePlan: ScheduleItem[];
+  /** 多巴胺干扰来源（情绪觉察流程收集，可选） */
+  dopamineTrigger?: DopamineTrigger;
 }
 
 export async function POST(req: Request) {
@@ -38,6 +41,11 @@ export async function POST(req: Request) {
     availableMinutes: body.availableMinutes,
     aiAdjustedLoad: 0,
     actualMinutes: 0,
+    // 仅写入合法值；"无" 视为未设置（保持与旧数据语义一致）
+    dopamineTrigger:
+      body.dopamineTrigger && body.dopamineTrigger !== "无"
+        ? body.dopamineTrigger
+        : undefined,
   };
 
   // 规则调量

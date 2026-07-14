@@ -23,6 +23,8 @@
   "shortcuts": [
     { "name": "今日学习", "url": "/" },
     { "name": "复习", "url": "/review" },
+    { "name": "休息", "url": "/rest" },
     { "name": "数据", "url": "/stats" }
-  ]
+  ],
+  "gcm_sender_id": "103953800507"
 }

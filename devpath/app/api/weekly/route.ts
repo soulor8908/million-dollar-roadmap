@@ -1,12 +1,13 @@
 // app/api/weekly/route.ts
 // 周报生成路由：接收本周数据 → 调 AI → 存 IndexedDB → 返回 markdown
+// 支持可选 emotions（来自情绪觉察流程的 EmotionEntry）
 
 import { NextResponse } from "next/server";
 import { generateWeeklyReport } from "@/lib/ai/weekly-report";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { setItem as dbSet } from "@/lib/storage/db";
 import { nanoid } from "nanoid";
-import type { LearnLog, ReviewLog, DailyStatus } from "@/lib/types";
+import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
 
 export const runtime = "edge";
 
@@ -15,6 +16,8 @@ interface WeeklyRequestBody {
   learnLogs: LearnLog[];
   reviewLogs: ReviewLog[];
   statuses: DailyStatus[];
+  /** 情绪觉察条目（可选） */
+  emotions?: EmotionEntry[];
 }
 
 export async function POST(req: Request) {
@@ -34,6 +37,7 @@ export async function POST(req: Request) {
     learnLogs: body.learnLogs,
     reviewLogs: body.reviewLogs,
     statuses: body.statuses,
+    emotions: body.emotions,
     weekStart: body.weekStart,
   });
 

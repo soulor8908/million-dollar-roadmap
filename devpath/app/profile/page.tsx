@@ -2,12 +2,18 @@
 
 // app/profile/page.tsx
 // 公开主页设置：username/displayName/bio/avatar + 4 个隐私 toggle + 实时预览 + 保存
-// 「生成分享图」按钮在 Task 15 加入
+// 扩展：每日时间表配置（存 IndexedDB key="routine:default"）+ PWA 通知开关
 
 import { useState, useEffect } from "react";
 import type { PublicProfile } from "@/lib/types";
 import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
 import { ShareCardButton } from "@/components/ShareCardButton";
+import {
+  loadRoutineMarkdown,
+  saveRoutineMarkdown,
+  defaultRoutineMarkdown,
+  parseRoutine,
+} from "@/lib/routine";
 
 const STORAGE_KEY = "my:profile";
 
@@ -27,10 +33,29 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // 每日时间表
+  const [routine, setRoutine] = useState<string>("");
+  const [routineSaving, setRoutineSaving] = useState(false);
+  const [routineSaved, setRoutineSaved] = useState(false);
+  const [routineHint, setRoutineHint] = useState<string>("");
+
+  // PWA 通知
+  const [notifSupported, setNotifSupported] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+
   useEffect(() => {
     (async () => {
       const stored = await dbGet<PublicProfile>(STORAGE_KEY);
       if (stored) setProfile(stored);
+
+      const r = await loadRoutineMarkdown();
+      setRoutine(r);
+
+      // 检查 PWA 通知支持
+      if (typeof window !== "undefined" && "Notification" in window) {
+        setNotifSupported(true);
+        setNotifPermission(Notification.permission);
+      }
     })();
   }, []);
 
@@ -50,9 +75,7 @@ export default function ProfilePage() {
   async function save() {
     setSaving(true);
     try {
-      // 1. 本地存
       await dbSet(STORAGE_KEY, profile);
-      // 2. 上传 KV（通过 Pages Function）
       const res = await fetch(`/api/public/${encodeURIComponent(profile.username)}`, {
         method: "PUT",
         headers: {
@@ -62,7 +85,6 @@ export default function ProfilePage() {
         body: JSON.stringify({ profile }),
       });
       if (!res.ok && res.status !== 404) {
-        // 静态导出下 /api/public 是 Pages Function，本地无环境时 404 可接受
         console.warn("KV sync skipped:", res.status);
       }
       setSaved(true);
@@ -71,9 +93,39 @@ export default function ProfilePage() {
     }
   }
 
+  async function saveRoutine() {
+    setRoutineSaving(true);
+    try {
+      await saveRoutineMarkdown(routine);
+      // 简单校验：解析后能否得到时段
+      const slots = parseRoutine(routine);
+      setRoutineHint(
+        slots.length > 0
+          ? `已识别 ${slots.length} 个时段`
+          : "已保存（未识别到任何时段，请检查格式）",
+      );
+      setRoutineSaved(true);
+    } finally {
+      setRoutineSaving(false);
+    }
+  }
+
+  async function requestNotifPermission() {
+    if (!notifSupported) return;
+    const perm = await Notification.requestPermission();
+    setNotifPermission(perm);
+    if (perm === "granted") {
+      // 立即测试一条通知
+      new Notification("devpath 打卡提醒已开启", {
+        body: "我们会在每日学习时段提醒你 📚",
+        icon: "/icons/icon-192.png",
+      });
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4">
-      <h1 className="text-2xl font-bold">公开主页设置</h1>
+    <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
+      <h1 className="text-2xl font-bold">个人中心</h1>
 
       <section className="space-y-3 rounded-lg border p-4">
         <h2 className="font-semibold">基本信息</h2>
@@ -117,6 +169,44 @@ export default function ProfilePage() {
       </section>
 
       <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">每日时间表</h2>
+        <p className="text-xs text-gray-500">
+          配置后首页会显示"现在该做什么"+ 剩余分钟 + 下一项，并联动 FSRS 复习 / 休息工具
+        </p>
+        <textarea
+          value={routine}
+          onChange={(e) => {
+            setRoutine(e.target.value);
+            setRoutineSaved(false);
+            setRoutineHint("");
+          }}
+          rows={12}
+          placeholder={defaultRoutineMarkdown()}
+          className="mt-1 w-full rounded border px-2 py-1 font-mono text-xs"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={saveRoutine}
+            disabled={routineSaving}
+            className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {routineSaving ? "保存中..." : "保存时间表"}
+          </button>
+          <button
+            onClick={() => {
+              setRoutine(defaultRoutineMarkdown());
+              setRoutineSaved(false);
+            }}
+            className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+          >
+            使用模板
+          </button>
+          {routineSaved && <span className="text-sm text-green-600">已保存 ✓</span>}
+          {routineHint && <span className="text-xs text-gray-500">{routineHint}</span>}
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
         <h2 className="font-semibold">隐私设置</h2>
         {([
           { key: "radar" as const, label: "能力雷达图" },
@@ -134,6 +224,25 @@ export default function ProfilePage() {
             />
           </label>
         ))}
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">学习提醒（PWA 通知）</h2>
+        {!notifSupported ? (
+          <p className="text-sm text-gray-500">当前环境不支持通知</p>
+        ) : notifPermission === "granted" ? (
+          <p className="text-sm text-green-600">✓ 通知已开启</p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">开启后可每日定时提醒你学习（外部监督）</p>
+            <button
+              onClick={requestNotifPermission}
+              className="rounded-lg bg-black px-3 py-1 text-sm text-white hover:bg-gray-800"
+            >
+              开启通知
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="space-y-3 rounded-lg border p-4">

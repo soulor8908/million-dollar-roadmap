@@ -1,21 +1,29 @@
 "use client";
 
+// app/page.tsx
+// 首页：当前任务卡 + 待学/待复习/打卡 + 今日状态 + 学习列表 + 热力图
+// 打卡可视化强化（按天数变色 + 断卡视觉冲击）+ 低能量休息提示
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { get, keys } from "idb-keyval";
 import { KEY_PREFIXES } from "@/lib/types";
+import type { LearningPlan, ReviewCard, LearnLog, ScheduleItem, DailyStatus } from "@/lib/types";
 import { chinaDateNow, chinaDateShift } from "@/lib/time";
 import { getDueCards } from "@/lib/fsrs";
 import { StatusCard } from "@/components/StatusCard";
-import type { LearningPlan, ReviewCard, LearnLog, ScheduleItem } from "@/lib/types";
+import { CurrentTaskCard } from "@/components/CurrentTaskCard";
 
 export default function Home() {
   const [dueCount, setDueCount] = useState(0);
   const [todayLearnCount, setTodayLearnCount] = useState(0);
   const [streak, setStreak] = useState(0);
+  /** 上一次连续天数（昨日或更早结束的连续段）—— 用于断卡视觉 */
+  const [lastStreak, setLastStreak] = useState(0);
   const [recentLogs, setRecentLogs] = useState<LearnLog[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ date: string; minutes: number }[]>([]);
+  const [todayEnergy, setTodayEnergy] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +64,8 @@ export default function Home() {
       setRecentLogs(logs.slice(-5));
 
       const logDates = new Set(logs.map((l) => l.date));
+
+      // 今日连续打卡（含今日）
       let streakCount = 0;
       let checkDate = chinaDateNow();
       while (logDates.has(checkDate)) {
@@ -63,6 +73,19 @@ export default function Home() {
         checkDate = chinaDateShift(checkDate, -1);
       }
       setStreak(streakCount);
+
+      // 上一次连续段：从昨日往前数
+      if (streakCount === 0) {
+        let lastCount = 0;
+        let yDate = chinaDateShift(chinaDateNow(), -1);
+        while (logDates.has(yDate)) {
+          lastCount++;
+          yDate = chinaDateShift(yDate, -1);
+        }
+        setLastStreak(lastCount);
+      } else {
+        setLastStreak(0);
+      }
 
       // 迷你热力图（最近 7 天）
       const dayMinutes: { date: string; minutes: number }[] = [];
@@ -74,6 +97,11 @@ export default function Home() {
         dayMinutes.push({ date, minutes });
       }
       setHeatmapData(dayMinutes);
+
+      // 读今日状态，用于低能量休息提示
+      const todayStatusKey = KEY_PREFIXES.STATUS + chinaDateNow();
+      const todayStatus = await get<DailyStatus>(todayStatusKey);
+      if (todayStatus) setTodayEnergy(todayStatus.energy);
     })();
   }, []);
 
@@ -85,11 +113,39 @@ export default function Home() {
     return "bg-green-700";
   };
 
+  // 打卡可视化强化：按天数变色 + 火焰 emoji
+  const streakMeta = (() => {
+    if (streak === 0) {
+      // 断卡：上次有连续段 > 0 → 视觉冲击
+      if (lastStreak >= 3) {
+        return {
+          color: "bg-red-50 border-red-300 text-red-600",
+          emoji: "💔",
+          sub: `断卡！上次连续 ${lastStreak} 天`,
+          shock: true,
+        };
+      }
+      return { color: "bg-gray-50 border-gray-200 text-gray-500", emoji: "⚪", sub: "今日未打卡", shock: false };
+    }
+    if (streak >= 30) return { color: "bg-purple-50 border-purple-300 text-purple-700", emoji: "🔥", sub: "满月达成！", shock: false };
+    if (streak >= 14) return { color: "bg-orange-50 border-orange-300 text-orange-700", emoji: "🔥", sub: "两周连胜！", shock: false };
+    if (streak >= 7) return { color: "bg-orange-50 border-orange-300 text-orange-600", emoji: "🔥", sub: "一周连胜！", shock: false };
+    if (streak >= 3) return { color: "bg-yellow-50 border-yellow-300 text-yellow-700", emoji: "⭐", sub: "保持节奏", shock: false };
+    return { color: "bg-blue-50 border-blue-300 text-blue-700", emoji: "🌱", sub: "开始打卡", shock: false };
+  })();
+
+  const lowEnergy = todayEnergy !== null && todayEnergy <= 2;
+
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20">
       <h1 className="text-2xl font-bold mb-4">今日</h1>
 
-      {/* 待学/待复习 + 打卡 */}
+      {/* 现在该做什么（时间表驱动） */}
+      <div className="mb-4">
+        <CurrentTaskCard />
+      </div>
+
+      {/* 待学/待复习 + 打卡（打卡强化） */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-white border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold">{todayLearnCount}</p>
@@ -99,11 +155,24 @@ export default function Home() {
           <p className="text-2xl font-bold">{dueCount}</p>
           <p className="text-xs text-gray-400">今日待复习</p>
         </div>
-        <div className="bg-white border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold">{streak}</p>
-          <p className="text-xs text-gray-400">连续打卡</p>
+        <div className={`border rounded-lg p-3 text-center ${streakMeta.color}`}>
+          <p className="text-2xl font-bold">
+            {streakMeta.emoji} {streak}
+          </p>
+          <p className="text-xs">{streakMeta.sub}</p>
         </div>
       </div>
+
+      {/* 低能量休息提示（与状态评估联动） */}
+      {lowEnergy && (
+        <Link
+          href="/rest"
+          className="mb-4 flex items-center justify-between rounded-lg bg-green-50 border border-green-200 p-3 hover:bg-green-100"
+        >
+          <span className="text-sm text-green-800">😴 检测到今天能量偏低，去休息一下？</span>
+          <span className="text-xs text-green-700">478 呼吸 →</span>
+        </Link>
+      )}
 
       {/* 今日状态 */}
       <div className="mb-4">

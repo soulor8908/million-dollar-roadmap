@@ -25,6 +25,8 @@ export interface KnowledgeNode {
   summary: string;
   mastery: number;
   customOrder?: number;
+  // 大厂高频考点标记（true = 互联网大厂面试重点考察）
+  bigTech?: boolean;
 }
 
 // 面试题
@@ -216,4 +218,21 @@ export const KEY_PREFIXES = {
   EMOTION: "emotion:",
   /** 每日时间表（用户在 profile 配置）：routine:default */
   ROUTINE: "routine:",
+  /** 常用提示词库：prompt:<id> */
+  PROMPT: "prompt:",
 } as const;
+
+// 用户保存的常用提示词
+export interface PromptLibraryItem {
+  id: string;
+  /** 提示词标题（用户给的名字） */
+  title: string;
+  /** 提示词内容（附加到 AI 生成请求的指令） */
+  content: string;
+  /** 创建时间 ISO */
+  createdAt: string;
+  /** 最近使用时间 ISO */
+  usedAt?: string;
+  /** 使用次数 */
+  usedCount: number;
+}

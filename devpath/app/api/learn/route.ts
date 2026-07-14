@@ -17,10 +17,11 @@ export async function POST(req: NextRequest) {
   if (authError) return authError;
   try {
     const body = await req.json();
-    const { topic, dailyMinutes = 30, maxNewPerDay = 1 } = body as {
+    const { topic, dailyMinutes = 30, maxNewPerDay = 1, prompt } = body as {
       topic?: string;
       dailyMinutes?: number;
       maxNewPerDay?: number;
+      prompt?: string;
     };
 
     if (!topic || typeof topic !== "string" || !topic.trim()) {
@@ -41,8 +42,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. 拆知识树
-    const nodes = await decomposeKnowledge(topic.trim());
+    // 用户自定义提示词（可选，最长 2000 字符）
+    const userPrompt =
+      typeof prompt === "string" && prompt.trim().length > 0
+        ? prompt.trim().slice(0, 2000)
+        : undefined;
+
+    // 1. 拆知识树（传入用户自定义提示词）
+    const nodes = await decomposeKnowledge(topic.trim(), userPrompt);
 
     // 2. 生成面试题（并行分批）
     const questions = await generateQuestions(nodes);

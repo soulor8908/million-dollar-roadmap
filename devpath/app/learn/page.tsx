@@ -13,10 +13,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setItem, listKeys, getItem, delItem } from "@/lib/storage/db";
 import { apiFetch } from "@/lib/api-client";
-import { KEY_PREFIXES } from "@/lib/types";
-import type { LearningPlan, KnowledgeNode, Question, ScheduleItem } from "@/lib/types";
+import { KEY_PREFIXES, type LearningPlan, type KnowledgeNode, type Question, type ScheduleItem, type PromptLibraryItem } from "@/lib/types";
 import { PRESETS, type PresetMeta } from "@/lib/presets";
 import { MindMap } from "@/components/MindMap";
+import {
+  listPrompts,
+  savePrompt,
+  markPromptUsed,
+  deletePrompt,
+  BUILTIN_PROMPTS,
+} from "@/lib/prompt-library";
 import { nanoid } from "nanoid";
 
 const EXAMPLES = [
@@ -45,14 +51,20 @@ export default function LearnPage() {
 
   // 预设弹窗状态
   const [activePreset, setActivePreset] = useState<PresetMeta | null>(null);
-  // 弹窗内当前展示的数据（可能是预设原数据，也可能是 AI 重新生成后的数据）
   const [presetData, setPresetData] = useState<PresetPlanData | null>(null);
   const [presetSource, setPresetSource] = useState<"preset" | "ai">("preset");
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>();
 
-  // 加载历史计划
+  // 用户自定义提示词
+  const [promptText, setPromptText] = useState("");
+  const [promptLibrary, setPromptLibrary] = useState<PromptLibraryItem[]>([]);
+  const [showPromptLib, setShowPromptLib] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [savePromptTitle, setSavePromptTitle] = useState("");
+
+  // 加载历史计划 + 提示词库
   useEffect(() => {
     (async () => {
       const allKeys = await listKeys();
@@ -66,6 +78,10 @@ export default function LearnPage() {
         .filter((p): p is LearningPlan => p !== undefined)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setHistory(valid);
+
+      // 加载提示词库
+      const prompts = await listPrompts();
+      setPromptLibrary(prompts);
     })();
   }, []);
 
@@ -117,6 +133,7 @@ export default function LearnPage() {
           topic: presetData.topic,
           dailyMinutes,
           maxNewPerDay,
+          prompt: promptText.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -132,6 +149,11 @@ export default function LearnPage() {
       });
       setPresetSource("ai");
       setSelectedNodeId(undefined);
+      // 如果使用了提示词，标记使用
+      if (promptText.trim()) {
+        const matched = promptLibrary.find((p) => p.content === promptText.trim());
+        if (matched) await markPromptUsed(matched.id);
+      }
     } catch (err) {
       setRegenError(err instanceof Error ? err.message : "未知错误");
     } finally {
@@ -174,6 +196,7 @@ export default function LearnPage() {
           topic: topic.trim(),
           dailyMinutes,
           maxNewPerDay,
+          prompt: promptText.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -182,11 +205,48 @@ export default function LearnPage() {
       }
       const { planId, plan } = (await res.json()) as { planId: string; plan: LearningPlan };
       await setItem(KEY_PREFIXES.PLAN + planId, plan);
+      // 如果使用了提示词，标记使用
+      if (promptText.trim()) {
+        const matched = promptLibrary.find((p) => p.content === promptText.trim());
+        if (matched) {
+          await markPromptUsed(matched.id);
+          // 刷新提示词库
+          const prompts = await listPrompts();
+          setPromptLibrary(prompts);
+        }
+      }
       router.push(`/learn/${planId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "未知错误");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // 选择某个常用提示词
+  function applyPrompt(p: PromptLibraryItem) {
+    setPromptText(p.content);
+    setShowPromptLib(false);
+  }
+
+  // 保存当前提示词为常用
+  async function saveCurrentPrompt() {
+    const content = promptText.trim();
+    if (!content) return;
+    const title = savePromptTitle.trim() || content.slice(0, 20);
+    await savePrompt(title, content);
+    const prompts = await listPrompts();
+    setPromptLibrary(prompts);
+    setShowSavePrompt(false);
+    setSavePromptTitle("");
+  }
+
+  // 删除某个用户自定义提示词
+  async function removePrompt(id: string) {
+    const ok = await deletePrompt(id);
+    if (ok) {
+      const prompts = await listPrompts();
+      setPromptLibrary(prompts);
     }
   }
 
@@ -260,6 +320,120 @@ export default function LearnPage() {
               className="w-full px-3 py-2 border rounded mt-1"
             />
           </label>
+        </div>
+
+        {/* 自定义提示词 */}
+        <div className="border rounded-lg p-3 bg-amber-50/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">
+              🎯 自定义提示词（可选）
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPromptLib((v) => !v)}
+                className="text-xs text-blue-600 hover:text-blue-800"
+              >
+                📚 常用 ({promptLibrary.length})
+              </button>
+              {promptText.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setShowSavePrompt((v) => !v)}
+                  className="text-xs text-green-600 hover:text-green-800"
+                >
+                  💾 存为常用
+                </button>
+              )}
+            </div>
+          </div>
+          <textarea
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            placeholder="例如：请以大厂面试官视角拆解，重点考察高并发场景和源码原理；或留空使用默认生成逻辑"
+            rows={3}
+            maxLength={2000}
+            className="w-full px-3 py-2 text-sm border rounded resize-y focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          {promptText.trim() && (
+            <p className="text-[11px] text-gray-400 mt-1">
+              {promptText.length}/2000 字 · 生成时会附加到 AI 请求
+            </p>
+          )}
+
+          {/* 常用提示词选择 */}
+          {showPromptLib && (
+            <div className="mt-2 border-t pt-2 space-y-1">
+              <p className="text-xs text-gray-500 mb-1">选择常用提示词：</p>
+              {promptLibrary.length === 0 ? (
+                <p className="text-xs text-gray-400">暂无，可输入后点击"存为常用"</p>
+              ) : (
+                promptLibrary.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-start gap-2 p-2 rounded hover:bg-white border border-transparent hover:border-gray-200 transition-colors"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => applyPrompt(p)}
+                      className="flex-1 text-left"
+                    >
+                      <p className="text-xs font-medium text-gray-800">
+                        {p.title}
+                        {p.usedCount > 0 && (
+                          <span className="ml-2 text-[10px] text-gray-400">
+                            使用 {p.usedCount} 次
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-gray-500 line-clamp-2">
+                        {p.content}
+                      </p>
+                    </button>
+                    {/* 仅用户自定义的可删除 */}
+                    {!BUILTIN_PROMPTS.some((b) => b.id === p.id) && (
+                      <button
+                        type="button"
+                        onClick={() => removePrompt(p.id)}
+                        className="text-gray-300 hover:text-red-500 text-xs"
+                        aria-label="删除"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* 保存为常用提示词 */}
+          {showSavePrompt && promptText.trim() && (
+            <div className="mt-2 border-t pt-2 flex items-center gap-2">
+              <input
+                type="text"
+                value={savePromptTitle}
+                onChange={(e) => setSavePromptTitle(e.target.value)}
+                placeholder="给这个提示词起个名字"
+                className="flex-1 px-2 py-1 text-sm border rounded"
+                maxLength={40}
+              />
+              <button
+                type="button"
+                onClick={saveCurrentPrompt}
+                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                保存
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSavePrompt(false)}
+                className="px-2 py-1 text-xs text-gray-500"
+              >
+                取消
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -503,7 +677,7 @@ function PresetMindMapModal({
         {/* 底部：操作 */}
         <div className="shrink-0 p-3 border-t bg-white flex items-center justify-between gap-2">
           <p className="text-xs text-gray-500 flex-1">
-            💡 点击任意知识点可立即开始学习该节点，或导入整个知识库
+            💡 点击任意知识点可立即开始学习该节点 · 🏢 标记为大厂高频考点
           </p>
           <button
             onClick={onImportAll}

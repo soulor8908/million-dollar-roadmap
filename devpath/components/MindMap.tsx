@@ -229,12 +229,15 @@ export function MindMap({
             const isSelected = selectedNodeId === p.id;
             const isHover = hoverId === p.id;
             const diff = p.node.difficulty;
-            const bg = isSelected ? "#0f172a" : DIFF_BG[diff - 1] || "#e2e8f0";
+            const isBigTech = p.node.bigTech === true;
+            const bg = isSelected ? "#0f172a" : isBigTech ? "#fef3c7" : DIFF_BG[diff - 1] || "#e2e8f0";
             const border = isSelected
               ? "#3b82f6"
-              : isHover
-                ? DIFF_BORDER[diff - 1] || "#475569"
-                : "#cbd5e1";
+              : isBigTech
+                ? "#f59e0b"
+                : isHover
+                  ? DIFF_BORDER[diff - 1] || "#475569"
+                  : "#cbd5e1";
             const fg = isSelected ? "#fff" : "#1e293b";
             const title = p.node.title;
             // 标题超长截断
@@ -256,7 +259,7 @@ export function MindMap({
                   rx={10}
                   fill={bg}
                   stroke={border}
-                  strokeWidth={isSelected ? 2.5 : isHover ? 2 : 1}
+                  strokeWidth={isSelected ? 2.5 : isBigTech ? 2 : isHover ? 2 : 1}
                 />
                 <text
                   x={14}
@@ -275,6 +278,7 @@ export function MindMap({
                 >
                   {qCount}
                   {p.node.customOrder ? ` · #${p.node.customOrder}` : ""}
+                  {isBigTech ? ` · 🏢` : ""}
                 </text>
               </g>
             );

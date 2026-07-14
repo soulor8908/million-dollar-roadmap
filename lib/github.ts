@@ -56,11 +56,10 @@ export class GitHubClient {
   }
 
   async listFiles(dirPath: string): Promise<string[]> {
-    const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${dirPath}`;
-    const res = await fetch(url, {
+    // 走 /api/github/ 代理路由，避免在浏览器直接调用 GitHub API 暴露 token
+    const res = await fetch(`/api/github/${dirPath}`, {
       headers: {
-        Authorization: `Bearer ${this.token}`,
-        Accept: "application/vnd.github+json",
+        "x-github-token": this.token,
       },
     });
     if (res.status === 404) return [];

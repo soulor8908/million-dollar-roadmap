@@ -17,15 +17,18 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install axios
+        working-directory: scripts
+        run: npm install
 
       - name: Generate weekly report
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
-        run: node scripts/ai-review.js
+        working-directory: scripts
+        run: npx tsx ai-review.ts
 
       - name: Refresh README dashboard
-        run: node scripts/dashboard.js
+        working-directory: scripts
+        run: npx tsx dashboard.ts
 
       - name: Commit report
         run: |

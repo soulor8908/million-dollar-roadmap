@@ -1,48 +1,52 @@
-const fs = require('fs');
-const path = require('path');
-
+// scripts/dashboard.ts
 // README 仪表盘生成器：从 algorithm/progress.md + daily/*.md 读取数据，生成 README.md
-// 运行：node scripts/dashboard.js
+// 运行：npx tsx scripts/dashboard.ts
 // 设计原则：解析失败时用占位符降级，绝不抛异常让 CI 挂掉
 
-const ROOT = path.join(__dirname, '..');
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-function readSafe(filePath) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT = path.join(__dirname, "..");
+
+function readSafe(filePath: string): string {
   try {
-    return fs.readFileSync(filePath, 'utf-8');
+    return fs.readFileSync(filePath, "utf-8");
   } catch {
-    return '';
+    return "";
   }
 }
 
 // 解析算法进度：匹配 "当前: X/Y (Z%)"
-function parseProgress() {
-  const content = readSafe(path.join(ROOT, 'algorithm', 'progress.md'));
+function parseProgress(): { done: number; total: number; percent: number } {
+  const content = readSafe(path.join(ROOT, "algorithm", "progress.md"));
   const m = content.match(/当前[:：]\s*(\d+)\s*\/\s*(\d+)\s*\((\d+)%\)/);
   if (!m) return { done: 0, total: 200, percent: 0 };
   return { done: +m[1], total: +m[2], percent: +m[3] };
 }
 
 // 列出所有日志文件（YYYY-MM-DD.md），排除 template.md
-function listDailyLogs() {
-  const dailyDir = path.join(ROOT, 'daily');
+function listDailyLogs(): string[] {
+  const dailyDir = path.join(ROOT, "daily");
   if (!fs.existsSync(dailyDir)) return [];
-  return fs.readdirSync(dailyDir)
-    .filter(f => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
+  return fs
+    .readdirSync(dailyDir)
+    .filter((f) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
     .sort();
 }
 
 // 计算从今天往回的连续打卡天数（按文件名日期）
-function currentStreak(logs) {
+function currentStreak(logs: string[]): number {
   if (logs.length === 0) return 0;
-  const dates = logs.map(f => f.replace('.md', ''));
+  const dates = logs.map((f) => f.replace(".md", ""));
   let streak = 0;
   const d = new Date();
-  // 容错：本地时区日期
   for (;;) {
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     const key = `${y}-${m}-${day}`;
     if (dates.includes(key)) {
       streak++;
@@ -55,24 +59,24 @@ function currentStreak(logs) {
 }
 
 // 生成进度条
-function bar(done, total, width = 20) {
+function bar(done: number, total: number, width = 20): string {
   const filled = total > 0 ? Math.round((done / total) * width) : 0;
-  return '█'.repeat(filled) + '░'.repeat(width - filled);
+  return "█".repeat(filled) + "░".repeat(width - filled);
 }
 
-function buildReadme() {
+function buildReadme(): string {
   const algo = parseProgress();
   const logs = listDailyLogs();
   const streak = currentStreak(logs);
-  const latest = logs.length ? logs[logs.length - 1].replace('.md', '') : '—';
-  const updatedAt = new Date().toISOString().split('T')[0];
+  const latest = logs.length ? logs[logs.length - 1].replace(".md", "") : "—";
+  const updatedAt = new Date().toISOString().split("T")[0];
 
   const algoBar = bar(algo.done, algo.total);
 
   return `# million-dollar-roadmap
 百万年薪计划 · 个人作战系统
 
-> 本 README 由 \`scripts/dashboard.js\` 自动生成，请勿手动编辑。最后更新：${updatedAt}
+> 本 README 由 \`scripts/dashboard.ts\` 自动生成，请勿手动编辑。最后更新：${updatedAt}
 
 ## 📊 进度仪表盘
 
@@ -109,7 +113,7 @@ projects/     项目文档（项目1 进行中，2/3 已冻结）
 backend/      后端学习路线（降级，按需学习）
 interview/    面试准备
 schedule/     作息安排
-scripts/      dashboard.js 仪表盘 + ai-review.js 周报
+scripts/      dashboard.ts 仪表盘 + ai-review.ts 周报
 .github/      Actions：每日检查 + 周度 AI 复盘
 \`\`\`
 
@@ -120,9 +124,9 @@ scripts/      dashboard.js 仪表盘 + ai-review.js 周报
 `;
 }
 
-function main() {
+function main(): void {
   const content = buildReadme();
-  const readmePath = path.join(ROOT, 'README.md');
+  const readmePath = path.join(ROOT, "README.md");
   fs.writeFileSync(readmePath, content);
   console.log(`README dashboard generated at ${path.relative(ROOT, readmePath)}`);
 }

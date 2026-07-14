@@ -14,15 +14,40 @@ export async function GET(
   const repo = process.env.GITHUB_REPO || "million-dollar-roadmap";
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/vnd.github+json",
-    },
-  });
+  // 透传条件请求头，支持 ETag / If-Modified-Since 缓存验证
+  const ghHeaders: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+  };
+  const ifNoneMatch = req.headers.get("if-none-match");
+  const ifModifiedSince = req.headers.get("if-modified-since");
+  if (ifNoneMatch) ghHeaders["If-None-Match"] = ifNoneMatch;
+  if (ifModifiedSince) ghHeaders["If-Modified-Since"] = ifModifiedSince;
+
+  const res = await fetch(url, { headers: ghHeaders });
+
+  // 304 Not Modified：客户端可用本地缓存
+  if (res.status === 304) {
+    return new NextResponse(null, { status: 304 });
+  }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  const response = NextResponse.json(data, { status: res.status });
+
+  // 透传 ETag / Last-Modified 供客户端条件请求使用
+  const etag = res.headers.get("etag");
+  const lastModified = res.headers.get("last-modified");
+  if (etag) response.headers.set("ETag", etag);
+  if (lastModified) response.headers.set("Last-Modified", lastModified);
+
+  // 浏览器缓存 60s，之后 stale-while-revalidate 300s
+  // private: 不被 CDN 共享缓存（token 在 header 中，每个用户独立）
+  response.headers.set(
+    "Cache-Control",
+    "private, max-age=60, stale-while-revalidate=300"
+  );
+
+  return response;
 }
 
 export async function PUT(
@@ -52,5 +77,8 @@ export async function PUT(
   });
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  const response = NextResponse.json(data, { status: res.status });
+  // 写操作不缓存
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }

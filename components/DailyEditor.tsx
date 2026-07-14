@@ -8,14 +8,19 @@ import { parseDailyLog, toggleChecklistItem, createEmptyLog, formatDailyLog } fr
 import { chinaDateNow } from "@/lib/time";
 import type { DailyLog } from "@/lib/types";
 
-export function DailyEditor() {
+export function DailyEditor({ date: externalDate }: { date?: string }) {
   const [log, setLog] = useState<DailyLog | null>(null);
   const [rawContent, setRawContent] = useState("");
   const [sha, setSha] = useState<string | undefined>();
-  const [date, setDate] = useState(chinaDateNow());
+  const [date, setDate] = useState(externalDate || chinaDateNow());
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  // 外部传入日期变化时同步（DailyCalendar 选择日期 → Editor 跟随切换）
+  useEffect(() => {
+    if (externalDate) setDate(externalDate);
+  }, [externalDate]);
 
   useEffect(() => {
     (async () => {

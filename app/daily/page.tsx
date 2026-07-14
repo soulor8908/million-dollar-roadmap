@@ -12,11 +12,9 @@ export default function DailyPage() {
       <h1 className="text-lg font-bold">📝 日志记录</h1>
       <DailyCalendar onSelect={setSelectedDate} />
       {selectedDate && (
-        <p className="text-xs text-gray-500">
-          已选择 {selectedDate}，下方编辑器切换中...
-        </p>
+        <p className="text-xs text-gray-500">已选择 {selectedDate}</p>
       )}
-      <DailyEditor />
+      <DailyEditor date={selectedDate || undefined} />
     </main>
   );
 }

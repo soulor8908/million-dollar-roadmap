@@ -39,3 +39,32 @@ export async function initCloudflareEnv(): Promise<void> {
     // 非 Cloudflare 环境，忽略
   }
 }
+
+// Cloudflare KV 最小接口（与 lib/storage/kv.ts 的 KVLike 一致）
+export interface KVLike {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+}
+
+/**
+ * 从当前 Cloudflare Pages 请求上下文获取 KV namespace binding。
+ * app/api 的 Edge runtime 路由无 context.env，需通过 getRequestContext 读取。
+ * 非 Cloudflare 环境（如本地 next dev）返回 undefined，调用方可降级为 mock。
+ */
+export function getCloudflareKV(): KVLike | undefined {
+  try {
+    const ctx = (globalThis as Record<symbol, { env?: Record<string, unknown> } | undefined>)[CF_CTX_SYMBOL];
+    const kv = ctx?.env?.KV;
+    if (
+      kv &&
+      typeof kv === "object" &&
+      typeof (kv as { get?: unknown }).get === "function" &&
+      typeof (kv as { put?: unknown }).put === "function"
+    ) {
+      return kv as KVLike;
+    }
+  } catch {
+    // 非 Cloudflare 环境，忽略
+  }
+  return undefined;
+}

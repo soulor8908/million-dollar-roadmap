@@ -9,6 +9,7 @@ import type { PublicProfile } from "@/lib/types";
 import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
 import { apiFetch, getApiToken, setApiToken } from "@/lib/api-client";
 import { ShareCardButton } from "@/components/ShareCardButton";
+import { SyncStatus } from "@/components/SyncStatus";
 import {
   loadRoutineMarkdown,
   saveRoutineMarkdown,
@@ -308,6 +309,14 @@ export default function ProfilePage() {
           </button>
           {tokenSaved && <span className="text-sm text-green-600">已保存 ✓</span>}
         </div>
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">数据同步</h2>
+        <p className="text-xs text-gray-500">
+          本地数据优先保存（离线可用），可手动上传到云端或跨设备恢复。云端数据以 userId 隔离。
+        </p>
+        <SyncStatus />
       </section>
 
       <section className="space-y-3 rounded-lg border p-4">

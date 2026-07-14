@@ -177,6 +177,14 @@ export interface PublicProfile {
   updatedAt: string;
 }
 
+// 用户数据云端备份（全量同步：IndexedDB 所有 key-value 打包）
+export interface UserBackup {
+  userId: string;
+  updatedAt: string;
+  version: number;
+  data: Record<string, unknown>; // 所有 IndexedDB key-value
+}
+
 // 能量模式（扩展为情绪+能量联合分析）
 export interface EnergyPattern {
   weekStart: string;

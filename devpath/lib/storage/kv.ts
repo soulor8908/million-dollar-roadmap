@@ -3,7 +3,7 @@
 // 运行时：Cloudflare Pages Functions 通过 env.KV binding 注入
 // 本地开发/测试：无 env.KV 时降级为内存 Map（mock）
 
-import type { PublicProfile } from "../types";
+import type { PublicProfile, UserBackup } from "../types";
 
 export interface PublicStats {
   username: string;
@@ -20,6 +20,8 @@ export interface KVStore {
   setProfile(profile: PublicProfile): Promise<void>;
   getStats(username: string): Promise<PublicStats | null>;
   updateStats(username: string, stats: Partial<PublicStats>): Promise<void>;
+  getUserBackup(userId: string): Promise<UserBackup | null>;
+  setUserBackup(userId: string, data: UserBackup): Promise<void>;
 }
 
 interface KVLike {
@@ -69,6 +71,18 @@ export function createKVStore(envKV?: KVLike): KVStore {
         updatedAt: new Date().toISOString(),
       };
       await kv.put(`stats:${username}`, JSON.stringify(merged));
+    },
+    async getUserBackup(userId: string) {
+      const raw = await kv.get(`user:${userId}:backup`);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw) as UserBackup;
+      } catch {
+        return null;
+      }
+    },
+    async setUserBackup(userId: string, data: UserBackup) {
+      await kv.put(`user:${userId}:backup`, JSON.stringify(data));
     },
   };
 }

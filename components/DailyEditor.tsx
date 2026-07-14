@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { parseDailyLog, toggleChecklistItem, createEmptyLog, formatDailyLog } from "@/lib/daily";
 import { chinaDateNow } from "@/lib/time";
 import type { DailyLog } from "@/lib/types";
 
 export function DailyEditor({ date: externalDate }: { date?: string }) {
+  const { client } = useGitHubClient();
   const [log, setLog] = useState<DailyLog | null>(null);
   const [rawContent, setRawContent] = useState("");
   const [sha, setSha] = useState<string | undefined>();
@@ -23,13 +22,13 @@ export function DailyEditor({ date: externalDate }: { date?: string }) {
   }, [externalDate]);
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) { setError("未登录"); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const path = `daily/${date}.md`;
         const file = await client.readFile(path);
+        if (cancelled) return;
         if (file) {
           setRawContent(file.content);
           setSha(file.sha);
@@ -41,19 +40,20 @@ export function DailyEditor({ date: externalDate }: { date?: string }) {
           setSha(undefined);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "加载失败");
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       }
     })();
-  }, [date]);
+    return () => {
+      cancelled = true;
+    };
+  }, [date, client]);
 
   async function save() {
     if (!log) return;
+    if (!client) { setError("未登录"); return; }
     setSaving(true);
     setError("");
     try {
-      const token = await loadToken();
-      if (!token) { setError("未登录"); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       const content = formatDailyLog(log);
       const newSha = await client.writeFile(
         `daily/${date}.md`,
@@ -73,6 +73,7 @@ export function DailyEditor({ date: externalDate }: { date?: string }) {
 
   async function toggleChecklist(idx: number) {
     if (!log) return;
+    if (!client) return;
     const newChecklist = [...log.checklist];
     newChecklist[idx] = {
       ...newChecklist[idx],
@@ -82,9 +83,6 @@ export function DailyEditor({ date: externalDate }: { date?: string }) {
     const newContent = toggleChecklistItem(rawContent, idx);
     setRawContent(newContent);
     try {
-      const token = await loadToken();
-      if (!token) return;
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       const newSha = await client.writeFile(
         `daily/${date}.md`,
         newContent,

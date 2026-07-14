@@ -2,25 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { BreathTimer } from "@/components/BreathTimer";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 
 export default function RestPage() {
+  const { client } = useGitHubClient();
   const [methods, setMethods] = useState<string>("");
   const [energy, setEnergy] = useState<number>(3);
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) return;
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const file = await client.readFile("rest/methods.md");
-        if (file) setMethods(file.content);
-      } catch {}
+        if (!cancelled && file) setMethods(file.content);
+      } catch (e) {
+        console.error("加载休息方法库失败", e);
+      }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   return (
     <main className="p-4 space-y-4 max-w-md mx-auto">

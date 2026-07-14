@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { parseEmotionFile } from "@/lib/emotion";
 import type { EmotionFile } from "@/lib/types";
 
 export function EmotionList() {
+  const { client } = useGitHubClient();
   const [files, setFiles] = useState<EmotionFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -22,10 +21,9 @@ export function EmotionList() {
   }
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) { setLoading(false); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const names = await client.listFiles("emotion");
         const recent = names
@@ -38,12 +36,15 @@ export function EmotionList() {
             return parseEmotionFile(file?.content || "", name.replace(".md", ""));
           })
         );
-        setFiles(loaded.reverse());
+        if (!cancelled) setFiles(loaded.reverse());
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   if (loading) return <p className="text-gray-400 text-sm">加载中...</p>;
 

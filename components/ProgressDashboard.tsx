@@ -1,22 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { buildProgressInfo } from "@/lib/progress";
 import type { ProgressInfo } from "@/lib/types";
 
 export function ProgressDashboard() {
+  const { client, error: tokenError } = useGitHubClient();
   const [info, setInfo] = useState<ProgressInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) { setLoading(false); setError("未登录"); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const [progressFile, dailyNames, algoFile, backendFile] = await Promise.all([
           client.readFile("algorithm/progress.md"),
@@ -35,20 +33,25 @@ export function ProgressDashboard() {
             return { name, content: f?.content || "" };
           })
         );
-        setInfo(
-          buildProgressInfo(progressMd, dailyFiles, {
-            algorithmChecklistMd: algoFile?.content || "",
-            backendRoadmapMd: backendFile?.content || "",
-          })
-        );
+        if (!cancelled)
+          setInfo(
+            buildProgressInfo(progressMd, dailyFiles, {
+              algorithmChecklistMd: algoFile?.content || "",
+              backendRoadmapMd: backendFile?.content || "",
+            })
+          );
       } catch (e) {
-        setError(e instanceof Error ? e.message : "加载失败");
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
+  if (tokenError) return <p className="text-red-500 text-sm">{tokenError}</p>;
   if (loading) return <p className="text-gray-400 text-sm">加载中...</p>;
   if (error) return <p className="text-red-500 text-sm">{error}</p>;
   if (!info) return null;

@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { parseBackendRoadmap, toggleWeek, getBackendStats } from "@/lib/backend";
 import type { BackendWeek } from "@/lib/types";
 
 export function BackendRoadmap() {
+  const { client } = useGitHubClient();
   const [weeks, setWeeks] = useState<BackendWeek[]>([]);
   const [markdown, setMarkdown] = useState("");
   const [sha, setSha] = useState<string | undefined>(undefined);
@@ -25,29 +24,27 @@ export function BackendRoadmap() {
   }
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const file = await client.readFile("backend/roadmap.md");
         const md = file?.content || "";
+        if (cancelled) return;
         setMarkdown(md);
         setSha(file?.sha);
         setWeeks(parseBackendRoadmap(md));
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   async function handleToggle(week: BackendWeek, completed: boolean) {
-    const token = await loadToken();
-    if (!token) return;
-    const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
+    if (!client) return;
     const newMd = toggleWeek(markdown, week.weekIndex, completed);
     setMarkdown(newMd);
     setWeeks(parseBackendRoadmap(newMd));

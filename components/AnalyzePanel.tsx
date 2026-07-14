@@ -1,25 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import type { AIAnalysis } from "@/lib/types";
 
 export function AnalyzePanel() {
+  const { client } = useGitHubClient();
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function runAnalysis() {
+    if (!client) { setError("未登录"); return; }
     setLoading(true);
     setError("");
     setAnalysis(null);
     try {
-      const token = await loadToken();
-      if (!token) { setError("未登录"); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
-
       // 拉取最近 14 天情绪笔记
       const emotionNames = await client.listFiles("emotion");
       const recentEmotion = emotionNames

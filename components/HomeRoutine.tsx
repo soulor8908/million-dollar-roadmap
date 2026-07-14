@@ -2,29 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { CurrentTask } from "@/components/CurrentTask";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 
 export function HomeRoutine() {
+  const { client, error: tokenError } = useGitHubClient();
   const [routine, setRoutine] = useState<string>("");
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) return;
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const file = await client.readFile("schedule/routine.md");
-        if (file) setRoutine(file.content);
+        if (!cancelled && file) setRoutine(file.content);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "加载失败");
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
-  if (error) return <p className="text-red-500 text-sm">{error}</p>;
+  const displayError = error || tokenError;
+  if (displayError) return <p className="text-red-500 text-sm">{displayError}</p>;
 
   if (routine) return <CurrentTask routineMarkdown={routine} />;
 

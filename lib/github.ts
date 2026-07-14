@@ -10,21 +10,13 @@ export class GitHubClient {
     private token: string
   ) {}
 
-  private async api(path: string, init?: RequestInit): Promise<Response> {
-    const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}`;
-    return fetch(url, {
-      ...init,
+  async readFile(path: string): Promise<FileContent | null> {
+    // 走 /api/github/ 代理路由，避免在浏览器直接调用 GitHub API 暴露 token
+    const res = await fetch(`/api/github/${path}`, {
       headers: {
-        Authorization: `Bearer ${this.token}`,
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json",
-        ...init?.headers,
+        "x-github-token": this.token,
       },
     });
-  }
-
-  async readFile(path: string): Promise<FileContent | null> {
-    const res = await this.api(path);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
     const data = await res.json();
@@ -42,12 +34,18 @@ export class GitHubClient {
   ): Promise<string> {
     const body: Record<string, string> = {
       message,
-      content: btoa(unescape(encodeURIComponent(content))),
+      // 用 TextEncoder 替代已废弃的 unescape(encodeURIComponent(...))
+      content: btoa(String.fromCharCode(...new TextEncoder().encode(content))),
     };
     if (sha) body.sha = sha;
 
-    const res = await this.api(path, {
+    // 走 /api/github/ 代理路由，避免在浏览器直接调用 GitHub API 暴露 token
+    const res = await fetch(`/api/github/${path}`, {
       method: "PUT",
+      headers: {
+        "x-github-token": this.token,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);

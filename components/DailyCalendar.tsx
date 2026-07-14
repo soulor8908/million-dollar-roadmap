@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { chinaTodayParts } from "@/lib/time";
 
 export function DailyCalendar({ onSelect }: { onSelect: (date: string) => void }) {
+  const { client } = useGitHubClient();
   const [loggedDates, setLoggedDates] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) { setLoading(false); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const names = await client.listFiles("daily");
         const dates = new Set(
@@ -22,12 +20,15 @@ export function DailyCalendar({ onSelect }: { onSelect: (date: string) => void }
             .filter((n) => /^\d{4}-\d{2}-\d{2}\.md$/.test(n))
             .map((n) => n.replace(".md", ""))
         );
-        setLoggedDates(dates);
+        if (!cancelled) setLoggedDates(dates);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   if (loading) return <p className="text-gray-400 text-xs">加载日历...</p>;
 

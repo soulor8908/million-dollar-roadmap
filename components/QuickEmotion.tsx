@@ -3,15 +3,14 @@
 import { useState } from "react";
 import type { EmotionEntry, EmotionTag, DopamineTrigger } from "@/lib/types";
 import { getEmoji, formatEmotionEntry, appendEntry } from "@/lib/emotion";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import { chinaDateNow, chinaTimeNow } from "@/lib/time";
 
 const TAGS: EmotionTag[] = ["焦虑", "兴奋", "疲惫", "烦躁", "满足", "冲动", "平静", "沮丧"];
 const DOPAMINE: DopamineTrigger[] = ["无", "刷手机", "游戏", "短视频", "甜食"];
 
 export function QuickEmotion() {
+  const { client } = useGitHubClient();
   const [tag, setTag] = useState<EmotionTag | null>(null);
   const [trigger, setTrigger] = useState("");
   const [impact, setImpact] = useState("");
@@ -21,12 +20,9 @@ export function QuickEmotion() {
 
   async function submit() {
     if (!tag || !trigger.trim()) return;
+    if (!client) { setStatus("error"); return; }
     setStatus("saving");
     try {
-      const token = await loadToken();
-      if (!token) { setStatus("error"); return; }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
-
       const date = chinaDateNow();
       const time = chinaTimeNow();
 

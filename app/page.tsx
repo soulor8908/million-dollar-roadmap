@@ -23,6 +23,14 @@ export default function Home() {
           <p className="text-2xl">📝</p>
           <p className="text-xs mt-1">写日志</p>
         </a>
+        <a href="/progress" className="bg-white rounded-xl p-3 shadow-sm text-center">
+          <p className="text-2xl">📊</p>
+          <p className="text-xs mt-1">学习中心</p>
+        </a>
+        <a href="/analyze" className="bg-white rounded-xl p-3 shadow-sm text-center">
+          <p className="text-2xl">🧠</p>
+          <p className="text-xs mt-1">AI分析</p>
+        </a>
       </div>
     </main>
   );

@@ -27,6 +27,28 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) {
     return;
   }
+
+  // navigation 请求：network-first（先尝试网络，失败后回退缓存）
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, copy));
+          return res;
+        })
+        .catch(() =>
+          caches
+            .match(event.request)
+            .then((cached) => cached || caches.match("/"))
+        )
+    );
+    return;
+  }
+
+  // 静态资源：cache-first（先读缓存，未命中再请求网络并回填缓存）
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return (
@@ -34,7 +56,9 @@ self.addEventListener("fetch", (event) => {
         fetch(event.request)
           .then((res) => {
             const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, copy));
             return res;
           })
           .catch(() => cached)

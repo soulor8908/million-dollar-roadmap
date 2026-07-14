@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadToken } from "@/lib/storage";
-import { GitHubClient } from "@/lib/github";
-import { GITHUB_OWNER, GITHUB_REPO } from "@/lib/githubConfig";
+import { useGitHubClient } from "@/lib/useGitHubClient";
 import {
   parseLeetCodeChecklist,
   toggleProblem,
@@ -28,6 +26,7 @@ interface SaveFields {
 }
 
 export function AlgorithmList() {
+  const { client, error: tokenError } = useGitHubClient();
   const [problems, setProblems] = useState<LeetCodeProblem[]>([]);
   const [markdown, setMarkdown] = useState("");
   const [sha, setSha] = useState<string | undefined>(undefined);
@@ -42,17 +41,13 @@ export function AlgorithmList() {
   const savingRef = useRef(false);
 
   useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
     (async () => {
-      const token = await loadToken();
-      if (!token) {
-        setError("未配置 token");
-        setLoading(false);
-        return;
-      }
-      const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
       try {
         const file = await client.readFile(ALGORITHM_PATH);
         const content = file?.content || "";
+        if (cancelled) return;
         setMarkdown(content);
         setSha(file?.sha);
         const parsed = parseLeetCodeChecklist(content);
@@ -64,12 +59,15 @@ export function AlgorithmList() {
         }
         setExpanded(initExpanded);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "加载失败");
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   function toggleExpand(key: string) {
     setExpanded((prev) => {
@@ -82,9 +80,7 @@ export function AlgorithmList() {
 
   // 写入 GitHub 并同步本地 state
   async function persist(newMarkdown: string, message: string) {
-    const token = await loadToken();
-    if (!token) throw new Error("未配置 token");
-    const client = new GitHubClient(GITHUB_OWNER, GITHUB_REPO, token);
+    if (!client) throw new Error("未配置 token");
     const newSha = await client.writeFile(
       ALGORITHM_PATH,
       newMarkdown,
@@ -131,6 +127,7 @@ export function AlgorithmList() {
     }
   }
 
+  if (tokenError) return <p className="text-red-500 text-sm">{tokenError}</p>;
   if (loading) return <p className="text-gray-400 text-sm">加载中...</p>;
   if (error) return <p className="text-red-500 text-sm">{error}</p>;
   if (problems.length === 0)

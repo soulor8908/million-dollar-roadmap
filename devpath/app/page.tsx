@@ -13,6 +13,7 @@ import { chinaDateNow, chinaDateShift } from "@/lib/time";
 import { getDueCards } from "@/lib/fsrs";
 import { StatusCard } from "@/components/StatusCard";
 import { CurrentTaskCard } from "@/components/CurrentTaskCard";
+import { DailyNudge } from "@/components/DailyNudge";
 
 export default function Home() {
   const [dueCount, setDueCount] = useState(0);
@@ -151,6 +152,11 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20 dark:bg-gray-900">
       <h1 className="text-2xl font-bold mb-4">今日</h1>
+
+      {/* 每日 AI 主动提醒（主动 UX：用户没问 AI 也开口） */}
+      <div className="mb-4">
+        <DailyNudge />
+      </div>
 
       {/* 现在该做什么（时间表驱动） */}
       <div className="mb-4">

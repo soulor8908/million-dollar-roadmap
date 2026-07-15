@@ -1,5 +1,7 @@
 // app/api/chat/route.ts
-// 流式聊天接口：接收 { messages, modelConfig } → 调用 streamText → 返回流式响应
+// 流式聊天接口：接收 { messages, modelConfig, contextSnapshot } → 调用 streamText → 返回流式响应
+// AI Native 升级：支持客户端注入"用户上下文快照"，让 LLM 知道用户当前在学什么、错了哪些题、今日能量
+// 上下文快照由客户端 lib/ai/chat-context.ts 在浏览器从 IndexedDB 聚合后传入
 
 import { NextRequest, NextResponse } from "next/server";
 import { streamText } from "ai";
@@ -7,6 +9,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { getModel } from "@/lib/ai/provider";
+import { wrapModelWithObservability } from "@/lib/ai/observability";
 import type { LanguageModel } from "ai";
 
 export const runtime = "edge";
@@ -23,7 +26,7 @@ interface ClientModelConfig {
   name: string;
 }
 
-const SYSTEM_PROMPT =
+const BASE_SYSTEM_PROMPT =
   "你是 DevPath 学习助手，擅长解答编程和技术面试题。回答要简洁、结合实际案例、必要时给出代码示例。使用 Markdown 格式。";
 
 export async function POST(req: NextRequest) {
@@ -33,9 +36,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { messages, modelConfig } = body as {
+    const { messages, modelConfig, contextSnapshot } = body as {
       messages?: ChatMessage[];
       modelConfig?: ClientModelConfig;
+      // 客户端构建的上下文片段（已经过 chat-context.ts 聚合，体积 < 1.5KB）
+      contextSnapshot?: string;
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -45,21 +50,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 安全限制上下文长度，防止滥用
+    const safeContext =
+      typeof contextSnapshot === "string" && contextSnapshot.length > 0
+        ? contextSnapshot.slice(0, 4000)
+        : "";
+
+    const systemPrompt = safeContext
+      ? `${BASE_SYSTEM_PROMPT}\n\n${safeContext}`
+      : BASE_SYSTEM_PROMPT;
+
     let model: LanguageModel;
     if (modelConfig && modelConfig.apiKey) {
       const openai = createOpenAI({
         baseURL: modelConfig.baseURL,
         apiKey: modelConfig.apiKey,
       });
-      model = openai(modelConfig.model);
+      model = wrapModelWithObservability(openai(modelConfig.model), "chat:custom");
     } else {
-      model = getModel();
+      model = wrapModelWithObservability(getModel(), "chat:default");
     }
 
     const result = await streamText({
       model,
       messages,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
     });
 
     return result.toDataStreamResponse();

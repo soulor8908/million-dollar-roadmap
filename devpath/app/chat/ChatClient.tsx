@@ -26,6 +26,7 @@ import {
 } from "@/lib/chat-store";
 import { listModelConfigs, getDefaultModelConfig } from "@/lib/model-config";
 import { AnswerContent } from "@/components/CodeBlock";
+import { buildChatContext } from "@/lib/ai/chat-context";
 
 // 内置提示词库
 const BUILTIN_PROMPTS = [
@@ -255,6 +256,15 @@ export default function ChatClient() {
         content: m.content,
       }));
 
+      // AI Native 升级：构建当前用户上下文快照（最新计划/错题/能量等）
+      // 失败时静默降级为空字符串，不影响聊天主流程
+      let contextSnapshot = "";
+      try {
+        contextSnapshot = await buildChatContext();
+      } catch {
+        contextSnapshot = "";
+      }
+
       const token = await getApiToken();
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -265,6 +275,7 @@ export default function ChatClient() {
         body: JSON.stringify({
           messages: history,
           modelConfig,
+          contextSnapshot,
         }),
       });
 

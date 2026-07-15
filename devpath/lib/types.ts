@@ -240,6 +240,8 @@ export const KEY_PREFIXES = {
   STATUS: "status:",
   /** 周报缓存：weekly:<weekStart> */
   WEEKLY: "weekly:",
+  /** 每日 AI 主动提醒缓存：daily_nudge:<YYYY-MM-DD> */
+  DAILY_NUDGE: "daily_nudge:",
   /** 情绪觉察条目：emotion:<date>_<id> */
   EMOTION: "emotion:",
   /** 每日时间表（用户在 profile 配置）：routine:default */

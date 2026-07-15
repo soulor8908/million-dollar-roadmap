@@ -53,12 +53,13 @@ export function requireAuth(
     if (isProduction()) {
       // 生产环境未配置 token 却有人用默认模型 → 拒绝并提示
       console.error(
-        "[auth] 生产环境未配置 API_TOKEN，拒绝使用服务端默认模型的请求"
+        "[auth] 生产环境未配置 API_TOKEN，拒绝使用服务端默认模型的请求。useServerModel=true 意味着请求未携带有效的 modelConfig（含 apiKey）。"
       );
       return NextResponse.json(
         {
           error:
-            "未选择 AI 模型。请在「我的 → 设置 → AI 模型配置」中添加你自己的模型（需填写 API Key），或在聊天页底部模型选择器中选中已配置的模型。",
+            "未检测到有效的 AI 模型配置。请按以下步骤排查：\n1. 在「我的 → AI 模型配置」中添加模型（填写名称、API Key、baseURL、模型名）\n2. 确保已点击「设为默认」或「保存」\n3. 在聊天页底部模型选择器中选中该模型\n4. 如果刚添加完，请刷新页面后重试\n（若使用服务端默认模型，需联系管理员配置 API_TOKEN 环境变量）",
+          code: "NO_MODEL_CONFIG",
         },
         { status: 503 }
       );

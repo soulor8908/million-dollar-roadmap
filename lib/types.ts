@@ -13,6 +13,10 @@ export interface LearningPlan {
   fsrsMode: "conservative" | "standard" | "aggressive";
   /** 生成时使用的自定义提示词（用于重新生成时回填） */
   prompt?: string;
+  /** 冻结状态：冻结后不计入每日调度和 AI 推荐 */
+  frozen?: boolean;
+  /** 优先级 1-5（1=最高），多计划并存时排序用，默认 3 */
+  priority?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -340,6 +344,8 @@ export const KEY_PREFIXES = {
   AI_FEEDBACK: "ai_feedback:",
   /** 每日日志（Markdown 格式）：daily_log:<YYYY-MM-DD> */
   DAILY_LOG: "daily_log:",
+  /** AI 工具创建的提醒：reminder:<id> */
+  REMINDER: "reminder:",
 } as const;
 
 // AI 模型配置（用户可在 profile 配置多个）
@@ -548,4 +554,21 @@ export interface MistakeRecord {
   resolved: boolean;
   /** 创建时间 ISO */
   createdAt: string;
+}
+
+// AI 工具创建的提醒（浏览器通知）
+export interface Reminder {
+  id: string;
+  /** 提醒标题 */
+  title: string;
+  /** 提醒内容（可选，更详细的描述） */
+  body?: string;
+  /** 触发时间 ISO 字符串 */
+  scheduledFor: string;
+  /** 创建时间 ISO */
+  createdAt: string;
+  /** 是否已触发 */
+  triggered: boolean;
+  /** 关联学习计划 ID（可选） */
+  planId?: string;
 }

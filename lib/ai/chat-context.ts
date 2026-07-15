@@ -10,8 +10,10 @@
 //   6. 当前 routine 时段（如果正在学习时段内）
 
 import { getItem, listItems } from "../storage/db";
-import { KEY_PREFIXES, type LearningPlan, type LearnLog, type MistakeRecord, type DailyStatus } from "../types";
+import { KEY_PREFIXES, type LearningPlan, type LearnLog, type MistakeRecord, type DailyStatus, type Routine, type ReviewLog, type Reminder } from "../types";
 import { chinaDateNow, chinaDateShift } from "../time";
+import { getPendingReminders } from "../reminder";
+import type { ToolContext, PlanContextItem } from "./chat-tools";
 
 export interface ChatContextSnapshot {
   hasPlan: boolean;
@@ -215,4 +217,174 @@ function renderSnapshot(s: ChatContextSnapshot): string {
   lines.push(`- 回答简洁、结合实际案例，必要时给代码示例，使用 Markdown。`);
 
   return lines.join("\n");
+}
+
+// ============ Tool Context：AI 工具所需的结构化上下文 ============
+
+/**
+ * 从 IndexedDB 聚合工具所需的结构化数据。
+ * 客户端在发送聊天请求时一并传入，服务端工具直接读取。
+ * 设计原则：任何环节失败不抛错，缺数据就跳过。
+ */
+export async function buildToolContext(): Promise<ToolContext> {
+  const ctx: ToolContext = {
+    plans: [],
+    todayLearnLogs: [],
+    todayReviewCount: 0,
+    now: new Date().toISOString(),
+    pendingReminders: [],
+    recentMistakes: [],
+  };
+
+  await Promise.all([
+    collectPlansForTools(ctx).catch(() => {}),
+    collectTodayLearnLogs(ctx).catch(() => {}),
+    collectTodayReviewCount(ctx).catch(() => {}),
+    collectTodayStatusForTools(ctx).catch(() => {}),
+    collectRoutine(ctx).catch(() => {}),
+    collectPendingReminders(ctx).catch(() => {}),
+    collectRecentMistakesForTools(ctx).catch(() => {}),
+  ]);
+
+  return ctx;
+}
+
+async function collectPlansForTools(ctx: ToolContext): Promise<void> {
+  const plans = await listItems<LearningPlan>(KEY_PREFIXES.PLAN);
+  const today = chinaDateNow();
+
+  ctx.plans = plans.map((plan) => {
+    const completedNodes = plan.schedule.filter(
+      (it) => it.type === "learn" && it.completed,
+    ).length;
+
+    // 找当前未完成的学习节点
+    const nextLearn = plan.schedule.find((it) => it.type === "learn" && !it.completed);
+    let currentNodeTitle: string | undefined;
+    if (nextLearn) {
+      const node = plan.knowledgeTree.find((n) => n.id === nextLearn.nodeId);
+      if (node) currentNodeTitle = node.title;
+    }
+
+    // 构建未来 7 天的日程
+    const upcomingSchedule: PlanContextItem["upcomingSchedule"] = [];
+    const scheduleByDay = new Map<number, typeof plan.schedule>();
+    for (const item of plan.schedule) {
+      if (!scheduleByDay.has(item.day)) scheduleByDay.set(item.day, []);
+      scheduleByDay.get(item.day)!.push(item);
+    }
+
+    const todayDay = plan.schedule.find(
+      (it) => !it.completed && it.type === "learn",
+    )?.day ?? 1;
+
+    for (let d = 0; d < 7; d++) {
+      const dayNum = todayDay + d;
+      const dayItems = scheduleByDay.get(dayNum) ?? [];
+      const date = chinaDateShift(today, d);
+      upcomingSchedule.push({
+        day: dayNum,
+        date,
+        tasks: dayItems.map((item) => {
+          const node = plan.knowledgeTree.find((n) => n.id === item.nodeId);
+          return {
+            nodeId: item.nodeId,
+            nodeTitle: node?.title ?? item.nodeId,
+            type: item.type,
+            estimatedMinutes: item.estimatedMinutes,
+            completed: item.completed,
+          };
+        }),
+      });
+    }
+
+    return {
+      id: plan.id,
+      topic: plan.topic,
+      frozen: plan.frozen ?? false,
+      priority: plan.priority ?? 3,
+      dailyMinutes: plan.dailyMinutes,
+      maxNewPerDay: plan.maxNewPerDay,
+      totalNodes: plan.knowledgeTree.length,
+      completedNodes,
+      currentNodeTitle,
+      upcomingSchedule,
+    };
+  });
+}
+
+async function collectTodayLearnLogs(ctx: ToolContext): Promise<void> {
+  const logs = await listItems<LearnLog>(KEY_PREFIXES.LEARN_LOG);
+  const today = chinaDateNow();
+  const todayLogs = logs.filter((l) => l.date === today);
+
+  // 尝试从计划找节点标题
+  let plans: LearningPlan[] = [];
+  try {
+    plans = await listItems<LearningPlan>(KEY_PREFIXES.PLAN);
+  } catch {
+    /* ignore */
+  }
+  const titleByNodeId = new Map<string, string>();
+  for (const p of plans) {
+    for (const n of p.knowledgeTree) titleByNodeId.set(n.id, n.title);
+  }
+
+  ctx.todayLearnLogs = todayLogs.map((l) => ({
+    type: l.type,
+    nodeTitle: l.nodeId ? titleByNodeId.get(l.nodeId) : undefined,
+    timestamp: l.timestamp,
+  }));
+}
+
+async function collectTodayReviewCount(ctx: ToolContext): Promise<void> {
+  const logs = await listItems<ReviewLog>(KEY_PREFIXES.REVIEW_LOG);
+  const today = chinaDateNow();
+  ctx.todayReviewCount = logs.filter((l) => l.date === today).length;
+}
+
+async function collectTodayStatusForTools(ctx: ToolContext): Promise<void> {
+  const key = KEY_PREFIXES.STATUS + chinaDateNow();
+  const today = await getItem<DailyStatus>(key);
+  if (!today) return;
+  ctx.todayStatus = {
+    energy: today.energy,
+    mood: today.mood,
+    availableMinutes: today.availableMinutes,
+  };
+}
+
+async function collectRoutine(ctx: ToolContext): Promise<void> {
+  const routine = await getItem<Routine>(KEY_PREFIXES.ROUTINE_DATA);
+  if (!routine) return;
+  ctx.routine = {
+    wakeTime: routine.wakeTime,
+    sleepTime: routine.sleepTime,
+    slots: routine.slots.map((s) => ({
+      label: s.label,
+      start: s.start,
+      end: s.end,
+      minutes: s.minutes,
+    })),
+    weekdays: routine.weekdays,
+    intensity: routine.intensity,
+  };
+}
+
+async function collectPendingReminders(ctx: ToolContext): Promise<void> {
+  const reminders = await getPendingReminders();
+  ctx.pendingReminders = reminders.map((r) => ({
+    id: r.id,
+    title: r.title,
+    scheduledFor: r.scheduledFor,
+  }));
+}
+
+async function collectRecentMistakesForTools(ctx: ToolContext): Promise<void> {
+  const all = await listItems<MistakeRecord>(KEY_PREFIXES.MISTAKE);
+  const unresolved = all
+    .filter((m) => !m.resolved)
+    .sort((a, b) => new Date(b.lastWrongAt).getTime() - new Date(a.lastWrongAt).getTime())
+    .slice(0, 5);
+  ctx.recentMistakes = unresolved.map((m) => m.questionText);
 }

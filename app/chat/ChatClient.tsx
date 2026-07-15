@@ -11,6 +11,8 @@ import {
   type ChatMessage,
   type Conversation,
   type ModelConfig,
+  type LearningPlan,
+  KEY_PREFIXES,
 } from "@/lib/types";
 import {
   listConversations,
@@ -26,7 +28,11 @@ import {
 } from "@/lib/chat-store";
 import { listModelConfigs, getDefaultModelConfig } from "@/lib/model-config";
 import { AnswerContent } from "@/components/CodeBlock";
-import { buildChatContext } from "@/lib/ai/chat-context";
+import { buildChatContext, buildToolContext } from "@/lib/ai/chat-context";
+import type { ClientAction } from "@/lib/ai/chat-tools";
+import { createReminder, startReminderPolling } from "@/lib/reminder";
+import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
+import { scheduleAutoSync } from "@/lib/sync";
 import {
   recordAICall,
   trackAIFeedback,
@@ -43,6 +49,15 @@ const BUILTIN_PROMPTS = [
   "对比优缺点",
   "面试中怎么回答",
   "常见误区有哪些",
+];
+
+// AI 工具快捷指令
+const TOOL_PROMPTS = [
+  "今天有什么安排？",
+  "接下来该学什么？",
+  "30分钟后提醒我学习",
+  "复盘一下今天的表现",
+  "未来几天有什么计划？",
 ];
 
 // 格式化为相对时间（如"3 分钟前"、"昨天"）
@@ -92,6 +107,19 @@ export default function ChatClient() {
     const list = await listConversations();
     setConversations(list);
   }, []);
+
+  // 刷新模型配置列表（从 profile 页返回时模型列表可能已变化）
+  const refreshModelConfigs = useCallback(async () => {
+    const configs = await listModelConfigs();
+    setModelConfigs(configs);
+    if (configs.length > 0) {
+      // 如果当前选中的模型已不存在，回退到第一个（默认模型排第一）
+      const stillExists = configs.find((c) => c.id === selectedModelId);
+      if (!stillExists) {
+        setSelectedModelId(configs[0].id);
+      }
+    }
+  }, [selectedModelId]);
 
   // 加载某个对话的消息
   const loadConversation = useCallback(async (conv: Conversation) => {
@@ -151,6 +179,108 @@ export default function ChatClient() {
     if (!q) return conversations;
     return conversations.filter((c) => c.title.toLowerCase().includes(q));
   })();
+
+  // 页面重新可见时刷新模型配置（从 profile 页添加模型后返回）
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "visible") {
+        refreshModelConfigs();
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [refreshModelConfigs]);
+
+  // 启动提醒轮询（浏览器通知）
+  useEffect(() => {
+    startReminderPolling();
+  }, []);
+
+  // 执行工具返回的客户端动作（写入 IndexedDB）
+  const executeClientAction = useCallback(async (action: ClientAction): Promise<void> => {
+    try {
+      switch (action.type) {
+        case "create_reminder": {
+          const params = action.params as {
+            title: string;
+            scheduledFor: string;
+            body?: string;
+          };
+          await createReminder(params.title, params.scheduledFor, {
+            body: params.body,
+          });
+          break;
+        }
+        case "toggle_plan_freeze": {
+          const params = action.params as { planId: string; freeze: boolean };
+          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+          if (plan) {
+            await dbSet(KEY_PREFIXES.PLAN + params.planId, {
+              ...plan,
+              frozen: params.freeze,
+              updatedAt: new Date().toISOString(),
+            });
+            scheduleAutoSync();
+          }
+          break;
+        }
+        case "set_plan_priority": {
+          const params = action.params as { planId: string; priority: number };
+          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+          if (plan) {
+            await dbSet(KEY_PREFIXES.PLAN + params.planId, {
+              ...plan,
+              priority: params.priority,
+              updatedAt: new Date().toISOString(),
+            });
+            scheduleAutoSync();
+          }
+          break;
+        }
+        case "adjust_plan": {
+          const params = action.params as {
+            planId: string;
+            action: "delay" | "skip" | "redistribute";
+            targetDay?: number;
+          };
+          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+          if (plan && params.targetDay !== undefined) {
+            const dayTasks = plan.schedule.filter((s) => s.day === params.targetDay);
+            if (params.action === "skip") {
+              // 跳过：标记为已完成（跳过）
+              for (const task of dayTasks) {
+                task.completed = true;
+                task.completedAt = new Date().toISOString();
+              }
+            } else if (params.action === "delay") {
+              // 延后：将该天所有任务的 day +1，后续任务也顺延
+              const maxDay = Math.max(...plan.schedule.map((s) => s.day));
+              for (const task of plan.schedule) {
+                if (task.day >= params.targetDay) {
+                  task.day += 1;
+                }
+              }
+              void maxDay;
+            } else if (params.action === "redistribute") {
+              // 重新分配：将该天任务分散到未来 3 天
+              const futureDays = [params.targetDay + 1, params.targetDay + 2, params.targetDay + 3];
+              dayTasks.forEach((task, i) => {
+                task.day = futureDays[i % futureDays.length];
+              });
+            }
+            await dbSet(KEY_PREFIXES.PLAN + params.planId, {
+              ...plan,
+              updatedAt: new Date().toISOString(),
+            });
+            scheduleAutoSync();
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("[chat] 执行客户端动作失败:", e);
+    }
+  }, []);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -278,6 +408,13 @@ export default function ChatClient() {
           setSelectedModelId(modelConfig.id);
         }
       }
+      // 最终仍然没有模型配置 → 阻止发送，给出明确提示
+      if (!modelConfig || !modelConfig.apiKey) {
+        setError(
+          '未配置 AI 模型。请前往「我的 → AI 模型配置」添加模型（需填写 API Key），或点击下方"去添加"链接。'
+        );
+        return;
+      }
       const history = newMessages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -290,6 +427,15 @@ export default function ChatClient() {
         contextSnapshot = await buildChatContext();
       } catch {
         contextSnapshot = "";
+      }
+
+      // AI 工具上下文：结构化数据供工具读取（计划/日志/作息/提醒等）
+      // 失败时静默降级为 undefined（不启用工具）
+      let toolContext = undefined;
+      try {
+        toolContext = await buildToolContext();
+      } catch {
+        toolContext = undefined;
       }
 
       // AI 质量追踪：生成 callId + 计时
@@ -307,6 +453,7 @@ export default function ChatClient() {
           messages: history,
           modelConfig,
           contextSnapshot,
+          toolContext,
         }),
       });
 
@@ -328,10 +475,12 @@ export default function ChatClient() {
       const decoder = new TextDecoder();
       let buffer = "";
       let acc = "";
+      // 收集工具返回的客户端动作（流结束后统一执行）
+      const pendingActions: ClientAction[] = [];
 
       // 解析 Vercel AI SDK data stream 协议的 data 行
       const parseDataLine = (line: string): string => {
-        // 形如 0:"text chunk"
+        // 形如 0:"text chunk" 或 a:{toolResult}
         const idx = line.indexOf(":");
         if (idx <= 0) return "";
         const type = line.slice(0, idx);
@@ -343,6 +492,19 @@ export default function ChatClient() {
             if (typeof parsed === "string") return parsed;
           } catch {
             return "";
+          }
+        }
+        // type "a" 表示工具结果，检查是否包含 clientAction
+        if (type === "a") {
+          try {
+            const parsed = JSON.parse(payload) as {
+              result?: { clientAction?: ClientAction };
+            };
+            if (parsed.result?.clientAction) {
+              pendingActions.push(parsed.result.clientAction);
+            }
+          } catch {
+            /* ignore */
           }
         }
         // type "2" 表示结束，type "3" 表示错误
@@ -392,6 +554,14 @@ export default function ChatClient() {
       setStreamContent("");
       setStreaming(false);
 
+      // 执行工具返回的客户端动作（创建提醒/调整计划等）
+      // 异步执行，不阻塞 UI
+      if (pendingActions.length > 0) {
+        void Promise.all(pendingActions.map((a) => executeClientAction(a))).catch(
+          () => {},
+        );
+      }
+
       // AI 质量追踪：记录调用 + 关联到 AI 消息（异步，失败静默）
       const durationMs = stopTimer();
       aiCallIdMap.current.set(aiMsg.id, callId);
@@ -422,6 +592,7 @@ export default function ChatClient() {
     modelConfigs,
     selectedModelId,
     refreshConversations,
+    executeClientAction,
     router,
   ]);
 
@@ -533,13 +704,26 @@ export default function ChatClient() {
               开始一段新对话
             </p>
             <p className="mb-6 text-sm">向 AI 提问，获取即时解答</p>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
+            <div className="flex flex-wrap gap-2 justify-center max-w-md mb-4">
               {BUILTIN_PROMPTS.map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => applyPrompt(p)}
                   className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <p className="mb-2 text-xs text-gray-400">AI 工具能力</p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-md">
+              {TOOL_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => applyPrompt(p)}
+                  className="px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-full transition-colors"
                 >
                   {p}
                 </button>

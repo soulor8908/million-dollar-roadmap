@@ -156,6 +156,34 @@ export default function DashboardClient() {
     <div className="min-h-screen p-4 max-w-3xl mx-auto pb-20">
       <h1 className="text-2xl font-bold mb-6">📊 学习仪表盘</h1>
 
+      {/* 快捷入口 */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link href="/learn" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          📚 学习计划
+        </Link>
+        <Link href="/chat" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          💬 AI 聊天
+        </Link>
+        <Link href="/stats" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          📈 学习统计
+        </Link>
+        <Link href="/stats/ai-quality" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          🤖 AI 质量
+        </Link>
+        <Link href="/daily" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          📅 每日日志
+        </Link>
+        <Link href="/algorithm" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          🧮 算法进度
+        </Link>
+        <Link href="/backend" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
+          📚 后端路线
+        </Link>
+        <Link href="/import" className="text-xs px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40">
+          📥 导入数据
+        </Link>
+      </div>
+
       {/* 统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="border rounded-lg p-3 bg-white">

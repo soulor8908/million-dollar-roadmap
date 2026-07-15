@@ -19,7 +19,8 @@ const USER_ID_KEY = "auth:user_id";
 const LAST_SYNC_KEY = "sync:last_synced_at";
 
 // 需要同步的数据 key 前缀（所有用户业务数据）
-// 注意：MODEL_CONFIG 含 apiKey，不同步到云端（安全考虑）
+// MODEL_CONFIG 含 apiKey，同步到用户私有 KV 命名空间（需 API_TOKEN 鉴权），
+// 确保跨设备可用 AI 模型配置，否则换设备后会报 503（未配置 AI）
 // DAILY_NUDGE / WEEKLY 是缓存，无需同步
 const SYNC_PREFIXES = [
   KEY_PREFIXES.PLAN,
@@ -35,6 +36,7 @@ const SYNC_PREFIXES = [
   KEY_PREFIXES.CONVERSATION,
   KEY_PREFIXES.CHAT_MESSAGE,
   KEY_PREFIXES.PROMPT,
+  KEY_PREFIXES.MODEL_CONFIG,
 ] as const;
 
 // 不在前缀体系内但需要同步的独立 key

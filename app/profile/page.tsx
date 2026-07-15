@@ -328,6 +328,8 @@ export default function ProfilePage() {
       await refreshModelConfigs();
       resetModelForm();
       setShowModelForm(false);
+      // 触发云端同步，确保跨设备可用（否则换设备后会报 503）
+      scheduleAutoSync();
     } finally {
       setModelSaving(false);
     }
@@ -342,12 +344,14 @@ export default function ProfilePage() {
       resetModelForm();
       setShowModelForm(false);
     }
+    scheduleAutoSync();
   }
 
   /** 设为默认 */
   async function handleSetDefault(id: string) {
     await setDefaultModel(id);
     await refreshModelConfigs();
+    scheduleAutoSync();
   }
 
   return (

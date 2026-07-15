@@ -4,13 +4,11 @@
 // 不依赖主站 GitHubClient，直接用 fetch + GitHub Contents API
 
 import { setItem } from "@/lib/storage/db";
-import { KEY_PREFIXES, type EmotionEntry, type LeetCodeProblem, type BackendWeek } from "@/lib/types";
+import { KEY_PREFIXES, type EmotionEntry } from "@/lib/types";
 import { nanoid } from "nanoid";
 import { parseEmotionFile } from "@/lib/emotion-parser";
-import { parseLeetCodeChecklist } from "@/lib/algorithm";
-import { parseBackendRoadmap } from "@/lib/backend";
 
-export type ImportType = "emotion" | "daily" | "algorithm" | "backend";
+export type ImportType = "emotion" | "daily";
 
 export interface ImportParams {
   token: string;
@@ -23,8 +21,6 @@ export interface ImportParams {
 export interface ImportStats {
   emotion: { files: number; entries: number };
   daily: { files: number };
-  algorithm: { problems: number };
-  backend: { weeks: number };
 }
 
 export interface ImportResult {
@@ -94,8 +90,6 @@ export async function importFromGitHub(params: ImportParams): Promise<ImportResu
   const stats: ImportStats = {
     emotion: { files: 0, entries: 0 },
     daily: { files: 0 },
-    algorithm: { problems: 0 },
-    backend: { weeks: 0 },
   };
 
   try {
@@ -152,37 +146,6 @@ export async function importFromGitHub(params: ImportParams): Promise<ImportResu
         onProgress?.(`已导入 ${stats.daily.files} 个日志`);
       } catch (e) {
         errors.push(`daily 导入失败: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-
-    // 3. 算法进度
-    if (types.includes("algorithm")) {
-      onProgress?.("读取 algorithm/leetcode-checklist.md...");
-      try {
-        const content = await readFile("algorithm/leetcode-checklist.md", token, owner, repo);
-        const problems = parseLeetCodeChecklist(content);
-        // 存储原始 Markdown（编辑时用）+ 解析后的题目列表
-        await setItem(`${KEY_PREFIXES.ALGORITHM}leetcode_checklist_md`, content);
-        await setItem(`${KEY_PREFIXES.ALGORITHM}leetcode_checklist`, problems);
-        stats.algorithm.problems = problems.length;
-        onProgress?.(`已导入 ${problems.length} 道算法题`);
-      } catch (e) {
-        errors.push(`algorithm 导入失败: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-
-    // 4. 后端学习路线
-    if (types.includes("backend")) {
-      onProgress?.("读取 backend/roadmap.md...");
-      try {
-        const content = await readFile("backend/roadmap.md", token, owner, repo);
-        const weeks = parseBackendRoadmap(content);
-        await setItem(`${KEY_PREFIXES.BACKEND}roadmap_md`, content);
-        await setItem(`${KEY_PREFIXES.BACKEND}roadmap`, weeks);
-        stats.backend.weeks = weeks.length;
-        onProgress?.(`已导入 ${weeks.length} 周后端路线`);
-      } catch (e) {
-        errors.push(`backend 导入失败: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   } catch (e) {

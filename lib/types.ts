@@ -230,35 +230,8 @@ export interface AIAnalysis {
   suggestions: string[];
 }
 
-// LeetCode 题目（来自 algorithm/leetcode-checklist.md）
-export interface LeetCodeProblem {
-  id: number;          // 序号 1-200
-  completed: boolean;  // [x] 为 true
-  number: string;      // LeetCode 题号（如 "1"、"128"）
-  title: string;       // 题目标题
-  difficulty: "简单" | "中等" | "困难";
-  date: string;        // 完成日期 YYYY-MM-DD，未完成为空
-  independent: "✅" | "⚠️" | "❌" | "";  // 独立程度
-  cost: string;        // 耗时（分钟），未完成为空
-  note: string;        // 备注
-  phase: number;       // 1/2/3
-  category: string;    // 专题（如 "数组与字符串"）
-}
-
-// 后端学习路线一周（来自 backend/roadmap.md）
-export interface BackendWeek {
-  month: number;       // 1-6
-  weekIndex: number;   // 1-24
-  title: string;       // 如 "语法基础 + 工具链"
-  completed: boolean;
-  summary: string;     // 学习要点摘要
-  resources: { label: string; url: string }[];  // 资料链接
-  output: string;      // 产出 demo 路径
-  days: string[];      // Day 1-7 拆解内容
-}
-
 // 学习中心 Tab（阶段 3 迁移后用于 /stats 页面切换）
-export type StudyTab = "algorithm" | "backend" | "stats";
+export type StudyTab = "stats";
 
 // 复习日志
 export interface ReviewLog {
@@ -367,10 +340,6 @@ export const KEY_PREFIXES = {
   AI_FEEDBACK: "ai_feedback:",
   /** 每日日志（Markdown 格式）：daily_log:<YYYY-MM-DD> */
   DAILY_LOG: "daily_log:",
-  /** 算法刷题清单：algo:leetcode_checklist */
-  ALGORITHM: "algo:",
-  /** 后端学习路线：backend:roadmap */
-  BACKEND: "backend:",
 } as const;
 
 // AI 模型配置（用户可在 profile 配置多个）

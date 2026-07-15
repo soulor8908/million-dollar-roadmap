@@ -15,8 +15,6 @@ import {
 const TYPE_LABELS: Record<ImportType, string> = {
   emotion: "情绪笔记",
   daily: "每日日志",
-  algorithm: "算法进度",
-  backend: "后端路线",
 };
 
 export default function ImportPage() {
@@ -24,7 +22,7 @@ export default function ImportPage() {
   const [owner, setOwner] = useState("soulor8908");
   const [repo, setRepo] = useState("million-dollar-roadmap");
   const [selectedTypes, setSelectedTypes] = useState<Set<ImportType>>(
-    new Set(["emotion", "daily", "algorithm", "backend"])
+    new Set(["emotion", "daily"])
   );
   const [progress, setProgress] = useState<string[]>([]);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -79,7 +77,7 @@ export default function ImportPage() {
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
         <p className="font-medium mb-1">从 GitHub 导入历史数据</p>
         <p className="text-blue-600">
-          将主站存储在 GitHub Markdown 中的情绪笔记、每日日志、算法进度、后端路线一次性导入 DevPath。
+          将主站存储在 GitHub Markdown 中的情绪笔记、每日日志一次性导入 DevPath。
           导入后数据存储在本地 IndexedDB，与 GitHub 数据互不影响。
         </p>
       </div>
@@ -203,12 +201,6 @@ export default function ImportPage() {
               {result.stats.daily.files > 0 && (
                 <p>每日日志：{result.stats.daily.files} 个文件</p>
               )}
-              {result.stats.algorithm.problems > 0 && (
-                <p>算法进度：{result.stats.algorithm.problems} 道题</p>
-              )}
-              {result.stats.backend.weeks > 0 && (
-                <p>后端路线：{result.stats.backend.weeks} 周</p>
-              )}
             </div>
             {result.errors.length > 0 && (
               <details className="mt-2">
@@ -230,18 +222,6 @@ export default function ImportPage() {
                 className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-center text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 查看日志 →
-              </Link>
-              <Link
-                href="/algorithm"
-                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-center text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                查看算法 →
-              </Link>
-              <Link
-                href="/backend"
-                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-center text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                查看路线 →
               </Link>
             </div>
           )}

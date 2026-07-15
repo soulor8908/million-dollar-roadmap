@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       model = getModel();
     }
 
-    const result = streamText({
+    const result = await streamText({
       model,
       messages,
       system: SYSTEM_PROMPT,

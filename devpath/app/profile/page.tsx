@@ -237,6 +237,111 @@ export default function ProfilePage() {
     }
   }
 
+  // ============ AI 模型配置 ============
+
+  /** 刷新模型配置列表 */
+  async function refreshModelConfigs() {
+    const configs = await listModelConfigs();
+    setModelConfigs(configs);
+  }
+
+  /** 重置表单（清空字段，退出编辑模式） */
+  function resetModelForm() {
+    setEditingModel(null);
+    setModelName("");
+    setModelProvider("custom");
+    setModelBaseURL("");
+    setModelApiKey("");
+    setModelModel("");
+    setModelIsDefault(false);
+    setModelError("");
+  }
+
+  /** 点击预设模板，填充表单（baseURL + model + name） */
+  function applyPreset(preset: (typeof MODEL_PRESETS)[number]) {
+    setModelName(preset.name);
+    setModelProvider(preset.provider);
+    setModelBaseURL(preset.baseURL);
+    setModelModel(preset.model);
+    setModelError("");
+  }
+
+  /** 打开新建表单 */
+  function openNewModelForm() {
+    resetModelForm();
+    setShowModelForm(true);
+  }
+
+  /** 点击编辑：用已有配置填充表单并展开 */
+  function openEditModelForm(config: ModelConfig) {
+    setEditingModel(config);
+    setModelName(config.name);
+    setModelProvider(config.provider);
+    setModelBaseURL(config.baseURL);
+    setModelApiKey(config.apiKey);
+    setModelModel(config.model);
+    setModelIsDefault(config.isDefault);
+    setModelError("");
+    setShowModelForm(true);
+  }
+
+  /** Provider 改变时，若为 glm/deepseek/mimo 自动回填 baseURL+model */
+  function handleProviderChange(provider: ModelConfig["provider"]) {
+    setModelProvider(provider);
+    const preset = MODEL_PRESETS.find((p) => p.provider === provider);
+    if (preset && (provider === "glm" || provider === "deepseek" || provider === "mimo")) {
+      setModelBaseURL(preset.baseURL);
+      setModelModel(preset.model);
+    }
+  }
+
+  /** 保存（新建 / 更新） */
+  async function saveModelConfig() {
+    setModelError("");
+    if (!modelName.trim() || !modelBaseURL.trim() || !modelApiKey.trim() || !modelModel.trim()) {
+      setModelError("请填写名称、baseURL、API Key、模型名称");
+      return;
+    }
+    setModelSaving(true);
+    try {
+      const payload = {
+        name: modelName.trim(),
+        provider: modelProvider,
+        baseURL: modelBaseURL.trim(),
+        apiKey: modelApiKey.trim(),
+        model: modelModel.trim(),
+        isDefault: modelIsDefault,
+      };
+      if (editingModel) {
+        await updateModelConfig(editingModel.id, payload);
+      } else {
+        await createModelConfig(payload);
+      }
+      await refreshModelConfigs();
+      resetModelForm();
+      setShowModelForm(false);
+    } finally {
+      setModelSaving(false);
+    }
+  }
+
+  /** 删除模型配置 */
+  async function handleDeleteModel(id: string) {
+    if (!confirm("确定删除该模型配置？")) return;
+    await deleteModelConfig(id);
+    await refreshModelConfigs();
+    if (editingModel?.id === id) {
+      resetModelForm();
+      setShowModelForm(false);
+    }
+  }
+
+  /** 设为默认 */
+  async function handleSetDefault(id: string) {
+    await setDefaultModel(id);
+    await refreshModelConfigs();
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <h1 className="text-2xl font-bold">我的</h1>
@@ -607,6 +712,217 @@ export default function ProfilePage() {
             <span className="ml-1 text-xs text-gray-400">（即将支持）</span>
           </span>
         </div>
+      </Section>
+
+      {/* 7. AI 模型配置 */}
+      <Section icon="🤖" title="AI 模型配置" desc="管理 OpenAI 兼容模型">
+        {/* 配置列表 */}
+        <div className="space-y-2">
+          {modelConfigs.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-gray-50 px-3 py-4 text-center text-sm text-gray-500">
+              暂无模型配置，点击下方按钮新建一个吧
+            </p>
+          ) : (
+            modelConfigs.map((c) => (
+              <div
+                key={c.id}
+                className="rounded-lg border bg-white px-3 py-2 text-sm shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{c.name}</span>
+                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                        {c.provider}
+                      </span>
+                      {c.isDefault && (
+                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">
+                          默认
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 truncate text-xs text-gray-500">
+                      {c.model} · {c.baseURL}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {!c.isDefault && (
+                      <button
+                        onClick={() => handleSetDefault(c.id)}
+                        className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+                      >
+                        设为默认
+                      </button>
+                    )}
+                    <button
+                      onClick={() => openEditModelForm(c)}
+                      className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => handleDeleteModel(c.id)}
+                      className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 新建 / 收起表单按钮 */}
+        <div>
+          {!showModelForm ? (
+            <button
+              onClick={openNewModelForm}
+              className="w-full rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              + 新建模型配置
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setShowModelForm(false);
+                resetModelForm();
+              }}
+              className="w-full rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              ▲ 收起表单
+            </button>
+          )}
+        </div>
+
+        {/* 表单 */}
+        {showModelForm && (
+          <div className="space-y-3 rounded-lg border bg-gray-50/50 p-3">
+            {/* 预设模板 */}
+            <div>
+              <label className="block text-sm font-medium">预设模板</label>
+              <p className="text-xs text-gray-500">
+                点击预设可快速填充 baseURL / 模型 / 名称
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {MODEL_PRESETS.map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() => applyPreset(p)}
+                    className="rounded-full border bg-white px-3 py-1 text-xs hover:border-blue-400 hover:text-blue-600"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 名称 */}
+            <div>
+              <label className="block text-sm font-medium">名称</label>
+              <input
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="如 我的 GPT"
+                className="mt-1 w-full rounded border px-2 py-1"
+              />
+            </div>
+
+            {/* Provider */}
+            <div>
+              <label className="block text-sm font-medium">Provider</label>
+              <select
+                value={modelProvider}
+                onChange={(e) =>
+                  handleProviderChange(e.target.value as ModelConfig["provider"])
+                }
+                className="mt-1 w-full rounded border px-2 py-1"
+              >
+                <option value="glm">glm（智谱）</option>
+                <option value="deepseek">deepseek</option>
+                <option value="mimo">mimo（小米）</option>
+                <option value="custom">custom</option>
+              </select>
+            </div>
+
+            {/* baseURL */}
+            <div>
+              <label className="block text-sm font-medium">baseURL</label>
+              <input
+                value={modelBaseURL}
+                onChange={(e) => setModelBaseURL(e.target.value)}
+                placeholder="https://api.openai.com/v1"
+                className="mt-1 w-full rounded border px-2 py-1 font-mono text-xs"
+              />
+            </div>
+
+            {/* API Key（密码 + 显隐） */}
+            <div>
+              <label className="block text-sm font-medium">API Key</label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type={showApiKey ? "text" : "password"}
+                  value={modelApiKey}
+                  onChange={(e) => setModelApiKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="flex-1 rounded border px-2 py-1 font-mono text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey((v) => !v)}
+                  className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+                >
+                  {showApiKey ? "隐藏" : "显示"}
+                </button>
+              </div>
+            </div>
+
+            {/* 模型名称 */}
+            <div>
+              <label className="block text-sm font-medium">模型名称</label>
+              <input
+                value={modelModel}
+                onChange={(e) => setModelModel(e.target.value)}
+                placeholder="如 gpt-4o-mini / deepseek-chat"
+                className="mt-1 w-full rounded border px-2 py-1 font-mono text-xs"
+              />
+            </div>
+
+            {/* 设为默认 */}
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={modelIsDefault}
+                onChange={(e) => setModelIsDefault(e.target.checked)}
+                className="h-5 w-5"
+              />
+              <span className="text-sm">设为默认模型</span>
+            </label>
+
+            {/* 错误提示 */}
+            {modelError && (
+              <p className="text-sm text-red-600">{modelError}</p>
+            )}
+
+            {/* 保存按钮 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveModelConfig}
+                disabled={modelSaving}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {modelSaving
+                  ? "保存中..."
+                  : editingModel
+                    ? "更新配置"
+                    : "保存配置"}
+              </button>
+              {editingModel && (
+                <span className="text-xs text-gray-500">编辑中：{editingModel.name}</span>
+              )}
+            </div>
+          </div>
+        )}
       </Section>
     </div>
   );

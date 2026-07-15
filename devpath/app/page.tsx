@@ -105,7 +105,7 @@ export default function Home() {
         const date = chinaDateShift(chinaDateNow(), -i);
         const minutes = logs
           .filter((l) => l.date === date)
-          .reduce((sum, l) => sum + l.duration, 0);
+          .reduce((sum, l) => sum + (l.duration ?? 0), 0);
         dayMinutes.push({ date, minutes });
       }
       setHeatmapData(dayMinutes);

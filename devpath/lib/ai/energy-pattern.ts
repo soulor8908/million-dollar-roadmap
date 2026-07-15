@@ -91,7 +91,7 @@ export function dopamineVsLearnMinutes(
     const set = new Set(dates);
     const matched = learnLogs.filter((l) => set.has(l.date));
     if (matched.length === 0) return 0;
-    return matched.reduce((s, l) => s + l.duration, 0) / matched.length;
+    return matched.reduce((s, l) => s + (l.duration ?? 0), 0) / matched.length;
   };
   const highAvg = sumBy(highDopamineDates);
   const lowDates = statuses

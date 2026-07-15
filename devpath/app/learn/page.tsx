@@ -174,6 +174,7 @@ export default function LearnPage() {
       dailyMinutes,
       maxNewPerDay,
       fsrsMode: "standard",
+      prompt: promptText.trim() || undefined,
       createdAt: now,
       updatedAt: now,
     };

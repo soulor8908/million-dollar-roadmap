@@ -29,12 +29,12 @@ export function ShareCardButton({ profile }: Props) {
         streakDays++;
         cursor.setDate(cursor.getDate() - 1);
       }
-      const totalMinutes = learnLogs.reduce((s, l) => s + l.duration, 0);
+      const totalMinutes = learnLogs.reduce((s, l) => s + (l.duration ?? 0), 0);
 
       const heatmapData = learnLogs.reduce((acc: Array<{ date: string; count: number }>, l) => {
         const existing = acc.find((x) => x.date === l.date);
-        if (existing) existing.count += l.duration;
-        else acc.push({ date: l.date, count: l.duration });
+        if (existing) existing.count += (l.duration ?? 0);
+        else acc.push({ date: l.date, count: l.duration ?? 0 });
         return acc;
       }, []);
 

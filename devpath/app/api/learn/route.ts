@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       dailyMinutes,
       maxNewPerDay,
       fsrsMode: "standard",
+      prompt: userPrompt,
       createdAt: now,
       updatedAt: now,
     };

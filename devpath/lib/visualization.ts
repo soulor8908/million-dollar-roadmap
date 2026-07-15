@@ -35,7 +35,7 @@ export async function buildPublicStats(
     cursor.setDate(cursor.getDate() - 1);
   }
 
-  const totalMinutes = learnLogs.reduce((sum, l) => sum + l.duration, 0);
+  const totalMinutes = learnLogs.reduce((sum, l) => sum + (l.duration ?? 0), 0);
 
   const stats: PublicStats = {
     username,
@@ -52,7 +52,7 @@ export async function buildPublicStats(
   if (profile.visibility.heatmap) {
     const byDate = new Map<string, number>();
     for (const l of learnLogs) {
-      byDate.set(l.date, (byDate.get(l.date) ?? 0) + l.duration);
+      byDate.set(l.date, (byDate.get(l.date) ?? 0) + (l.duration ?? 0));
     }
     stats.heatmapData = Array.from(byDate.entries())
       .map(([date, count]) => ({ date, count }))

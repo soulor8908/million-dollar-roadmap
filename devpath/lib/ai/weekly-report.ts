@@ -35,7 +35,7 @@ const EMOTION_EMOJI: Record<EmotionTag, string> = {
  * ## 下周建议
  */
 export async function generateWeeklyReport(input: WeeklyInput): Promise<string> {
-  const totalMinutes = input.learnLogs.reduce((sum, l) => sum + l.duration, 0);
+  const totalMinutes = input.learnLogs.reduce((sum, l) => sum + (l.duration ?? 0), 0);
   const learnCount = input.learnLogs.filter((l) => l.type === "learn").length;
   const reviewCount = input.reviewLogs.length;
   const correctCount = input.reviewLogs.filter((r) => r.rating >= 3).length;
@@ -67,13 +67,13 @@ export async function generateWeeklyReport(input: WeeklyInput): Promise<string> 
   // 高干扰日的学习时长
   const highDopamineLearnMinutes = input.learnLogs
     .filter((l) => highDopamineDates.has(l.date))
-    .reduce((s, l) => s + l.duration, 0);
+    .reduce((s, l) => s + (l.duration ?? 0), 0);
   const noDopamineDates = new Set(
     input.statuses.filter((s) => !s.dopamineTrigger || s.dopamineTrigger === "无").map((s) => s.date),
   );
   const noDopamineLearnMinutes = input.learnLogs
     .filter((l) => noDopamineDates.has(l.date))
-    .reduce((s, l) => s + l.duration, 0);
+    .reduce((s, l) => s + (l.duration ?? 0), 0);
 
   const hasEmotionData = emotions.length > 0 || dopamineCounts.size > 0;
 
@@ -156,7 +156,7 @@ ${recs.map((s) => `- ${s}`).join("\n")}`;
       streakDays,
       avgEnergy,
       dailyMinutes: input.learnLogs.reduce((acc, l) => {
-        acc[l.date] = (acc[l.date] ?? 0) + l.duration;
+        acc[l.date] = (acc[l.date] ?? 0) + (l.duration ?? 0);
         return acc;
       }, {} as Record<string, number>),
       emotionCounts: Object.fromEntries(emotionCounts),

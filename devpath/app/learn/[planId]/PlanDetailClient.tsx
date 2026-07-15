@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { getItem, setItem } from "@/lib/storage/db";
 import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
@@ -10,6 +11,7 @@ import { KnowledgeTree } from "@/components/KnowledgeTree";
 import { QuestionCard } from "@/components/QuestionCard";
 import { toggleQuestionInPlan, createFavoriteDeck, listFavoriteDecks, deleteFavoriteDeck } from "@/lib/favorite";
 import { nowISO } from "@/lib/time";
+import { logLearning } from "@/lib/learn-log";
 
 export default function PlanDetailClient() {
   const params = useParams<{ planId: string }>();
@@ -23,6 +25,15 @@ export default function PlanDetailClient() {
   const [regenError, setRegenError] = useState<string | null>(null);
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // 重新生成弹窗状态
+  const [showRegenModal, setShowRegenModal] = useState(false);
+  const [regenTopic, setRegenTopic] = useState("");
+  const [regenPrompt, setRegenPrompt] = useState("");
+  const [regenDailyMinutes, setRegenDailyMinutes] = useState(30);
+  const [regenMaxNew, setRegenMaxNew] = useState(1);
+  const [regeneratingPlan, setRegeneratingPlan] = useState(false);
+  const [regenPlanError, setRegenPlanError] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       const p = await getItem<LearningPlan>(KEY_PREFIXES.PLAN + planId);
@@ -32,6 +43,11 @@ export default function PlanDetailClient() {
       }
       setPlan(p);
       setLoading(false);
+      // 初始化重新生成表单
+      setRegenTopic(p.topic);
+      setRegenPrompt(p.prompt ?? "");
+      setRegenDailyMinutes(p.dailyMinutes);
+      setRegenMaxNew(p.maxNewPerDay);
       // 检查是否已收藏为 deck
       const decks = await listFavoriteDecks();
       const found = decks.find((d) => d.planId === p.id);
@@ -44,9 +60,19 @@ export default function PlanDetailClient() {
 
   async function handleQuestionFavorite(questionId: string) {
     if (!plan) return;
+    const oldQ = plan.questions.find((q) => q.id === questionId);
     const updated = toggleQuestionInPlan(plan, questionId);
     setPlan(updated);
     await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+    // 记录收藏日志（仅在新增收藏时）
+    if (oldQ && !oldQ.favorited) {
+      logLearning({
+        planId: plan.id,
+        nodeId: oldQ.nodeId,
+        questionId,
+        type: "question_favorite",
+      }).catch(() => {});
+    }
   }
 
   async function handleDeckFavorite() {
@@ -72,6 +98,8 @@ export default function PlanDetailClient() {
   // 点击 schedule 项 → 标记完成/取消完成，写回 plan
   async function handleScheduleClick(scheduleIndex: number) {
     if (!plan) return;
+    const oldItem = plan.schedule[scheduleIndex];
+    const willComplete = !oldItem.completed;
     const updated: LearningPlan = {
       ...plan,
       updatedAt: nowISO(),
@@ -79,8 +107,8 @@ export default function PlanDetailClient() {
         if (idx === scheduleIndex) {
           return {
             ...item,
-            completed: !item.completed,
-            completedAt: !item.completed ? nowISO() : undefined,
+            completed: willComplete,
+            completedAt: willComplete ? nowISO() : undefined,
           };
         }
         return item;
@@ -88,6 +116,14 @@ export default function PlanDetailClient() {
     };
     setPlan(updated);
     await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+    // 记录学习日志
+    if (willComplete) {
+      logLearning({
+        planId: plan.id,
+        nodeId: oldItem.nodeId,
+        type: oldItem.type === "learn" ? "learn_complete" : "review_complete",
+      }).catch(() => {});
+    }
   }
 
   // 跳转到对应知识点的第一道题
@@ -137,6 +173,59 @@ export default function PlanDetailClient() {
     }
   }
 
+  // 打开重新生成弹窗
+  function openRegenModal() {
+    if (!plan) return;
+    setRegenTopic(plan.topic);
+    setRegenPrompt(plan.prompt ?? "");
+    setRegenDailyMinutes(plan.dailyMinutes);
+    setRegenMaxNew(plan.maxNewPerDay);
+    setRegenPlanError(null);
+    setShowRegenModal(true);
+  }
+
+  // 提交重新生成
+  async function handleRegenPlan() {
+    if (!plan) return;
+    if (!regenTopic.trim()) {
+      setRegenPlanError("主题不能为空");
+      return;
+    }
+    setRegeneratingPlan(true);
+    setRegenPlanError(null);
+    try {
+      const res = await apiFetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: regenTopic.trim(),
+          dailyMinutes: regenDailyMinutes,
+          maxNewPerDay: regenMaxNew,
+          prompt: regenPrompt.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `请求失败 (${res.status})`);
+      }
+      const { plan: newPlan } = (await res.json()) as { plan: LearningPlan };
+      // 保留原 planId，用新内容替换旧计划
+      const replaced: LearningPlan = {
+        ...newPlan,
+        id: plan.id,
+        createdAt: plan.createdAt,
+        updatedAt: nowISO(),
+      };
+      setPlan(replaced);
+      await setItem(KEY_PREFIXES.PLAN + plan.id, replaced);
+      setShowRegenModal(false);
+    } catch (e) {
+      setRegenPlanError(e instanceof Error ? e.message : "重新生成失败");
+    } finally {
+      setRegeneratingPlan(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -163,11 +252,31 @@ export default function PlanDetailClient() {
         >
           ← 返回
         </button>
-        <h1 className="text-xl font-bold">{plan.topic}</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {plan.knowledgeTree.length} 个知识点 · {plan.questions.length} 道题 ·{" "}
-          {days.length} 天计划
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold">{plan.topic}</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {plan.knowledgeTree.length} 个知识点 · {plan.questions.length} 道题 ·{" "}
+              {days.length} 天计划
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={openRegenModal}
+              className="px-3 py-1.5 text-xs bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              title="重新编辑提示词与计划参数，AI 重新生成"
+            >
+              🔄 重新生成
+            </button>
+            <Link
+              href={`/learn/${plan.id}/edit`}
+              className="px-3 py-1.5 text-xs border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+              title="调整作息、优先级、纳入范围"
+            >
+              ✏️ 调整计划
+            </Link>
+          </div>
+        </div>
         <button
           onClick={handleDeckFavorite}
           className="mt-3 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200"
@@ -255,6 +364,128 @@ export default function PlanDetailClient() {
           })}
         </div>
       </div>
+
+      {/* 重新生成弹窗 */}
+      {showRegenModal && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !regeneratingPlan && setShowRegenModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold">🔄 重新生成计划</h2>
+                <button
+                  onClick={() => !regeneratingPlan && setShowRegenModal(false)}
+                  className="text-gray-400 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+                  aria-label="关闭"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                修改下方参数后点击生成，AI 将重新拆解知识树并生成面试题，当前计划内容会被替换。
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">学习主题</label>
+                  <input
+                    type="text"
+                    value={regenTopic}
+                    onChange={(e) => setRegenTopic(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={regeneratingPlan}
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <label className="flex-1">
+                    <span className="text-sm text-gray-600 block mb-1">每日学习时间（分钟）</span>
+                    <input
+                      type="number"
+                      value={regenDailyMinutes}
+                      onChange={(e) => setRegenDailyMinutes(Number(e.target.value))}
+                      min={15}
+                      max={120}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      disabled={regeneratingPlan}
+                    />
+                  </label>
+                  <label className="flex-1">
+                    <span className="text-sm text-gray-600 block mb-1">每日新内容数</span>
+                    <input
+                      type="number"
+                      value={regenMaxNew}
+                      onChange={(e) => setRegenMaxNew(Number(e.target.value))}
+                      min={1}
+                      max={5}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      disabled={regeneratingPlan}
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">
+                    自定义提示词（可选）
+                  </label>
+                  <textarea
+                    value={regenPrompt}
+                    onChange={(e) => setRegenPrompt(e.target.value)}
+                    placeholder="例如：请以大厂面试官视角拆解，重点考察高并发场景和源码原理"
+                    rows={4}
+                    maxLength={2000}
+                    className="w-full px-3 py-2 border rounded-lg text-sm resize-y focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    disabled={regeneratingPlan}
+                  />
+                  {regenPrompt.trim() && (
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      {regenPrompt.length}/2000 字
+                    </p>
+                  )}
+                </div>
+
+                {regenPlanError && (
+                  <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {regenPlanError}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    onClick={handleRegenPlan}
+                    disabled={regeneratingPlan || !regenTopic.trim()}
+                    className="flex-1 py-2.5 bg-black text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {regeneratingPlan ? (
+                      <>
+                        <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        AI 生成中...
+                      </>
+                    ) : (
+                      <>🔄 重新生成</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setShowRegenModal(false)}
+                    disabled={regeneratingPlan}
+                    className="px-4 py-2.5 text-sm text-gray-500 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    取消
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400 text-center">
+                  预计 30-90 秒，生成期间请勿关闭页面
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,8 @@ export interface LearningPlan {
   dailyMinutes: number;
   maxNewPerDay: number;
   fsrsMode: "conservative" | "standard" | "aggressive";
+  /** 生成时使用的自定义提示词（用于重新生成时回填） */
+  prompt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -158,10 +160,16 @@ export interface ReviewLog {
 export interface LearnLog {
   id: string;
   planId: string;
-  nodeId: string;
+  /** 关联知识点（question_view 时可空） */
+  nodeId?: string;
+  /** 关联面试题（可选） */
+  questionId?: string;
   date: string;
-  duration: number;
-  type: "learn" | "review";
+  /** 精确时间戳 ISO（可选，旧数据可能没有） */
+  timestamp?: string;
+  /** 学习时长（分钟，旧字段，兼容） */
+  duration?: number;
+  type: "learn" | "review" | "learn_complete" | "review_complete" | "question_view" | "question_favorite" | "question_regenerate";
 }
 
 // 公开主页
@@ -222,7 +230,60 @@ export const KEY_PREFIXES = {
   ROUTINE: "routine:",
   /** 常用提示词库：prompt:<id> */
   PROMPT: "prompt:",
+  /** 学习日志：log:<id> */
+  LOG: "log:",
+  /** 用户作息时间表：routine:default */
+  ROUTINE_DATA: "routine:default",
 } as const;
+
+// 用户作息时间表（用于 AI 调整计划）
+export interface Routine {
+  /** 起床时间 HH:MM */
+  wakeTime: string;
+  /** 睡觉时间 HH:MM */
+  sleepTime: string;
+  /** 可用学习时段 */
+  slots: {
+    /** 时段标签：早晨/午间/晚上 */
+    label: string;
+    /** 开始 HH:MM */
+    start: string;
+    /** 结束 HH:MM */
+    end: string;
+    /** 可用分钟数 */
+    minutes: number;
+  }[];
+  /** 每周可学习的星期（1-7，1=周一） */
+  weekdays: number[];
+  /** 偏好学习强度：轻松/标准/冲刺 */
+  intensity: "light" | "standard" | "intensive";
+}
+
+// 学习统计（仪表盘用）
+export interface LearnStats {
+  /** 总学习天数 */
+  totalDays: number;
+  /** 总学习行为数 */
+  totalActions: number;
+  /** 已完成学习任务数 */
+  learnedCount: number;
+  /** 已完成复习任务数 */
+  reviewedCount: number;
+  /** 已查看面试题数 */
+  viewedQuestions: number;
+  /** 已收藏面试题数 */
+  favoritedQuestions: number;
+  /** 当前连续学习天数 */
+  currentStreak: number;
+  /** 最长连续学习天数 */
+  longestStreak: number;
+  /** 最近 30 天活动：{ date: count } */
+  dailyActivity: Record<string, number>;
+  /** 各知识点掌握度：{ nodeId: { completed, total, mastery } } */
+  nodeProgress: Record<string, { completed: number; total: number; mastery: number }>;
+  /** 薄弱知识点 ID（完成率 < 50%） */
+  weakAreas: string[];
+}
 
 // 用户保存的常用提示词
 export interface PromptLibraryItem {

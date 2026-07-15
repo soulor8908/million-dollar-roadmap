@@ -8,8 +8,8 @@ const items = [
   { href: "/learn", label: "学习", icon: "📚" },
   { href: "/chat", label: "AI", icon: "💬" },
   { href: "/review", label: "复习", icon: "🔁" },
+  { href: "/mistakes", label: "错题", icon: "❌" },
   { href: "/dashboard", label: "仪表盘", icon: "📈" },
-  { href: "/favorites", label: "收藏", icon: "⭐" },
   { href: "/profile", label: "我的", icon: "👤" },
 ];
 

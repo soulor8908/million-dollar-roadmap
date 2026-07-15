@@ -240,6 +240,8 @@ export const KEY_PREFIXES = {
   CHAT_MESSAGE: "chat:",
   /** AI 模型配置：model:<id> */
   MODEL_CONFIG: "model:",
+  /** 错题记录：mistake:<id> */
+  MISTAKE: "mistake:",
 } as const;
 
 // AI 模型配置（用户可在 profile 配置多个）
@@ -368,4 +370,25 @@ export interface PromptLibraryItem {
   usedAt?: string;
   /** 使用次数 */
   usedCount: number;
+}
+
+// 错题记录（复习时答错自动收集）
+export interface MistakeRecord {
+  id: string;
+  /** 关联计划 ID */
+  planId: string;
+  /** 关联题目 ID */
+  questionId: string;
+  /** 关联知识点 ID */
+  nodeId: string;
+  /** 题目内容快照（避免题目被删除后无法显示） */
+  questionText: string;
+  /** 答错次数 */
+  wrongCount: number;
+  /** 最近一次答错时间 ISO */
+  lastWrongAt: string;
+  /** 是否已掌握（从错题本移除） */
+  resolved: boolean;
+  /** 创建时间 ISO */
+  createdAt: string;
 }

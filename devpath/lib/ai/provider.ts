@@ -5,6 +5,7 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
+import type { ModelConfig } from "../types";
 
 export type AIProvider = "glm" | "deepseek" | "mimo" | "custom";
 
@@ -84,7 +85,7 @@ function resolveConfig(): ProviderConfig {
 
 let cachedModel: LanguageModel | null = null;
 
-/** 获取 AI 模型（带缓存） */
+/** 获取 AI 模型（带缓存，走环境变量配置） */
 export function getModel(): LanguageModel {
   if (cachedModel) return cachedModel;
   const { baseURL, model, apiKey } = resolveConfig();
@@ -96,6 +97,15 @@ export function getModel(): LanguageModel {
   const openai = createOpenAI({ baseURL, apiKey });
   cachedModel = openai(model);
   return cachedModel;
+}
+
+/** 从用户 ModelConfig 创建模型（无缓存，每次新建） */
+export function getModelFromConfig(config: ModelConfig): LanguageModel {
+  if (!config.apiKey) {
+    throw new Error(`模型 "${config.name}" 未配置 API Key`);
+  }
+  const openai = createOpenAI({ baseURL: config.baseURL, apiKey: config.apiKey });
+  return openai(config.model);
 }
 
 /** 检查是否配置了 AI Key */
@@ -127,4 +137,9 @@ export function getProviderInfo(): { provider: string; model: string; baseURL: s
     model: getEnv("AI_MODEL") || preset?.model || "unknown",
     baseURL: getEnv("AI_API_URL") || preset?.baseURL || "unknown",
   };
+}
+
+/** 获取预设列表（供前端展示） */
+export function getPresets() {
+  return PRESETS;
 }

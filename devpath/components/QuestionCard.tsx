@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Question } from "@/lib/types";
 import { AnswerContent, CodeBlock } from "@/components/CodeBlock";
 
@@ -9,11 +10,21 @@ interface Props {
   onFavoriteToggle?: (questionId: string) => void;
   onRegenerate?: (questionId: string) => void;
   regenerating?: boolean;
+  onFollowUpClick?: (followUp: string) => void;
 }
 
-export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regenerating }: Props) {
+export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regenerating, onFollowUpClick }: Props) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const isFailed = question.question === "生成失败，点击重试";
+
+  const handleFollowUpClick = (fu: string) => {
+    if (onFollowUpClick) {
+      onFollowUpClick(fu);
+    } else {
+      router.push(`/chat?prefill=${encodeURIComponent(fu)}&sourceType=question&sourceId=${question.id}&sourceTitle=${encodeURIComponent(question.question)}`);
+    }
+  };
 
   return (
     <div className="border rounded-lg p-4 bg-white">
@@ -55,12 +66,19 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
           )}
           {question.followUps.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-500 mt-2">追问：</p>
-              <ul className="text-xs text-gray-600 list-disc list-inside">
+              <p className="text-xs font-medium text-gray-500 mt-2">追问（点击向 AI 提问）：</p>
+              <div className="flex flex-wrap gap-1.5 mt-1">
                 {question.followUps.map((fu, i) => (
-                  <li key={i}>{fu}</li>
+                  <button
+                    key={i}
+                    onClick={() => handleFollowUpClick(fu)}
+                    className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors border border-blue-100"
+                    title="点击进入 AI 聊天"
+                  >
+                    💬 {fu}
+                  </button>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
           {question.codeSnippet && (

@@ -19,6 +19,15 @@ import {
   parseRoutine,
 } from "@/lib/routine";
 import { listFavoriteDecks, listFavoritedQuestions } from "@/lib/favorite";
+import {
+  listModelConfigs,
+  createModelConfig,
+  updateModelConfig,
+  deleteModelConfig,
+  setDefaultModel,
+  MODEL_PRESETS,
+} from "@/lib/model-config";
+import type { ModelConfig } from "@/lib/types";
 
 const STORAGE_KEY = "my:profile";
 
@@ -95,6 +104,20 @@ export default function ProfilePage() {
   const [deckCount, setDeckCount] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
 
+  // AI 模型配置
+  const [modelConfigs, setModelConfigs] = useState<ModelConfig[]>([]);
+  const [showModelForm, setShowModelForm] = useState(false);
+  const [editingModel, setEditingModel] = useState<ModelConfig | null>(null);
+  const [modelName, setModelName] = useState("");
+  const [modelProvider, setModelProvider] = useState<ModelConfig["provider"]>("custom");
+  const [modelBaseURL, setModelBaseURL] = useState("");
+  const [modelApiKey, setModelApiKey] = useState("");
+  const [modelModel, setModelModel] = useState("");
+  const [modelIsDefault, setModelIsDefault] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [modelSaving, setModelSaving] = useState(false);
+  const [modelError, setModelError] = useState("");
+
   useEffect(() => {
     (async () => {
       const stored = await dbGet<PublicProfile>(STORAGE_KEY);
@@ -120,6 +143,10 @@ export default function ProfilePage() {
       ]);
       setDeckCount(decks.length);
       setQuestionCount(questions.length);
+
+      // 加载 AI 模型配置
+      const configs = await listModelConfigs();
+      setModelConfigs(configs);
     })();
   }, []);
 

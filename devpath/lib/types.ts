@@ -234,7 +234,77 @@ export const KEY_PREFIXES = {
   LOG: "log:",
   /** 用户作息时间表：routine:default */
   ROUTINE_DATA: "routine:default",
+  /** 聊天对话：conv:<id> */
+  CONVERSATION: "conv:",
+  /** 聊天消息：chat:<conversationId>_<id> */
+  CHAT_MESSAGE: "chat:",
+  /** AI 模型配置：model:<id> */
+  MODEL_CONFIG: "model:",
 } as const;
+
+// AI 模型配置（用户可在 profile 配置多个）
+export interface ModelConfig {
+  id: string;
+  /** 配置名称（如"我的 GPT"、"DeepSeek"） */
+  name: string;
+  /** 提供商类型 */
+  provider: "glm" | "deepseek" | "mimo" | "custom";
+  /** API baseURL（OpenAI 兼容格式） */
+  baseURL: string;
+  /** API Key（存储在 IndexedDB，不上传到云端） */
+  apiKey: string;
+  /** 模型名称（如 gpt-4o, deepseek-chat, glm-4-flash） */
+  model: string;
+  /** 是否默认模型 */
+  isDefault: boolean;
+  /** 创建时间 ISO */
+  createdAt: string;
+}
+
+// 聊天消息来源（指向触发该对话的题目或知识点）
+export interface ChatSource {
+  /** 来源类型 */
+  type: "question" | "knowledge" | "manual";
+  /** 来源 ID（questionId / nodeId） */
+  id: string;
+  /** 来源标题（题目内容 / 知识点标题） */
+  title: string;
+  /** 关联计划 ID（用于跳转） */
+  planId?: string;
+}
+
+// 聊天消息
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  /** 角色 */
+  role: "user" | "assistant" | "system";
+  /** 消息内容 */
+  content: string;
+  /** 创建时间 ISO */
+  createdAt: string;
+}
+
+// 聊天对话
+export interface Conversation {
+  id: string;
+  /** 对话标题（默认取首条用户消息前 30 字） */
+  title: string;
+  /** 创建时间 ISO */
+  createdAt: string;
+  /** 最后更新时间 ISO（用于排序和清理） */
+  updatedAt: string;
+  /** 最后一条消息时间 ISO */
+  lastMessageAt: string;
+  /** 是否收藏/置顶（收藏的不自动清理） */
+  pinned: boolean;
+  /** 使用的模型配置 ID */
+  modelConfigId?: string;
+  /** 消息来源（如有，指向触发该对话的题目） */
+  source?: ChatSource;
+  /** 消息数量缓存 */
+  messageCount: number;
+}
 
 // 用户作息时间表（用于 AI 调整计划）
 export interface Routine {

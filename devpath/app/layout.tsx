@@ -19,7 +19,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className="bg-gray-50 text-gray-900 min-h-screen pb-16">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var stored = localStorage.getItem('devpath:theme') || 'system';
+              var dark = stored === 'dark' || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              if (dark) document.documentElement.classList.add('dark');
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
+      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen pb-16">
         {children}
         <Nav />
         <script

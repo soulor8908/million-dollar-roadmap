@@ -12,6 +12,7 @@ import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
 import { apiFetch, getApiToken, setApiToken } from "@/lib/api-client";
 import { ShareCardButton } from "@/components/ShareCardButton";
 import { SyncStatus } from "@/components/SyncStatus";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   loadRoutineMarkdown,
   saveRoutineMarkdown,
@@ -345,6 +346,14 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <h1 className="text-2xl font-bold">我的</h1>
+
+      {/* 0. 外观（主题切换） */}
+      <Section icon="🎨" title="外观" desc="主题模式">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600 dark:text-gray-400">主题模式</span>
+          <ThemeToggle />
+        </div>
+      </Section>
 
       {/* 1. 我的个人信息 */}
       <Section
@@ -941,7 +950,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-xl border bg-white p-4 shadow-sm">
+    <section className="space-y-3 rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
       <header className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-semibold">
           <span className="text-xl" aria-hidden>

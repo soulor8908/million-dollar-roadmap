@@ -149,7 +149,7 @@ export default function Home() {
   const lowEnergy = todayEnergy !== null && todayEnergy <= 2;
 
   return (
-    <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20">
+    <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20 dark:bg-gray-900">
       <h1 className="text-2xl font-bold mb-4">今日</h1>
 
       {/* 现在该做什么（时间表驱动） */}
@@ -173,13 +173,13 @@ export default function Home() {
 
       {/* 待学/待复习 + 打卡（打卡强化） */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-white border rounded-lg p-3 text-center">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold">{todayLearnCount}</p>
-          <p className="text-xs text-gray-400">今日待学</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">今日待学</p>
         </div>
-        <div className="bg-white border rounded-lg p-3 text-center">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold">{dueCount}</p>
-          <p className="text-xs text-gray-400">今日待复习</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">今日待复习</p>
         </div>
         <div className={`border rounded-lg p-3 text-center ${streakMeta.color}`}>
           <p className="text-2xl font-bold">
@@ -211,7 +211,7 @@ export default function Home() {
           <h2 className="text-sm font-medium text-gray-500 mb-2">今日安排</h2>
           <div className="space-y-1">
             {todaySchedule.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white border rounded-lg p-2">
+              <div key={i} className="flex items-center gap-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-2">
                 <span className={`text-xs px-2 py-0.5 rounded ${
                   item.type === "learn" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
                 }`}>
@@ -260,7 +260,7 @@ export default function Home() {
         <Link href="/learn" className="bg-black text-white rounded-lg p-4 text-center font-medium">
           📚 开始学习
         </Link>
-        <Link href="/review" className="bg-white border rounded-lg p-4 text-center font-medium">
+        <Link href="/review" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 text-center font-medium">
           🔁 去复习
         </Link>
       </div>

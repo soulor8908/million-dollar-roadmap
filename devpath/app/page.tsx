@@ -22,7 +22,7 @@ export default function Home() {
   /** 上一次连续天数（昨日或更早结束的连续段）—— 用于断卡视觉 */
   const [lastStreak, setLastStreak] = useState(0);
   const [recentLogs, setRecentLogs] = useState<LearnLog[]>([]);
-  const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
+  const [todaySchedule, setTodaySchedule] = useState<Array<ScheduleItem & { planId: string; topic: string }>>([]);
   const [heatmapData, setHeatmapData] = useState<{ date: string; minutes: number }[]>([]);
   const [todayEnergy, setTodayEnergy] = useState<number | null>(null);
   const [latestPlan, setLatestPlan] = useState<{ id: string; topic: string } | null>(null);
@@ -46,14 +46,17 @@ export default function Home() {
       // 读所有 plan，找今日 schedule
       const planKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.PLAN));
       let todayLearn = 0;
-      const todayItems: ScheduleItem[] = [];
+      const todayItems: Array<ScheduleItem & { planId: string; topic: string }> = [];
       const loadedPlans: LearningPlan[] = [];
       for (const k of planKeys) {
         const plan = await getItem<LearningPlan>(k);
         if (!plan) continue;
         loadedPlans.push(plan);
         const today = plan.schedule.filter((s) => s.day === 1 && !s.completed);
-        todayItems.push(...today);
+        // 附带 planId + topic 以便点击跳转
+        for (const s of today) {
+          todayItems.push({ ...s, planId: plan.id, topic: plan.topic });
+        }
         todayLearn += today.filter((s) => s.type === "learn").length;
       }
       // 跟踪最新计划（用于"继续学习"入口）
@@ -177,23 +180,32 @@ export default function Home() {
         </div>
       )}
 
-      {/* 待学/待复习 + 打卡（打卡强化） */}
+      {/* 待学/待复习 + 打卡（打卡强化）- 全部可点击跳转 */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center">
+        <Link href="/learn" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center hover:shadow-md transition-shadow">
           <p className="text-2xl font-bold">{todayLearnCount}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500">今日待学</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center">
+        </Link>
+        <Link href="/review" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 text-center hover:shadow-md transition-shadow">
           <p className="text-2xl font-bold">{dueCount}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500">今日待复习</p>
-        </div>
-        <div className={`border rounded-lg p-3 text-center ${streakMeta.color}`}>
+        </Link>
+        <Link href="/learn" className={`border rounded-lg p-3 text-center hover:shadow-md transition-shadow ${streakMeta.color}`}>
           <p className="text-2xl font-bold">
             {streakMeta.emoji} {streak}
           </p>
-          <p className="text-xs">{streakMeta.sub}</p>
-        </div>
+          <p className="text-xs">{streak === 0 ? "去打卡" : streakMeta.sub}</p>
+        </Link>
       </div>
+
+      {/* 打卡引导：未打卡时告诉用户怎么打卡 */}
+      {streak === 0 && hasPlans && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-3">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            💡 完成今日第一个学习/复习任务即可自动打卡。点击上方「今日待学」开始吧！
+          </p>
+        </div>
+      )}
 
       {/* 低能量休息提示（与状态评估联动） */}
       {lowEnergy && (
@@ -217,15 +229,20 @@ export default function Home() {
           <h2 className="text-sm font-medium text-gray-500 mb-2">今日安排</h2>
           <div className="space-y-1">
             {todaySchedule.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-2">
+              <Link
+                key={i}
+                href={`/learn/${item.planId}`}
+                className="flex items-center gap-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-2 hover:shadow-md transition-shadow"
+              >
                 <span className={`text-xs px-2 py-0.5 rounded ${
                   item.type === "learn" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
                 }`}>
                   {item.type === "learn" ? "学" : "复"}
                 </span>
-                <span className="text-sm flex-1">{item.nodeId}</span>
+                <span className="text-sm flex-1 truncate">{item.topic}</span>
                 <span className="text-xs text-gray-400">{item.estimatedMinutes}min</span>
-              </div>
+                <span className="text-xs text-blue-500">→</span>
+              </Link>
             ))}
           </div>
         </div>

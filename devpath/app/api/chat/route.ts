@@ -31,9 +31,6 @@ const BASE_SYSTEM_PROMPT =
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
-  if (authError) return authError;
-
   try {
     const body = await req.json();
     const { messages, modelConfig, contextSnapshot } = body as {
@@ -49,6 +46,13 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 判断是否使用用户自带的 modelConfig（含 apiKey）
+    // 用户自带 key → 不需要服务端 API_TOKEN（用户用自己的额度）
+    // 使用默认模型 → 需要 API_TOKEN 校验
+    const useServerModel = !(modelConfig && modelConfig.apiKey);
+    const authError = requireAuth(req, { useServerModel });
+    if (authError) return authError;
 
     // 安全限制上下文长度，防止滥用
     const safeContext =

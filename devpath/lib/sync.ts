@@ -19,14 +19,27 @@ const USER_ID_KEY = "auth:user_id";
 const LAST_SYNC_KEY = "sync:last_synced_at";
 
 // 需要同步的数据 key 前缀（所有用户业务数据）
+// 注意：MODEL_CONFIG 含 apiKey，不同步到云端（安全考虑）
+// DAILY_NUDGE / WEEKLY 是缓存，无需同步
 const SYNC_PREFIXES = [
   KEY_PREFIXES.PLAN,
+  KEY_PREFIXES.PLAN_SUMMARY,
   KEY_PREFIXES.CARD,
   KEY_PREFIXES.STATUS,
   KEY_PREFIXES.REVIEW_LOG,
   KEY_PREFIXES.LEARN_LOG,
   KEY_PREFIXES.EMOTION,
   KEY_PREFIXES.ROUTINE,
+  KEY_PREFIXES.DECK,
+  KEY_PREFIXES.MISTAKE,
+  KEY_PREFIXES.CONVERSATION,
+  KEY_PREFIXES.CHAT_MESSAGE,
+  KEY_PREFIXES.PROMPT,
+] as const;
+
+// 不在前缀体系内但需要同步的独立 key
+const SYNC_EXTRA_KEYS = [
+  "my:profile", // 个人信息（用户名/显示名/简介/头像/隐私设置）
 ] as const;
 
 // 备份数据结构版本号
@@ -110,6 +123,11 @@ export async function uploadAll(): Promise<void> {
       if (v !== undefined) data[k] = v;
     }
   }
+  // 同步独立 key（如 my:profile）
+  for (const key of SYNC_EXTRA_KEYS) {
+    const v = await getItem<unknown>(key);
+    if (v !== undefined) data[key] = v;
+  }
   const backup: UserBackup = {
     userId,
     updatedAt: new Date().toISOString(),
@@ -168,4 +186,27 @@ async function safeErrText(res: Response): Promise<string> {
   } catch {
     return "";
   }
+}
+
+// ========== 自动同步（防抖） ==========
+// 用户操作（完成学习/复习/改 profile 等）后调用 scheduleAutoSync()
+// 5 秒内多次操作只触发一次上传，避免频繁请求
+let autoSyncTimer: ReturnType<typeof setTimeout> | null = null;
+const AUTO_SYNC_DELAY_MS = 5000;
+
+/**
+ * 排队一次自动同步（防抖 5 秒）
+ * 静默执行，失败不抛错（不阻塞用户操作）
+ * 用于用户操作后自动把数据推到云端
+ */
+export function scheduleAutoSync(): void {
+  if (autoSyncTimer) clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(async () => {
+    autoSyncTimer = null;
+    try {
+      await uploadAll();
+    } catch (e) {
+      console.warn("[sync] auto-sync failed:", e);
+    }
+  }, AUTO_SYNC_DELAY_MS);
 }

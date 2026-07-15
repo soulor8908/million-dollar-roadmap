@@ -180,17 +180,18 @@ function tokenize(code: string, lang: string): Token[] {
   return tokens;
 }
 
-// token 颜色映射（参考 GitHub Light 主题）
+// token 颜色映射（适配深色背景 #0d1117，参考 GitHub Dark 主题）
+// 原来用的是 GitHub Light 主题色，深色背景下浅色文字看不清
 const TOKEN_COLORS: Record<TokenType, string> = {
-  keyword: "#d73a49",       // 红
-  string: "#032f62",        // 深蓝
-  comment: "#6a737d",       // 灰
-  number: "#005cc5",         // 蓝
-  boolean: "#005cc5",        // 蓝
-  function: "#6f42c1",       // 紫
-  operator: "#d73a49",      // 红
-  punctuation: "#24292e",   // 深灰
-  plain: "#24292e",         // 深灰
+  keyword: "#ff7b72",       // 红（GitHub Dark keyword）
+  string: "#a5d6ff",        // 浅蓝（GitHub Dark string）
+  comment: "#8b949e",      // 灰（GitHub Dark comment）
+  number: "#79c0ff",        // 蓝（GitHub Dark number）
+  boolean: "#79c0ff",        // 蓝
+  function: "#d2a8ff",       // 紫（GitHub Dark function）
+  operator: "#ff7b72",      // 红
+  punctuation: "#c9d1d9",   // 浅灰（GitHub Dark punctuation）
+  plain: "#c9d1d9",         // 浅灰（GitHub Dark plain text）
 };
 
 // ============================================================

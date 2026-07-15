@@ -391,21 +391,21 @@ export default function ChatClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">加载中...</p>
+      <div className="h-dvh flex items-center justify-center">
+        <p className="text-gray-400 dark:text-gray-500">加载中...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col pb-16">
-      {/* 顶部栏 */}
-      <header className="sticky top-0 z-10 bg-white border-b p-3 flex items-center gap-2">
+    <div className="h-dvh flex flex-col">
+      {/* 顶部栏（固定不动） */}
+      <header className="shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-3 flex items-center gap-2 z-20">
         <button
           type="button"
           onClick={() => setShowHistory(true)}
           aria-label="历史对话"
-          className="p-2 rounded hover:bg-gray-100 text-lg"
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg"
         >
           ☰
         </button>
@@ -416,7 +416,7 @@ export default function ChatClient() {
           type="button"
           onClick={() => activeConv && handleTogglePin(activeConv.id)}
           aria-label="收藏对话"
-          className={`p-2 rounded hover:bg-gray-100 text-lg ${
+          className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg ${
             activeConv?.pinned ? "opacity-100" : "opacity-50"
           }`}
           disabled={!activeConv}
@@ -427,7 +427,7 @@ export default function ChatClient() {
           type="button"
           onClick={() => activeConv && handleDelete(activeConv.id)}
           aria-label="删除对话"
-          className="p-2 rounded hover:bg-gray-100 text-lg opacity-70"
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg opacity-70"
           disabled={!activeConv}
         >
           🗑️
@@ -466,12 +466,12 @@ export default function ChatClient() {
         </div>
       )}
 
-      {/* 消息区 */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* 消息区（仅此区域滚动） */}
+      <main className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && !streaming && (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 py-10">
             <div className="text-5xl mb-4">💬</div>
-            <p className="mb-1 text-gray-600 font-medium">
+            <p className="mb-1 text-gray-600 dark:text-gray-300 font-medium">
               开始一段新对话
             </p>
             <p className="mb-6 text-sm">向 AI 提问，获取即时解答</p>
@@ -501,7 +501,7 @@ export default function ChatClient() {
           ) : (
             <div
               key={m.id}
-              className="mr-auto max-w-[80%] bg-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 text-sm"
+              className="mr-auto max-w-[80%] bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-sm"
             >
               <AnswerContent text={m.content} />
             </div>
@@ -510,7 +510,7 @@ export default function ChatClient() {
 
         {/* 流式输出中的临时气泡 */}
         {streaming && (
-          <div className="mr-auto max-w-[80%] bg-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 text-sm">
+          <div className="mr-auto max-w-[80%] bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-sm">
             {streamContent ? (
               <AnswerContent text={streamContent} />
             ) : (
@@ -526,8 +526,8 @@ export default function ChatClient() {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* 底部输入栏 */}
-      <footer className="sticky bottom-0 bg-white border-t p-3 pb-20">
+      {/* 底部输入栏（固定在底部，不随消息滚动） */}
+      <footer className="shrink-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3 pb-16">
         {showPrompts && (
           <div className="mb-2 flex flex-wrap gap-2">
             {BUILTIN_PROMPTS.map((p) => (
@@ -535,7 +535,7 @@ export default function ChatClient() {
                 key={p}
                 type="button"
                 onClick={() => applyPrompt(p)}
-                className="px-3 py-1 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-full transition-colors"
+                className="px-3 py-1 text-xs bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full transition-colors"
               >
                 {p}
               </button>
@@ -548,7 +548,7 @@ export default function ChatClient() {
             onClick={() => setShowPrompts((v) => !v)}
             aria-label="提示词库"
             className={`p-2 rounded shrink-0 text-lg ${
-              showPrompts ? "bg-amber-100" : "hover:bg-gray-100"
+              showPrompts ? "bg-amber-100 dark:bg-amber-900/50" : "hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             ⚡
@@ -560,7 +560,7 @@ export default function ChatClient() {
             onKeyDown={handleKeyDown}
             placeholder="输入消息... (Enter 发送，Shift+Enter 换行)"
             rows={1}
-            className="flex-1 resize-none border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 max-h-32"
+            className="flex-1 resize-none border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 max-h-32 bg-white dark:bg-gray-700 dark:text-gray-100"
             disabled={streaming}
           />
           <button
@@ -574,9 +574,9 @@ export default function ChatClient() {
         </div>
         {/* 模型选择器 */}
         <div className="mt-2 flex items-center gap-2 text-xs">
-          <span className="text-gray-500">模型:</span>
+          <span className="text-gray-500 dark:text-gray-400">模型:</span>
           {modelConfigs.length === 0 ? (
-            <span className="text-gray-400">
+            <span className="text-gray-400 dark:text-gray-500">
               默认模型（环境变量） ·{" "}
               <Link href="/profile" className="text-blue-500 hover:underline">
                 去配置 →
@@ -586,7 +586,7 @@ export default function ChatClient() {
             <select
               value={selectedModelId}
               onChange={(e) => setSelectedModelId(e.target.value)}
-              className="border rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
               {modelConfigs.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -606,9 +606,9 @@ export default function ChatClient() {
             onClick={() => setShowHistory(false)}
             aria-hidden="true"
           />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-lg z-50 transform transition-transform flex flex-col">
+          <aside className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-gray-800 shadow-lg z-50 transform transition-transform flex flex-col">
             {/* 抽屉顶部：新建按钮 */}
-            <div className="p-3 border-b">
+            <div className="p-3 border-b dark:border-gray-700">
               <button
                 type="button"
                 onClick={handleNewConversation}
@@ -620,24 +620,24 @@ export default function ChatClient() {
             {/* 对话列表 */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {filteredConversations.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-6">
+                <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-6">
                   {searchQuery ? "无匹配对话" : "暂无历史对话"}
                 </p>
               ) : (
                 filteredConversations.map((c) => (
                   <div
                     key={c.id}
-                    className={`group p-2 rounded-lg cursor-pointer hover:bg-gray-100 ${
-                      activeConv?.id === c.id ? "bg-blue-50" : ""
+                    className={`group p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                      activeConv?.id === c.id ? "bg-blue-50 dark:bg-blue-900/30" : ""
                     }`}
                     onClick={() => switchConversation(c)}
                   >
                     <div className="flex items-start gap-1">
-                      <span className="text-sm flex-1 truncate">{c.title}</span>
+                      <span className="text-sm flex-1 truncate text-gray-800 dark:text-gray-200">{c.title}</span>
                       {c.pinned && <span className="text-xs shrink-0">📌</span>}
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[11px] text-gray-400">
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
                         {relativeTime(c.lastMessageAt)}
                       </span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -683,7 +683,7 @@ export default function ChatClient() {
               )}
             </div>
             {/* 抽屉底部：搜索框 */}
-            <div className="p-3 border-t">
+            <div className="p-3 border-t dark:border-gray-700">
               <input
                 type="text"
                 value={searchQuery}
@@ -698,7 +698,7 @@ export default function ChatClient() {
                   }
                 }}
                 placeholder="搜索对话..."
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
               />
             </div>
           </aside>

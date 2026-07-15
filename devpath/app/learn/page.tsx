@@ -629,25 +629,25 @@ function PresetMindMapModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4 pb-24"
+      className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-0 sm:p-4 sm:pb-24"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
+        className="bg-white dark:bg-gray-800 sm:rounded-2xl w-full max-w-5xl h-full sm:h-[85vh] flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部：标题 + 右上角操作 */}
-        <div className="shrink-0 flex items-start justify-between p-4 border-b bg-gradient-to-r from-gray-50 to-white">
+        <div className="shrink-0 flex items-start justify-between p-4 border-b dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-3xl">{preset.icon}</span>
               <div className="min-w-0">
-                <h2 className="text-lg font-bold truncate">{data.topic}</h2>
-                <p className="text-xs text-gray-500">
+                <h2 className="text-lg font-bold truncate text-gray-900 dark:text-gray-100">{data.topic}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {stats.total} 知识点 · {stats.questions} 题 · {stats.scheduleDays} 天计划 ·
                   高频 {stats.high} 个
                   {source === "ai" && (
-                    <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-medium">
+                    <span className="ml-2 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-[10px] font-medium">
                       AI 重生成
                     </span>
                   )}
@@ -673,7 +673,7 @@ function PresetMindMapModal({
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               aria-label="关闭"
             >
               ✕
@@ -683,17 +683,17 @@ function PresetMindMapModal({
 
         {/* 重新生成错误 */}
         {regenError && (
-          <div className="shrink-0 px-4 py-2 bg-red-50 text-red-600 text-xs border-b">
+          <div className="shrink-0 px-4 py-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-xs border-b dark:border-gray-700">
             重新生成失败：{regenError}
           </div>
         )}
 
-        {/* 脑图 */}
-        <div className="flex-1 min-h-0 overflow-auto p-4 bg-gray-50">
+        {/* 脑图 - 填充剩余空间 */}
+        <div className="flex-1 min-h-0 overflow-auto p-2 sm:p-4 bg-gray-50 dark:bg-gray-900">
           {regenerating ? (
-            <div className="flex flex-col items-center justify-center h-64">
+            <div className="flex flex-col items-center justify-center h-full min-h-[200px]">
               <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
-              <p className="text-sm text-gray-600 font-medium">
+              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
                 AI 正在重新生成知识树...
               </p>
               <p className="text-xs text-gray-400 mt-1">
@@ -706,18 +706,19 @@ function PresetMindMapModal({
               topic={data.topic}
               selectedNodeId={selectedNodeId}
               onSelectNode={onSelectNode}
+              fillHeight
             />
           )}
         </div>
 
         {/* 底部：操作 */}
-        <div className="shrink-0 p-3 border-t bg-white flex items-center justify-between gap-2">
-          <p className="text-xs text-gray-500 flex-1">
+        <div className="shrink-0 p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between gap-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 flex-1 hidden sm:block">
             💡 点击任意知识点可立即开始学习该节点 · 🏢 标记为大厂高频考点
           </p>
           <button
             onClick={onImportAll}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors w-full sm:w-auto"
           >
             一键导入全部 →
           </button>

@@ -13,6 +13,7 @@ import { apiFetch, getApiToken, setApiToken } from "@/lib/api-client";
 import { ShareCardButton } from "@/components/ShareCardButton";
 import { SyncStatus } from "@/components/SyncStatus";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { scheduleAutoSync } from "@/lib/sync";
 import {
   loadRoutineMarkdown,
   saveRoutineMarkdown,
@@ -71,7 +72,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: "AI 接口失败怎么办？",
-    a: "检查 API Token 是否正确，或稍后重试。预设知识库无需 AI 也可使用",
+    a: "1) 在「AI 模型配置」添加你自己的模型配置（自带 API Key，无需服务端 Token）；2) 如果用默认模型，需在设置里填入与生产环境相同的 API Token；3) 预设知识库无需 AI 也可使用",
   },
   {
     q: "支持哪些语言？",
@@ -178,6 +179,8 @@ export default function ProfilePage() {
         console.warn("KV sync skipped:", res.status);
       }
       setSaved(true);
+      // 触发自动云端同步（含 profile）
+      scheduleAutoSync();
     } finally {
       setSaving(false);
     }
@@ -347,15 +350,29 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <h1 className="text-2xl font-bold">我的</h1>
 
-      {/* 0. 外观（主题切换） */}
-      <Section icon="🎨" title="外观" desc="主题模式">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600 dark:text-gray-400">主题模式</span>
-          <ThemeToggle />
+      {/* 1. 我的收藏（置顶） */}
+      <Section icon="⭐" title="我的收藏" desc="收藏的试题集与单题">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex gap-6">
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{deckCount}</div>
+              <div className="text-xs text-gray-500">试题集</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{questionCount}</div>
+              <div className="text-xs text-gray-500">单题</div>
+            </div>
+          </div>
+          <Link
+            href="/favorites"
+            className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
+          >
+            查看收藏 →
+          </Link>
         </div>
       </Section>
 
-      {/* 1. 我的个人信息 */}
+      {/* 2. 我的个人信息 */}
       <Section
         icon="👤"
         title="我的个人信息"
@@ -705,30 +722,17 @@ export default function ProfilePage() {
         )}
       </Section>
 
-      {/* 4. 我的收藏 */}
-      <Section icon="⭐" title="我的收藏" desc="收藏的试题集与单题">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex gap-6">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{deckCount}</div>
-              <div className="text-xs text-gray-500">试题集</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{questionCount}</div>
-              <div className="text-xs text-gray-500">单题</div>
-            </div>
+      {/* 4. 设置 */}
+      <Section icon="⚙️" title="设置" desc="主题 / 时间表 / 隐私 / 通知 / Token">
+        {/* 主题模式（原"外观"分区合并到设置） */}
+        <div className="space-y-3 border-b pb-4">
+          <h3 className="font-medium">主题模式</h3>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">切换浅色 / 深色 / 跟随系统</span>
+            <ThemeToggle />
           </div>
-          <Link
-            href="/favorites"
-            className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            查看收藏 →
-          </Link>
         </div>
-      </Section>
 
-      {/* 5. 设置 */}
-      <Section icon="⚙️" title="设置" desc="时间表 / 隐私 / 通知 / Token">
         {/* 每日时间表 */}
         <div className="space-y-3 border-b pb-4">
           <h3 className="font-medium">每日时间表</h3>
@@ -796,6 +800,19 @@ export default function ProfilePage() {
               />
             </label>
           ))}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={save}
+              disabled={saving || !profile.username}
+              className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? "保存中..." : "保存隐私设置"}
+            </button>
+            {saved && <span className="text-sm text-green-600">已保存 ✓</span>}
+            {!profile.username && (
+              <span className="text-xs text-gray-400">需先设置用户名</span>
+            )}
+          </div>
         </div>
 
         {/* PWA 学习提醒 */}
@@ -824,7 +841,7 @@ export default function ProfilePage() {
         <div className="space-y-3 pt-4">
           <h3 className="font-medium">API 鉴权 Token</h3>
           <p className="text-xs text-gray-500">
-            生产环境设置了 API_TOKEN 密钥后，需在此填入相同值才能调用 AI 接口。开发模式留空即可。
+            使用服务端默认模型时需填入与生产环境 API_TOKEN 相同的值。如果你在「AI 模型配置」里添加了自己的模型（含 API Key），则无需此 Token。开发模式留空即可。
           </p>
           <input
             type="password"

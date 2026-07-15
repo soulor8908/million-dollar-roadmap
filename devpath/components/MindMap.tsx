@@ -17,6 +17,8 @@ interface MindMapProps {
   topic?: string;
   selectedNodeId?: string;
   onSelectNode?: (node: KnowledgeNode) => void;
+  /** 是否填充父容器高度（用于弹窗内嵌场景），默认 false 使用固定 400px 最小高度 */
+  fillHeight?: boolean;
 }
 
 interface TreeNode {
@@ -163,6 +165,7 @@ export function MindMap({
   nodes,
   selectedNodeId,
   onSelectNode,
+  fillHeight = false,
 }: MindMapProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   // 缩放与平移状态
@@ -346,7 +349,10 @@ export function MindMap({
   }
 
   return (
-    <div className="relative bg-gray-50 rounded-lg overflow-hidden" style={{ minHeight: "400px" }}>
+    <div
+      className={`relative bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden ${fillHeight ? "h-full" : ""}`}
+      style={{ minHeight: fillHeight ? "100%" : "400px" }}
+    >
       {/* 工具栏 */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur rounded-lg shadow-sm p-1">
         <button
@@ -398,7 +404,7 @@ export function MindMap({
         className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
         // touch-action: none 阻止浏览器默认手势，确保我们的 touch handler 全权处理
         // 这样移动端整页不会被 pinch-to-zoom
-        style={{ minHeight: "400px", touchAction: "none" }}
+        style={{ minHeight: fillHeight ? "100%" : "400px", touchAction: "none" }}
       >
         <svg
           width="100%"

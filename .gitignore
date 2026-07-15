@@ -1,12 +1,21 @@
 node_modules/
-scripts/node_modules/
-.env
+.next/
+.vercel/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+next-env.d.ts.bak
 .env.local
+.env*.local
 *.log
 .DS_Store
 
-# Next.js
-.next/
-next-env.d.ts
-.vercel/
-tsconfig.tsbuildinfo
+# Cloudflare 本地状态
+.wrangler/
+
+# scripts 子工程依赖（archive/scripts 独立 npm 包）
+archive/scripts/node_modules/
+
+# AI 周报生成产物
+reviews/

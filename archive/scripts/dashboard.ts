@@ -9,7 +9,8 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.join(__dirname, "..");
+// scripts 位于 archive/scripts/，ROOT 需上溯两级到仓库根
+const ROOT = path.join(__dirname, "..", "..");
 
 function readSafe(filePath: string): string {
   try {
@@ -21,7 +22,7 @@ function readSafe(filePath: string): string {
 
 // 解析算法进度：匹配 "当前: X/Y (Z%)"
 function parseProgress(): { done: number; total: number; percent: number } {
-  const content = readSafe(path.join(ROOT, "algorithm", "progress.md"));
+  const content = readSafe(path.join(ROOT, "archive", "algorithm", "progress.md"));
   const m = content.match(/当前[:：]\s*(\d+)\s*\/\s*(\d+)\s*\((\d+)%\)/);
   if (!m) return { done: 0, total: 200, percent: 0 };
   return { done: +m[1], total: +m[2], percent: +m[3] };
@@ -29,7 +30,7 @@ function parseProgress(): { done: number; total: number; percent: number } {
 
 // 列出所有日志文件（YYYY-MM-DD.md），排除 template.md
 function listDailyLogs(): string[] {
-  const dailyDir = path.join(ROOT, "daily");
+  const dailyDir = path.join(ROOT, "archive", "daily");
   if (!fs.existsSync(dailyDir)) return [];
   return fs
     .readdirSync(dailyDir)
@@ -107,13 +108,19 @@ function buildReadme(): string {
 ## 📁 仓库结构
 
 \`\`\`
-daily/        每日作战日志（YYYY-MM-DD.md）
-algorithm/    刷题进度 + 错题本
+app/          DevPath 应用（Next.js App Router）
+components/   React 组件
+lib/          业务逻辑与类型
+functions/   Cloudflare Pages Functions（公开 API）
+archive/      历史数据归档
+  ├── daily/        每日作战日志（YYYY-MM-DD.md）
+  ├── algorithm/    刷题进度 + 错题本
+  ├── backend/      后端学习路线
+  ├── schedule/     作息安排
+  ├── interview/    面试准备
+  └── scripts/      dashboard.ts 仪表盘 + ai-review.ts 周报
 projects/     项目文档（项目1 进行中，2/3 已冻结）
-backend/      后端学习路线（降级，按需学习）
-interview/    面试准备
-schedule/     作息安排
-scripts/      dashboard.ts 仪表盘 + ai-review.ts 周报
+docs/         设计与计划文档
 .github/      Actions：每日检查 + 周度 AI 复盘
 \`\`\`
 

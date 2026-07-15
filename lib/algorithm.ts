@@ -1,5 +1,9 @@
-import type { LeetCodeProblem } from "./types";
-import { chinaDateNow } from "./time";
+// lib/algorithm.ts
+// LeetCode 刷题清单解析（从主站 lib/algorithm.ts 迁移）
+// 数据源：IndexedDB（导入后的 algorithm/leetcode-checklist.md 内容）
+
+import type { LeetCodeProblem } from "@/lib/types";
+import { chinaDateNow } from "@/lib/time";
 
 // 解析难度字段，去掉 emoji 前缀，只保留 "简单"/"中等"/"困难"
 function parseDifficulty(raw: string): "简单" | "中等" | "困难" {
@@ -50,8 +54,6 @@ export function parseLeetCodeChecklist(markdown: string): LeetCodeProblem[] {
     if (isSeparatorRow(trimmed)) continue;
 
     const cells = trimmed.split("|").map((c) => c.trim());
-    // cells[0] 和 cells[length-1] 为首尾管道符外侧的空串
-    // 数据列从 cells[1] 到 cells[9]
     if (cells.length < 10) continue;
 
     const id = parseInt(cells[1], 10);
@@ -76,7 +78,6 @@ export function parseLeetCodeChecklist(markdown: string): LeetCodeProblem[] {
 }
 
 // 把指定 id 的题目在 [ ] ↔ [x] 间切换
-// completed=true 时填入字段；completed=false 时清空字段
 export function toggleProblem(
   markdown: string,
   problemId: number,
@@ -103,14 +104,12 @@ export function toggleProblem(
     const id = parseInt(cells[1], 10);
     if (isNaN(id) || id !== problemId) continue;
 
-    // 找到目标行，重构该行
     const newCompleted = completed ? "[x]" : "[ ]";
     const newDate = completed ? (fields?.date ?? chinaDateNow()) : "";
     const newIndependent = completed ? (fields?.independent ?? "✅") : "";
     const newCost = completed ? (fields?.cost ?? "") : "";
     const newNote = completed ? (fields?.note ?? "") : "";
 
-    // 保留行首缩进
     const indent = lines[i].match(/^\s*/)?.[0] || "";
     lines[i] = `${indent}| ${id} | ${newCompleted} | ${cells[3]} | ${cells[4]} | ${cells[5]} | ${newDate} | ${newIndependent} | ${newCost} | ${newNote} |`;
     break;
@@ -119,7 +118,7 @@ export function toggleProblem(
   return lines.join("\n");
 }
 
-// 统计：done/total/todayCount（今天完成的）/independentCount（✅独立的）
+// 统计：done/total/todayCount/independentCount
 export function getAlgorithmStats(problems: LeetCodeProblem[]): {
   done: number;
   total: number;

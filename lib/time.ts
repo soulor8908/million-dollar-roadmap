@@ -17,10 +17,7 @@ function formatParts(date: Date) {
   }).formatToParts(date);
 }
 
-function get(
-  parts: ReturnType<typeof formatParts>,
-  type: string
-): string {
+function get(parts: ReturnType<typeof formatParts>, type: string): string {
   return parts.find((p) => p.type === type)?.value || "";
 }
 
@@ -37,11 +34,7 @@ export function chinaTimeNow(): string {
 }
 
 // 中国时区今天的年/月/日（month 0-based，便于传给 new Date）
-export function chinaTodayParts(): {
-  year: number;
-  month: number;
-  day: number;
-} {
+export function chinaTodayParts(): { year: number; month: number; day: number } {
   const parts = formatParts(new Date());
   return {
     year: +get(parts, "year"),
@@ -51,7 +44,6 @@ export function chinaTodayParts(): {
 }
 
 // 把 "YYYY-MM-DD" 推移 n 天（n 可为负），返回新日期字符串
-// 用 UTC 计算，避免本地时区偏移
 export function chinaDateShift(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
@@ -60,4 +52,9 @@ export function chinaDateShift(dateStr: string, days: number): string {
   const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(date.getUTCDate()).padStart(2, "0");
   return `${yy}-${mm}-${dd}`;
+}
+
+// 当前 ISO 时间戳
+export function nowISO(): string {
+  return new Date().toISOString();
 }

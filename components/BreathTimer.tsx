@@ -1,5 +1,9 @@
 "use client";
 
+// components/BreathTimer.tsx
+// 478 呼吸法计时器（4 秒吸气 / 7 秒屏息 / 8 秒呼气，循环 4 轮）
+// 从主项目迁移，无外部依赖
+
 import { useState, useEffect, useRef } from "react";
 
 type Phase = "idle" | "inhale" | "hold" | "exhale" | "done";

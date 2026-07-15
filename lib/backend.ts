@@ -1,4 +1,8 @@
-import type { BackendWeek } from "./types";
+// lib/backend.ts
+// 后端学习路线解析（从主站 lib/backend.ts 迁移）
+// 数据源：IndexedDB（导入后的 backend/roadmap.md 内容）
+
+import type { BackendWeek } from "@/lib/types";
 
 // 解析整个 markdown，返回所有 week（1-24）
 export function parseBackendRoadmap(markdown: string): BackendWeek[] {

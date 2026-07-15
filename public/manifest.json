@@ -1,11 +1,11 @@
 {
-  "name": "作战辅助系统",
-  "short_name": "作战系统",
-  "description": "百万年薪作战系统的记录与提醒前端",
+  "name": "devpath - AI 驱动的开发者成长 OS",
+  "short_name": "devpath",
+  "description": "告诉 AI 你想学什么，它给你拆知识树、排学习计划、生面试题、按遗忘曲线复习",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -18,18 +18,13 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    { "name": "今日学习", "url": "/" },
+    { "name": "复习", "url": "/review" },
+    { "name": "休息", "url": "/rest" },
+    { "name": "数据", "url": "/stats" }
+  ],
+  "gcm_sender_id": "103953800507"
 }

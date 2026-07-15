@@ -1,4 +1,9 @@
-import type { DailyLog, ChecklistItem, DailyEnergy, DailyReview } from "./types";
+// lib/daily.ts
+// 每日日志 Markdown 解析与生成（从主站 lib/daily.ts 迁移）
+// 存储格式：IndexedDB key = "daily_log:<YYYY-MM-DD>", value = markdown string
+// 与主站 DailyEditor 逻辑完全兼容，迁移后改为直接操作 Markdown 字符串
+
+import type { DailyLog, ChecklistItem, DailyEnergy, DailyReview } from "@/lib/types";
 
 export function parseDailyLog(markdown: string, date: string): DailyLog {
   const checklist: ChecklistItem[] = [];

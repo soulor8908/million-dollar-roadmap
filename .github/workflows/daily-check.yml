@@ -15,7 +15,7 @@ jobs:
         id: check
         run: |
           TODAY=$(date +%Y-%m-%d)
-          FILE="daily/${TODAY}.md"
+          FILE="archive/daily/${TODAY}.md"
 
           if [ -f "$FILE" ]; then
             echo "found=true" >> $GITHUB_OUTPUT

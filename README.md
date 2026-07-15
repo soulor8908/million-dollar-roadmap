@@ -1,7 +1,7 @@
 # million-dollar-roadmap
 百万年薪计划 · 个人作战系统
 
-> 本 README 由 `scripts/dashboard.js` 自动生成，请勿手动编辑。最后更新：2026-07-13
+> 本 README 由 `scripts/dashboard.ts` 自动生成，请勿手动编辑。最后更新：2026-07-15
 
 ## 📊 进度仪表盘
 
@@ -11,13 +11,12 @@
 | 连续打卡 | 0 天 |
 | 累计日志 | 1 篇 |
 | 最近日志 | 2026-07-13 |
-| 当前主线 | AI 作战辅助系统（已上线）+ 算法筑基 + 项目1（Trae Work） |
+| 当前主线 | 项目1 · AI Code Review（M1 环境搭建+API接入） |
 
 ## 🎯 当前聚焦
 
-- **算法筑基**：200 题 checklist（深度优先，每题写思路 + 错题本）
-- **AI 作战辅助系统**：已上线，持续维护（边使用边优化）
-- **项目1**：AI Code Review，通过 Trae Work 推进（每周 ≥2 次真实代码 commit）
+- **算法筑基**：8 题/周（深度优先，每题写思路 + 错题本）
+- **项目1**：AI Code Review，每周 ≥2 次真实代码 commit
 - **每周输出**：1 篇技术拆解（teach to learn），存 `blog/`
 - **红线**：陪娃时间 0 侵占
 
@@ -33,15 +32,19 @@
 ## 📁 仓库结构
 
 ```
-daily/        每日作战日志（YYYY-MM-DD.md）
-algorithm/    刷题进度 + 错题本
+app/          DevPath 应用（Next.js App Router）
+components/   React 组件
+lib/          业务逻辑与类型
+functions/   Cloudflare Pages Functions（公开 API）
+archive/      历史数据归档
+  ├── daily/        每日作战日志（YYYY-MM-DD.md）
+  ├── algorithm/    刷题进度 + 错题本
+  ├── backend/      后端学习路线
+  ├── schedule/     作息安排
+  ├── interview/    面试准备
+  └── scripts/      dashboard.ts 仪表盘 + ai-review.ts 周报
 projects/     项目文档（项目1 进行中，2/3 已冻结）
-backend/      后端学习路线（降级，按需学习）
-emotion/      情绪笔记数据（GitHub markdown 存储）
-demo/         单文件 HTML 演示
-interview/    面试准备
-schedule/     作息安排
-scripts/      dashboard.js 仪表盘 + ai-review.js 周报
+docs/         设计与计划文档
 .github/      Actions：每日检查 + 周度 AI 复盘
 ```
 

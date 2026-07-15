@@ -4,7 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - "devpath/**"
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "functions/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.js"
       - ".github/workflows/deploy-devpath.yml"
   workflow_dispatch:
 
@@ -12,9 +19,6 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: devpath
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +28,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: devpath/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -57,5 +61,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: devpath
           command: pages deploy .vercel/output/static --project-name=devpath

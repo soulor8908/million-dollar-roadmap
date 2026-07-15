@@ -9,9 +9,10 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.join(__dirname, "..");
+// scripts 位于 archive/scripts/，ROOT 需上溯两级到仓库根
+const ROOT = path.join(__dirname, "..", "..");
 
-// AI provider 配置（与主项目 lib/ai.ts 统一）
+// AI provider 配置（与 devpath lib/ai/provider.ts 统一）
 const PROVIDERS: Record<string, { url: string; model: string; keyEnv: string }> = {
   glm: {
     url: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
@@ -59,7 +60,7 @@ interface DailyLogEntry {
 }
 
 function getRecentLogs(): DailyLogEntry[] {
-  const dailyDir = path.join(ROOT, "daily");
+  const dailyDir = path.join(ROOT, "archive", "daily");
   if (!fs.existsSync(dailyDir)) return [];
 
   const files = fs
@@ -75,7 +76,7 @@ function getRecentLogs(): DailyLogEntry[] {
 }
 
 function getProgress(): string {
-  const progressFile = path.join(ROOT, "algorithm", "progress.md");
+  const progressFile = path.join(ROOT, "archive", "algorithm", "progress.md");
   if (fs.existsSync(progressFile)) {
     return fs.readFileSync(progressFile, "utf-8");
   }

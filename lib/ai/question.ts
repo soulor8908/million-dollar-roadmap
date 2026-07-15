@@ -3,6 +3,7 @@
 // 分批 5 个一组，单节点失败不影响其他
 
 import { generateObject } from "ai";
+import type { LanguageModel } from "ai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { createAIProvider } from "./provider";
@@ -29,10 +30,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return chunks;
 }
 
-async function generateOne(node: KnowledgeNode): Promise<Question> {
+async function generateOne(node: KnowledgeNode, model: LanguageModel): Promise<Question> {
   try {
     const result = await generateObject({
-      model: createAIProvider(),
+      model,
       schema: questionSchema,
       system: PROMPT_DEF.system,
       prompt: `知识点：${node.title}\n描述：${node.summary}\n难度：${node.difficulty}\n面试频率：${node.frequency}`,
@@ -63,18 +64,20 @@ async function generateOne(node: KnowledgeNode): Promise<Question> {
   }
 }
 
-export async function generateQuestions(nodes: KnowledgeNode[]): Promise<Question[]> {
+export async function generateQuestions(nodes: KnowledgeNode[], model?: LanguageModel): Promise<Question[]> {
+  const aiModel = model ?? createAIProvider();
   const batches = chunk(nodes, 5);
   const results: Question[] = [];
   for (const batch of batches) {
-    const batchResults = await Promise.all(batch.map(generateOne));
+    const batchResults = await Promise.all(batch.map((n) => generateOne(n, aiModel)));
     results.push(...batchResults);
   }
   return results;
 }
 
-export async function regenerateQuestion(node: KnowledgeNode): Promise<Question> {
-  return generateOne(node);
+export async function regenerateQuestion(node: KnowledgeNode, model?: LanguageModel): Promise<Question> {
+  const aiModel = model ?? createAIProvider();
+  return generateOne(node, aiModel);
 }
 
 export { chunk };

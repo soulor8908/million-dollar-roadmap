@@ -4,6 +4,7 @@
 
 import { hasAIKey, getModel } from "./provider";
 import { generateText } from "ai";
+import type { LanguageModel } from "ai";
 import { getPrompt } from "./prompts";
 
 // 从 Prompt Registry 读取
@@ -21,7 +22,7 @@ export interface EnhancePattern {
  * 无触发条件返回空数组
  * 有 AI key 时调用 LLM 生成更个性化建议，失败降级为模板
  */
-export async function enhanceAdjustment(pattern: EnhancePattern): Promise<string[]> {
+export async function enhanceAdjustment(pattern: EnhancePattern, model?: LanguageModel): Promise<string[]> {
   const suggestions: string[] = [];
 
   if (pattern.consecutiveLowDays >= 3) {
@@ -44,9 +45,9 @@ export async function enhanceAdjustment(pattern: EnhancePattern): Promise<string
 
   // AI 个性化润色（失败降级到模板）
   try {
-    const model = getModel();
+    const aiModel = model ?? getModel();
     const { text } = await generateText({
-      model,
+      model: aiModel,
       system: PROMPT_DEF.system,
       prompt: `基础建议：\n${suggestions.map((s) => `- ${s}`).join("\n")}`,
     });

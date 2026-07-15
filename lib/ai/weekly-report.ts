@@ -5,6 +5,7 @@
 
 import { hasAIKey, getModel } from "./provider";
 import { generateText } from "ai";
+import type { LanguageModel } from "ai";
 import { getPrompt } from "./prompts";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry, DopamineTrigger, EmotionTag } from "../types";
 
@@ -41,7 +42,7 @@ const EMOTION_EMOJI: Record<EmotionTag, string> = {
  * ## 情绪与多巴胺模式（有情绪数据时）
  * ## 下周建议
  */
-export async function generateWeeklyReport(input: WeeklyInput): Promise<string> {
+export async function generateWeeklyReport(input: WeeklyInput, model?: LanguageModel): Promise<string> {
   const totalMinutes = input.learnLogs.reduce((sum, l) => sum + (l.duration ?? 0), 0);
   const learnCount = input.learnLogs.filter((l) => l.type === "learn").length;
   const reviewCount = input.reviewLogs.length;
@@ -154,7 +155,7 @@ ${recs.map((s) => `- ${s}`).join("\n")}`;
   }
 
   try {
-    const model = getModel();
+    const aiModel = model ?? getModel();
     const dataSummary = JSON.stringify({
       totalMinutes,
       learnCount,
@@ -173,7 +174,7 @@ ${recs.map((s) => `- ${s}`).join("\n")}`;
       noDopamineLearnMinutes,
     });
     const { text } = await generateText({
-      model,
+      model: aiModel,
       system: PROMPT_DEF.system.replace(
         "{emotion_section}",
         hasEmotionData ? EMOTION_SECTION_PROMPT : "",

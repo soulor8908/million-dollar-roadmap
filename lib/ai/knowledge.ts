@@ -7,6 +7,7 @@
 //   - KV 不可用时静默降级为直接调用（不阻塞主流程）
 
 import { generateObject } from "ai";
+import type { LanguageModel } from "ai";
 import { z } from "zod";
 import { createAIProvider } from "./provider";
 import { getFallbackTemplate } from "./templates";
@@ -64,7 +65,8 @@ function buildCacheKey(topic: string, userPrompt?: string): string {
 export async function decomposeKnowledge(
   topic: string,
   userPrompt?: string,
-  opts?: { skipCache?: boolean }
+  opts?: { skipCache?: boolean },
+  model?: LanguageModel
 ): Promise<KnowledgeNode[]> {
   const skipCache = opts?.skipCache ?? false;
 
@@ -78,11 +80,12 @@ export async function decomposeKnowledge(
 
   // 2. 调用 LLM 拆解（带观测 + 重试）
   try {
+    const aiModel = model ?? createAIProvider();
     const result = await observeCall("knowledge:decompose", () =>
       withRetry(
         () =>
           generateObject({
-            model: createAIProvider(),
+            model: aiModel,
             schema: treeSchema,
             system: PROMPT_DEF.system,
             prompt: buildPrompt(topic, userPrompt),

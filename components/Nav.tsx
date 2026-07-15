@@ -9,6 +9,7 @@ const items = [
   { href: "/chat", label: "AI", icon: "💬" },
   { href: "/review", label: "复习", icon: "🔁" },
   { href: "/mistakes", label: "错题", icon: "❌" },
+  { href: "/emotion", label: "情绪", icon: "📝" },
   { href: "/dashboard", label: "仪表盘", icon: "📈" },
   { href: "/profile", label: "我的", icon: "👤" },
 ];

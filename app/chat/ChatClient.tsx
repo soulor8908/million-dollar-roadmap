@@ -627,7 +627,7 @@ export default function ChatClient() {
   }
 
   return (
-    <div className="h-dvh flex flex-col">
+    <div className="h-[calc(100dvh-4rem)] flex flex-col overflow-hidden">
       {/* 顶部栏（固定不动） */}
       <header className="shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-3 flex items-center gap-2 z-20">
         <button
@@ -781,7 +781,7 @@ export default function ChatClient() {
       </main>
 
       {/* 底部输入栏（固定在底部，不随消息滚动） */}
-      <footer className="shrink-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3 pb-16">
+      <footer className="shrink-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3">
         {showPrompts && (
           <div className="mb-2 flex flex-wrap gap-2">
             {BUILTIN_PROMPTS.map((p) => (

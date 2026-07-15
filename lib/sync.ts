@@ -22,6 +22,7 @@ const LAST_SYNC_KEY = "sync:last_synced_at";
 // MODEL_CONFIG 含 apiKey，同步到用户私有 KV 命名空间（需 API_TOKEN 鉴权），
 // 确保跨设备可用 AI 模型配置，否则换设备后会报 503（未配置 AI）
 // DAILY_NUDGE / WEEKLY 是缓存，无需同步
+// DAILY_LOG（每日日志 Markdown）和 EMOTION（情绪笔记）需同步以支持跨设备
 const SYNC_PREFIXES = [
   KEY_PREFIXES.PLAN,
   KEY_PREFIXES.PLAN_SUMMARY,
@@ -38,6 +39,7 @@ const SYNC_PREFIXES = [
   KEY_PREFIXES.PROMPT,
   KEY_PREFIXES.MODEL_CONFIG,
   KEY_PREFIXES.REMINDER,
+  KEY_PREFIXES.DAILY_LOG,
 ] as const;
 
 // 不在前缀体系内但需要同步的独立 key

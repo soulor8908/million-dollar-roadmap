@@ -2,7 +2,8 @@
 // 用户数据云端同步 API（Cloudflare KV）
 // - GET  ?userId=xxx：读取 user:${userId}:backup，返回完整备份数据
 // - POST body=UserBackup：写入 user:${userId}:backup
-// 鉴权：复用 lib/auth.ts 的 requireAuth（共享 API_TOKEN）
+// 鉴权：数据操作（dataOperation=true），不消耗 AI 额度，
+//       未配置 API_TOKEN 时放行（数据按 userId 隔离，无滥用风险）
 // 运行时：edge。通过 getCloudflareKV() 拿到 Cloudflare KV binding，
 //         无 binding 时降级为内存 mock（仅本地开发）。
 
@@ -18,7 +19,8 @@ const BACKUP_VERSION = 1;
 
 export async function GET(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+  // 数据操作：不消耗 AI 额度，未配置 API_TOKEN 时放行
+  const authError = requireAuth(req, { dataOperation: true });
   if (authError) return authError;
 
   const userId = req.nextUrl.searchParams.get("userId");
@@ -36,7 +38,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+  // 数据操作：不消耗 AI 额度，未配置 API_TOKEN 时放行
+  const authError = requireAuth(req, { dataOperation: true });
   if (authError) return authError;
 
   let body: Partial<UserBackup> & { userId?: string };

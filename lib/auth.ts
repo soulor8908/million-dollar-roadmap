@@ -35,17 +35,22 @@ function isProduction(): boolean {
  * 校验请求是否携带有效 token。
  * @param req 请求对象
  * @param options.useServerModel 是否使用服务端默认模型（true 时需要 token 校验）
+ * @param options.dataOperation 是否为数据操作（如 sync，不消耗 AI 额度，未配置 token 时放行）
  * @returns null 表示通过；NextResponse(401) 表示拒绝
  */
 export function requireAuth(
   req: Request,
-  options?: { useServerModel?: boolean }
+  options?: { useServerModel?: boolean; dataOperation?: boolean }
 ): NextResponse | null {
   const expected = getApiToken();
   const useServerModel = options?.useServerModel ?? true;
+  const dataOperation = options?.dataOperation ?? false;
 
   // 用户自带 modelConfig（含 apiKey）→ 始终放行
   if (!useServerModel) return null;
+
+  // 数据操作（如 sync）：未配置 token 时放行（数据是 userId 隔离的，无 AI 额度消耗风险）
+  if (dataOperation && !expected) return null;
 
   // 使用服务端默认模型 → 需要 token 校验
   if (!expected) {

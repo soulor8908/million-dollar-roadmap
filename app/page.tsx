@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getItem, listKeys } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
-import type { LearningPlan, ReviewCard, LearnLog, ScheduleItem, DailyStatus } from "@/lib/types";
+import type { LearningPlan, ReviewCard, LearnLog, ScheduleItem, DailyStatus, PublicProfile } from "@/lib/types";
 import { chinaDateNow, chinaDateShift } from "@/lib/time";
 import { getDueCards } from "@/lib/fsrs";
 import { StatusCard } from "@/components/StatusCard";
@@ -27,6 +27,8 @@ export default function Home() {
   const [todayEnergy, setTodayEnergy] = useState<number | null>(null);
   const [latestPlan, setLatestPlan] = useState<{ id: string; topic: string } | null>(null);
   const [hasPlans, setHasPlans] = useState<boolean | null>(null);
+  const [username, setUsername] = useState<string>("");
+  const [shareMsg, setShareMsg] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -118,8 +120,39 @@ export default function Home() {
       const todayStatusKey = KEY_PREFIXES.STATUS + chinaDateNow();
       const todayStatus = await getItem<DailyStatus>(todayStatusKey);
       if (todayStatus) setTodayEnergy(todayStatus.energy);
+
+      // 读用户名（用于分享主页）
+      const profile = await getItem<PublicProfile>("my:profile");
+      if (profile?.username) setUsername(profile.username);
     })();
   }, []);
+
+  // 分享主页地址
+  async function handleShare() {
+    if (!username) {
+      setShareMsg("请先在「我的」设置用户名");
+      setTimeout(() => setShareMsg(""), 2500);
+      return;
+    }
+    const shareUrl = `${window.location.origin}/u/${encodeURIComponent(username)}`;
+    const shareText = "来看看我的开发者成长主页";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "devpath", text: shareText, url: shareUrl });
+      } catch {
+        // 用户取消分享，静默处理
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareMsg("链接已复制到剪贴板");
+        setTimeout(() => setShareMsg(""), 2500);
+      } catch {
+        setShareMsg(shareUrl);
+        setTimeout(() => setShareMsg(""), 5000);
+      }
+    }
+  }
 
   const heatColor = (minutes: number) => {
     if (minutes === 0) return "bg-gray-100";
@@ -154,7 +187,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20 dark:bg-gray-900">
-      <h1 className="text-2xl font-bold mb-4">今日</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">今日</h1>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+        >
+          🔗 分享主页
+        </button>
+      </div>
+      {shareMsg && (
+        <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-2 text-sm text-blue-700 dark:text-blue-300 break-all">
+          {shareMsg}
+        </div>
+      )}
 
       {/* 每日 AI 主动提醒（主动 UX：用户没问 AI 也开口） */}
       <div className="mb-4">
@@ -279,12 +326,15 @@ export default function Home() {
       )}
 
       {/* 快捷入口 */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Link href="/learn" className="bg-black text-white rounded-lg p-4 text-center font-medium">
-          📚 开始学习
+          📚 学习
         </Link>
         <Link href="/review" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 text-center font-medium">
-          🔁 去复习
+          🔁 复习
+        </Link>
+        <Link href="/emotion" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 text-center font-medium">
+          📝 情绪
         </Link>
       </div>
     </div>

@@ -13,17 +13,12 @@ import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { hasAIKey, getModel } from "@/lib/ai/provider";
 import { wrapModelWithObservability } from "@/lib/ai/observability";
+import { getPrompt } from "@/lib/ai/prompts";
 
 export const runtime = "edge";
 
-const SYSTEM_PROMPT = `你是 DevPath 学习教练。基于用户的当前学习上下文，给出一段简短的"今日建议"。
-
-要求：
-1. 1-2 句话，不超过 80 字
-2. 第一句直接给出今天最该做的事（结合当前计划节点/能量/错题）
-3. 第二句给一个具体可执行的小动作（如"用 478 呼吸 5 分钟再开始"、"先做 3 张待复习卡片"）
-4. 语气友好、像朋友，不要罗列、不要 markdown
-5. 不要重复用户上下文里已经说过的信息`;
+// 从 Prompt Registry 读取
+const PROMPT_DEF = getPrompt("daily_nudge");
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
@@ -53,7 +48,7 @@ export async function POST(req: NextRequest) {
       const model = wrapModelWithObservability(getModel(), "daily-nudge");
       const { text } = await generateText({
         model,
-        system: SYSTEM_PROMPT,
+        system: PROMPT_DEF.system,
         prompt: `用户上下文：\n${safeSnapshot}\n\n请生成今日建议：`,
       });
 

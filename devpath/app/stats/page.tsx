@@ -4,6 +4,7 @@
 // 数据可视化总览：顶部 Tab 切换 热力图 / 雷达图 / 周报
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Heatmap } from "@/components/Heatmap";
 import { RadarChart } from "@/components/RadarChart";
 import { WeeklyReport } from "@/components/WeeklyReport";
@@ -50,7 +51,15 @@ export default function StatsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4">
-      <h1 className="text-2xl font-bold">学习数据</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">学习数据</h1>
+        <Link
+          href="/stats/ai-quality"
+          className="text-sm text-blue-500 hover:underline"
+        >
+          AI 质量 →
+        </Link>
+      </div>
 
       <div className="flex gap-2 border-b">
         {([

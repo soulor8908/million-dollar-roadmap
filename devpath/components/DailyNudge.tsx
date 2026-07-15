@@ -9,12 +9,20 @@
 //   3. 未命中 → 调 /api/daily-nudge → 缓存 → 渲染
 //   4. 用户可点刷新按钮强制重新生成（更新缓存）
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getItem, setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import { chinaDateNow } from "@/lib/time";
 import { buildChatContext } from "@/lib/ai/chat-context";
 import { getApiToken } from "@/lib/api-client";
+import {
+  recordAICall,
+  trackAIFeedback,
+  startTimer,
+  makeInputDigest,
+  makeOutputDigest,
+  generateCallId,
+} from "@/lib/ai/quality-tracker";
 
 interface NudgePayload {
   nudge: string;
@@ -24,12 +32,16 @@ interface NudgePayload {
 
 interface CachedNudge extends NudgePayload {
   date: string;
+  /** 关联的 AI 调用记录 ID（用于反馈归因） */
+  aiCallId?: string;
 }
 
 export function DailyNudge() {
   const [nudge, setNudge] = useState<NudgePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 当前展示的 nudge 对应的 callId（用于反馈归因）
+  const callIdRef = useRef<string | null>(null);
 
   const today = chinaDateNow();
   const cacheKey = KEY_PREFIXES.DAILY_NUDGE + today;
@@ -49,6 +61,7 @@ export function DailyNudge() {
               source: cached.source,
               generatedAt: cached.generatedAt,
             });
+            callIdRef.current = cached.aiCallId ?? null;
             setLoading(false);
             return;
           }
@@ -65,7 +78,9 @@ export function DailyNudge() {
         contextSnapshot = "";
       }
 
-      // 3. 调 API
+      // 3. 调 API + AI 质量追踪
+      const newCallId = generateCallId();
+      const stopTimer = startTimer();
       try {
         const token = await getApiToken();
         const res = await fetch("/api/daily-nudge", {
@@ -82,11 +97,25 @@ export function DailyNudge() {
         }
 
         const data = (await res.json()) as NudgePayload;
+        const durationMs = stopTimer();
         setNudge(data);
+        callIdRef.current = newCallId;
 
-        // 4. 写入缓存
+        // AI 质量追踪：记录调用（异步，失败静默）
+        void recordAICall({
+          callId: newCallId,
+          scene: "daily_nudge",
+          promptId: "daily_nudge",
+          inputDigest: makeInputDigest(contextSnapshot),
+          outputDigest: makeOutputDigest(data),
+          schemaValid: true,
+          durationMs,
+          source: data.source === "ai" ? "ai" : "rule",
+        }).catch(() => {});
+
+        // 4. 写入缓存（带 callId，便于刷新后仍可归因）
         try {
-          const cached: CachedNudge = { ...data, date: today };
+          const cached: CachedNudge = { ...data, date: today, aiCallId: newCallId };
           await setItem(cacheKey, cached);
         } catch {
           /* 缓存写入失败忽略 */
@@ -141,6 +170,29 @@ export function DailyNudge() {
 
   if (!nudge) return null;
 
+  // 隐式反馈：用户点"换一个" = 当前建议不满意
+  const handleRefresh = () => {
+    if (callIdRef.current) {
+      void trackAIFeedback({
+        callRecordId: callIdRef.current,
+        scene: "daily_nudge",
+        action: "regenerated",
+      }).catch(() => {});
+    }
+    void fetchNudge(true);
+  };
+
+  // 显式反馈：用户点 👎 = 当前建议没帮助
+  const handleThumbsDown = () => {
+    if (callIdRef.current) {
+      void trackAIFeedback({
+        callRecordId: callIdRef.current,
+        scene: "daily_nudge",
+        rating: 1,
+      }).catch(() => {});
+    }
+  };
+
   return (
     <div className="mb-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 dark:border-blue-800 dark:from-blue-950 dark:to-indigo-950">
       <div className="flex items-start gap-2">
@@ -159,12 +211,23 @@ export function DailyNudge() {
             </span>
             <button
               type="button"
-              onClick={() => void fetchNudge(true)}
+              onClick={handleRefresh}
               className="text-blue-500 hover:underline"
               aria-label="重新生成今日建议"
             >
               换一个 →
             </button>
+            {nudge.source === "ai" && (
+              <button
+                type="button"
+                onClick={handleThumbsDown}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="这条建议没帮助"
+                title="这条建议没帮助"
+              >
+                👎
+              </button>
+            )}
           </div>
         </div>
       </div>

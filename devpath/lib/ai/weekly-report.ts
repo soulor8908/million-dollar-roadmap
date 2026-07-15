@@ -5,7 +5,14 @@
 
 import { hasAIKey, getModel } from "./provider";
 import { generateText } from "ai";
+import { getPrompt } from "./prompts";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry, DopamineTrigger, EmotionTag } from "../types";
+
+// 从 Prompt Registry 读取（基础模板含 {emotion_section} 占位符，运行时替换）
+const PROMPT_DEF = getPrompt("weekly_report");
+
+const EMOTION_SECTION_PROMPT =
+  "## 情绪与多巴胺模式\n（情绪标签频率、最大干扰源、高干扰日学习时长变化，每条一行带 -）\n\n";
 
 export interface WeeklyInput {
   learnLogs: LearnLog[];
@@ -167,12 +174,10 @@ ${recs.map((s) => `- ${s}`).join("\n")}`;
     });
     const { text } = await generateText({
       model,
-      system:
-        "你是学习教练 + 情绪教练。生成本周学习报告，严格 markdown 段落：\n" +
-        "## 本周统计\n（用列表呈现时长/数量/正确率/打卡/能量）\n\n" +
-        "## 模式识别\n（基于数据发现 2-3 条规律，每条一行带 -）\n\n" +
-        (hasEmotionData ? "## 情绪与多巴胺模式\n（情绪标签频率、最大干扰源、高干扰日学习时长变化，每条一行带 -）\n\n" : "") +
-        "## 下周建议\n（3 条具体可执行建议，每条一行带 -）",
+      system: PROMPT_DEF.system.replace(
+        "{emotion_section}",
+        hasEmotionData ? EMOTION_SECTION_PROMPT : "",
+      ),
       prompt: `本周数据：${dataSummary}`,
     });
     // 校验 AI 返回包含至少三段标题，缺失则补全

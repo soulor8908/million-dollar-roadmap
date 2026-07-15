@@ -4,6 +4,10 @@
 
 import { hasAIKey, getModel } from "./provider";
 import { generateText } from "ai";
+import { getPrompt } from "./prompts";
+
+// 从 Prompt Registry 读取
+const PROMPT_DEF = getPrompt("status_enhance");
 
 export interface EnhancePattern {
   consecutiveLowDays: number;
@@ -43,8 +47,7 @@ export async function enhanceAdjustment(pattern: EnhancePattern): Promise<string
     const model = getModel();
     const { text } = await generateText({
       model,
-      system:
-        "你是学习教练。根据用户近期学习状态，把以下基础建议改写成 1-2 句更具体、带行动项的话。每条建议一行，不要序号。保持简短。",
+      system: PROMPT_DEF.system,
       prompt: `基础建议：\n${suggestions.map((s) => `- ${s}`).join("\n")}`,
     });
     const lines = text

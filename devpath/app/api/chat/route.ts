@@ -10,6 +10,7 @@ import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { getModel } from "@/lib/ai/provider";
 import { wrapModelWithObservability } from "@/lib/ai/observability";
+import { getPrompt } from "@/lib/ai/prompts";
 import type { LanguageModel } from "ai";
 
 export const runtime = "edge";
@@ -26,8 +27,8 @@ interface ClientModelConfig {
   name: string;
 }
 
-const BASE_SYSTEM_PROMPT =
-  "你是 DevPath 学习助手，擅长解答编程和技术面试题。回答要简洁、结合实际案例、必要时给出代码示例。使用 Markdown 格式。";
+// 从 Prompt Registry 读取基础 system（运行时拼接 contextSnapshot）
+const PROMPT_DEF = getPrompt("chat");
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
@@ -61,8 +62,8 @@ export async function POST(req: NextRequest) {
         : "";
 
     const systemPrompt = safeContext
-      ? `${BASE_SYSTEM_PROMPT}\n\n${safeContext}`
-      : BASE_SYSTEM_PROMPT;
+      ? `${PROMPT_DEF.system}\n\n${safeContext}`
+      : PROMPT_DEF.system;
 
     let model: LanguageModel;
     if (modelConfig && modelConfig.apiKey) {

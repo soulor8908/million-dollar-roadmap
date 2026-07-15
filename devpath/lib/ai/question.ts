@@ -6,16 +6,11 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { createAIProvider } from "./provider";
+import { getPrompt } from "./prompts";
 import type { KnowledgeNode, Question } from "../types";
 
-const SYSTEM_PROMPT = `你是资深技术面试官。针对给定知识点生成一道高频面试题。
-要求：
-1. 题目要考察对知识点的深度理解
-2. 答案用三段式：结论 → 展开解释 → 代码示例（200-500 字）
-3. keyPoints 3-5 个关键点
-4. followUps 2-3 个追问
-5. 如果适用，提供 codeSnippet
-6. 标记 bigTech=true 表示这是大厂高频面试题（互联网大厂真实考察过）`;
+// 从 Prompt Registry 读取
+const PROMPT_DEF = getPrompt("question_generate");
 
 const questionSchema = z.object({
   question: z.string(),
@@ -39,7 +34,7 @@ async function generateOne(node: KnowledgeNode): Promise<Question> {
     const result = await generateObject({
       model: createAIProvider(),
       schema: questionSchema,
-      system: SYSTEM_PROMPT,
+      system: PROMPT_DEF.system,
       prompt: `知识点：${node.title}\n描述：${node.summary}\n难度：${node.difficulty}\n面试频率：${node.frequency}`,
     });
     return {

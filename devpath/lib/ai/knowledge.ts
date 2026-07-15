@@ -12,17 +12,11 @@ import { createAIProvider } from "./provider";
 import { getFallbackTemplate } from "./templates";
 import { getCloudflareKV } from "./cloudflare-env";
 import { observeCall } from "./observability";
+import { getPrompt } from "./prompts";
 import type { KnowledgeNode } from "../types";
 
-const SYSTEM_PROMPT = `你是技术学习专家。把用户给的学习主题拆解成知识节点。
-要求：
-1. 每个节点是一个可独立学习的最小知识单元
-2. 标注节点间的依赖关系
-3. 评估难度 1-5
-4. 按面试出现频率排序
-5. 节点数量由主题复杂度自行决定，不限制数量（简单主题 5-8 个，复杂主题可达 20-30 个）
-6. 标记大厂高频考点（bigTech=true 表示互联网大厂面试重点考察）
-7. 输出严格 JSON`;
+// 从 Prompt Registry 读取（修改 prompt 在 lib/ai/prompts.ts 中 bump version）
+const PROMPT_DEF = getPrompt("knowledge_decompose");
 
 const nodeSchema = z.object({
   id: z.string().describe("节点 ID，格式 k1, k2, ..."),
@@ -90,7 +84,7 @@ export async function decomposeKnowledge(
           generateObject({
             model: createAIProvider(),
             schema: treeSchema,
-            system: SYSTEM_PROMPT,
+            system: PROMPT_DEF.system,
             prompt: buildPrompt(topic, userPrompt),
           }),
         2

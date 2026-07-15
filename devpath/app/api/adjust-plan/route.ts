@@ -7,9 +7,13 @@ import { z } from "zod";
 import { createAIProvider } from "@/lib/ai/provider";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
+import { getPrompt } from "@/lib/ai/prompts";
 import type { LearningPlan, Routine } from "@/lib/types";
 
 export const runtime = "edge";
+
+// 从 Prompt Registry 读取
+const PROMPT_DEF = getPrompt("adjust_plan");
 
 const scheduleItemSchema = z.object({
   day: z.number(),
@@ -22,9 +26,6 @@ const scheduleItemSchema = z.object({
 const adjustSchema = z.object({
   schedule: z.array(scheduleItemSchema),
 });
-
-const SYSTEM_PROMPT =
-  "你是学习计划调整助手。根据用户指令调整学习计划的 schedule（仅日程安排，不改变知识点和题目）。保持 nodeId 与原计划一致，只调整 day、type、estimatedMinutes 的分配。";
 
 const INTENSITY_LABEL: Record<Routine["intensity"], string> = {
   light: "轻松",
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
     const result = await generateObject({
       model: createAIProvider(),
       schema: adjustSchema,
-      system: SYSTEM_PROMPT,
+      system: PROMPT_DEF.system,
       prompt,
     });
 

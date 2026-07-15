@@ -13,6 +13,13 @@ import { toggleQuestionInPlan, createFavoriteDeck, listFavoriteDecks, deleteFavo
 import { savePlanSummary } from "@/lib/plan-summary";
 import { nowISO } from "@/lib/time";
 import { logLearning } from "@/lib/learn-log";
+import {
+  recordAICall,
+  startTimer,
+  makeInputDigest,
+  makeOutputDigest,
+  generateCallId,
+} from "@/lib/ai/quality-tracker";
 
 export default function PlanDetailClient() {
   const params = useParams<{ planId: string }>();
@@ -153,6 +160,11 @@ export default function PlanDetailClient() {
     if (!node) return;
     setRegeneratingId(questionId);
     setRegenError(null);
+
+    // AI 质量追踪：生成 callId + 计时（失败静默，不影响主流程）
+    const callId = generateCallId();
+    const stopTimer = startTimer();
+
     try {
       const res = await apiFetch("/api/regenerate", {
         method: "POST",
@@ -161,12 +173,28 @@ export default function PlanDetailClient() {
       });
       if (!res.ok) throw new Error(`请求失败 (${res.status})`);
       const { question } = (await res.json()) as { question: Question };
-      // 保留原 id 和 favorited 状态，替换内容
+      const durationMs = stopTimer();
+
+      // 记录 AI 调用（异步，不阻塞主流程）
+      void recordAICall({
+        callId,
+        scene: "question_generate",
+        promptId: "question_generate",
+        inputDigest: makeInputDigest({ nodeId: node.id, title: node.title }),
+        outputDigest: makeOutputDigest(question),
+        schemaValid: true,
+        durationMs,
+        source: "ai",
+        refId: question.id,
+      }).catch(() => {});
+
+      // 保留原 id 和 favorited 状态，替换内容；挂上 callId 供 QuestionCard 反馈归因
       const newQuestion: Question = {
         ...question,
         id: oldQ.id,
         favorited: oldQ.favorited,
         favoritedAt: oldQ.favoritedAt,
+        aiCallId: callId,
       };
       const updated: LearningPlan = {
         ...plan,

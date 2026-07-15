@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Question } from "@/lib/types";
 import { AnswerContent, CodeBlock } from "@/components/CodeBlock";
+import { trackAIFeedback } from "@/lib/ai/quality-tracker";
 
 interface Props {
   question: Question;
@@ -18,7 +19,18 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
   const [expanded, setExpanded] = useState(false);
   const isFailed = question.question === "生成失败，点击重试";
 
+  // 隐式反馈：记录用户对这道题的行为（仅当有 aiCallId 时触发，老题目静默跳过）
+  const trackImplicit = (implicitAction: "expanded" | "followed_up" | "favorited") => {
+    if (!question.aiCallId) return;
+    void trackAIFeedback({
+      callRecordId: question.aiCallId,
+      scene: "question_generate",
+      implicitAction,
+    });
+  };
+
   const handleFollowUpClick = (fu: string) => {
+    trackImplicit("followed_up");
     if (onFollowUpClick) {
       onFollowUpClick(fu);
     } else {
@@ -30,7 +42,10 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
     <div className="border rounded-lg p-4 bg-white">
       <div className="flex items-start gap-2">
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => {
+            if (!expanded) trackImplicit("expanded");
+            setExpanded(!expanded);
+          }}
           className="flex-1 text-left text-sm font-medium hover:text-blue-600"
         >
           {question.bigTech && (
@@ -42,7 +57,10 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
         </button>
         {onFavoriteToggle && (
           <button
-            onClick={() => onFavoriteToggle(question.id)}
+            onClick={() => {
+              if (!question.favorited) trackImplicit("favorited");
+              onFavoriteToggle(question.id);
+            }}
             className={`text-lg ${question.favorited ? "text-yellow-500" : "text-gray-300"}`}
             aria-label="收藏"
           >
@@ -98,7 +116,17 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
         )}
         {onRegenerate && (
           <button
-            onClick={() => onRegenerate(question.id)}
+            onClick={() => {
+              // 隐式反馈：用户主动换题 = 对当前题目不满意
+              if (question.aiCallId && !isFailed) {
+                void trackAIFeedback({
+                  callRecordId: question.aiCallId,
+                  scene: "question_generate",
+                  action: "regenerated",
+                });
+              }
+              onRegenerate(question.id);
+            }}
             disabled={regenerating}
             className={`text-xs ml-auto px-2 py-1 rounded ${
               isFailed

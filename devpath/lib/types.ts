@@ -58,6 +58,8 @@ export interface Question {
   favoritedAt?: string;
   // 大厂高频面试题标记
   bigTech?: boolean;
+  // 关联 AI 调用记录 ID（用于反馈归因，仅客户端重新生成时填充）
+  aiCallId?: string;
 }
 
 // 试题集收藏
@@ -260,6 +262,10 @@ export const KEY_PREFIXES = {
   MODEL_CONFIG: "model:",
   /** 错题记录：mistake:<id> */
   MISTAKE: "mistake:",
+  /** AI 调用记录：ai_call:<id> */
+  AI_CALL: "ai_call:",
+  /** AI 输出反馈：ai_feedback:<id> */
+  AI_FEEDBACK: "ai_feedback:",
 } as const;
 
 // AI 模型配置（用户可在 profile 配置多个）
@@ -278,6 +284,65 @@ export interface ModelConfig {
   /** 是否默认模型 */
   isDefault: boolean;
   /** 创建时间 ISO */
+  createdAt: string;
+}
+
+// ============ AI 质量观测数据模型 ============
+
+/** AI 调用场景（与 prompt registry 的 key 对应） */
+export type AIScene =
+  | "knowledge_decompose"
+  | "question_generate"
+  | "daily_nudge"
+  | "chat"
+  | "energy_pattern"
+  | "status_enhance"
+  | "weekly_report"
+  | "adjust_plan";
+
+/** AI 调用记录（一次 AI 调用 = 一条记录） */
+export interface AICallRecord {
+  id: string;
+  /** 调用场景 */
+  scene: AIScene;
+  /** prompt 版本指纹（自动从 prompt 内容计算，格式 promptId:version:hash） */
+  promptVersion: string;
+  /** 输入摘要（topic / nodeId / 快照hash，不存原文，控制体积） */
+  inputDigest: string;
+  /** 输出摘要（前 100 字 + 结构化字段数量，不存完整输出） */
+  outputDigest: string;
+  /** 结构化输出验证：schema 验证是否通过 */
+  schemaValid: boolean;
+  /** 耗时 ms */
+  durationMs: number;
+  /** 来源：ai / rule / fallback */
+  source: "ai" | "rule" | "fallback";
+  /** 关联资源 ID（如 planId / questionId / conversationId，用于反馈归因） */
+  refId?: string;
+  /** 时间 */
+  createdAt: string;
+}
+
+/** AI 输出反馈动作（显式 + 隐式） */
+export type AIFeedbackRating = 1 | 2 | 3 | 4 | 5;
+export type AIFeedbackAction = "adopted" | "discarded" | "regenerated" | "edited";
+export type AIImplicitAction = "viewed" | "expanded" | "ignored" | "followed_up" | "copied" | "favorited";
+
+/** AI 输出反馈（用户对某次输出的评价） */
+export interface AIFeedback {
+  id: string;
+  /** 关联的 AICallRecord.id */
+  callRecordId: string;
+  scene: AIScene;
+  /** 显式反馈：1=很差 5=很好（仅负面反馈时采集，默认满意不记录） */
+  rating?: AIFeedbackRating;
+  /** 显式反馈：采纳 / 丢弃 / 再生成 / 编辑 */
+  action?: AIFeedbackAction;
+  /** 隐式反馈（由系统自动从行为推断） */
+  implicitAction?: AIImplicitAction;
+  /** 反馈原因（用户选择，如"太难""不相关""答案错误"） */
+  reason?: string;
+  /** 时间 */
   createdAt: string;
 }
 

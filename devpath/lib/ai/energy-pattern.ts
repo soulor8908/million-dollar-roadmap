@@ -4,7 +4,11 @@
 
 import { hasAIKey, getModel } from "./provider";
 import { generateText } from "ai";
+import { getPrompt } from "./prompts";
 import type { DailyStatus, EnergyPattern, EmotionEntry, EmotionTag, DopamineTrigger } from "../types";
+
+// 从 Prompt Registry 读取
+const PROMPT_DEF = getPrompt("energy_pattern");
 
 const WEEKDAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
@@ -187,9 +191,7 @@ export async function analyzeEnergyPattern(
 
     const { text } = await generateText({
       model,
-      system:
-        "你是学习教练 + 情绪教练。分析用户 28 天能量 + 情绪 + 多巴胺干扰数据，找出低能量日/高能量日、高频情绪模式、多巴胺干扰时段，给 3 条具体建议。" +
-        "输出 JSON：{\"insights\": string[], \"recommendations\": string[]}，每项 1 句话。",
+      system: PROMPT_DEF.system,
       prompt:
         `周几平均能量：${dataStr}\n` +
         `情绪标签次数：${emotionStr || "无记录"}\n` +

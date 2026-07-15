@@ -27,6 +27,14 @@ import {
 import { listModelConfigs, getDefaultModelConfig } from "@/lib/model-config";
 import { AnswerContent } from "@/components/CodeBlock";
 import { buildChatContext } from "@/lib/ai/chat-context";
+import {
+  recordAICall,
+  trackAIFeedback,
+  startTimer,
+  makeInputDigest,
+  makeOutputDigest,
+  generateCallId,
+} from "@/lib/ai/quality-tracker";
 
 // 内置提示词库
 const BUILTIN_PROMPTS = [
@@ -76,6 +84,8 @@ export default function ChatClient() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // AI 调用记录 ID 映射：messageId → callId（用于反馈归因，仅当前会话有效）
+  const aiCallIdMap = useRef<Map<string, string>>(new Map());
 
   // 刷新对话列表
   const refreshConversations = useCallback(async () => {
@@ -88,6 +98,8 @@ export default function ChatClient() {
     setActiveConv(conv);
     const msgs = await getMessages(conv.id);
     setMessages(msgs);
+    // 清空当前会话的 AI 调用映射（历史消息不在当前会话生成，不展示反馈按钮）
+    aiCallIdMap.current.clear();
   }, []);
 
   // 初始化
@@ -280,6 +292,10 @@ export default function ChatClient() {
         contextSnapshot = "";
       }
 
+      // AI 质量追踪：生成 callId + 计时
+      const callId = generateCallId();
+      const stopTimer = startTimer();
+
       const token = await getApiToken();
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -375,6 +391,22 @@ export default function ChatClient() {
       setMessages((prev) => [...prev, aiMsg]);
       setStreamContent("");
       setStreaming(false);
+
+      // AI 质量追踪：记录调用 + 关联到 AI 消息（异步，失败静默）
+      const durationMs = stopTimer();
+      aiCallIdMap.current.set(aiMsg.id, callId);
+      void recordAICall({
+        callId,
+        scene: "chat",
+        promptId: "chat",
+        inputDigest: makeInputDigest({ conversationId: conv.id, userMessage: text }),
+        outputDigest: makeOutputDigest(finalContent),
+        schemaValid: true,
+        durationMs,
+        source: "ai",
+        refId: conv.id,
+      }).catch(() => {});
+
       await refreshConversations();
     } catch (e) {
       setStreaming(false);
@@ -392,6 +424,17 @@ export default function ChatClient() {
     refreshConversations,
     router,
   ]);
+
+  // 显式反馈：用户对某条 AI 回复点 👎
+  const handleThumbsDown = useCallback((messageId: string) => {
+    const callId = aiCallIdMap.current.get(messageId);
+    if (!callId) return;
+    void trackAIFeedback({
+      callRecordId: callId,
+      scene: "chat",
+      rating: 1,
+    }).catch(() => {});
+  }, []);
 
   // 键盘快捷键：Enter 发送，Shift+Enter 换行
   const handleKeyDown = useCallback(
@@ -516,9 +559,21 @@ export default function ChatClient() {
           ) : (
             <div
               key={m.id}
-              className="mr-auto max-w-[80%] bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-sm"
+              className="mr-auto max-w-[80%] bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-sm group"
             >
               <AnswerContent text={m.content} />
+              {/* 显式反馈：👎 仅在当前会话生成的消息上展示（历史消息无 callId，不展示） */}
+              {aiCallIdMap.current.has(m.id) && (
+                <button
+                  type="button"
+                  onClick={() => handleThumbsDown(m.id)}
+                  className="mt-1 text-[11px] text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="这条回复没帮助"
+                  title="这条回复没帮助"
+                >
+                  👎
+                </button>
+              )}
             </div>
           )
         )}

@@ -34,6 +34,12 @@ export default function PlanDetailClient() {
   const [regeneratingPlan, setRegeneratingPlan] = useState(false);
   const [regenPlanError, setRegenPlanError] = useState<string | null>(null);
 
+  // 筛选状态
+  const [filterBigTech, setFilterBigTech] = useState<"all" | "big" | "normal">("all");
+  const [filterDifficulty, setFilterDifficulty] = useState<number | "all">("all");
+  const [filterNodeId, setFilterNodeId] = useState<string | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     (async () => {
       const p = await getItem<LearningPlan>(KEY_PREFIXES.PLAN + planId);
@@ -243,6 +249,26 @@ export default function PlanDetailClient() {
   });
   const days = Object.keys(scheduleByDay).map(Number).sort((a, b) => a - b);
 
+  // 筛选后的题目
+  const filteredQuestions = plan.questions.filter((q) => {
+    if (filterBigTech === "big" && !q.bigTech) return false;
+    if (filterBigTech === "normal" && q.bigTech) return false;
+    if (filterDifficulty !== "all") {
+      const node = plan.knowledgeTree.find((n) => n.id === q.nodeId);
+      if (node?.difficulty !== filterDifficulty) return false;
+    }
+    if (filterNodeId !== "all" && q.nodeId !== filterNodeId) return false;
+    if (searchQuery.trim()) {
+      const q_lower = searchQuery.toLowerCase();
+      if (
+        !q.question.toLowerCase().includes(q_lower) &&
+        !q.answer.toLowerCase().includes(q_lower)
+      )
+        return false;
+    }
+    return true;
+  });
+
   return (
     <div className="min-h-screen p-4 max-w-3xl mx-auto pb-20">
       <div className="mb-6">
@@ -290,7 +316,92 @@ export default function PlanDetailClient() {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-lg font-bold mb-3">面试题（{plan.questions.length}）</h2>
+        <h2 className="text-lg font-bold mb-3">面试题（{filteredQuestions.length}/{plan.questions.length}）</h2>
+        <div className="mb-3 p-3 bg-gray-50 rounded-lg space-y-2">
+          {/* Row 1: bigTech + difficulty */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500">大厂:</span>
+            {(["all", "big", "normal"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setFilterBigTech(v)}
+                className={`text-xs px-2 py-0.5 rounded ${
+                  filterBigTech === v
+                    ? "bg-black text-white"
+                    : "bg-white text-gray-600 border"
+                }`}
+              >
+                {v === "all" ? "全部" : v === "big" ? "🏢 大厂" : "普通"}
+              </button>
+            ))}
+            <span className="text-xs text-gray-500 ml-2">难度:</span>
+            <button
+              onClick={() => setFilterDifficulty("all")}
+              className={`text-xs px-2 py-0.5 rounded ${
+                filterDifficulty === "all"
+                  ? "bg-black text-white"
+                  : "bg-white border"
+              }`}
+            >
+              全部
+            </button>
+            {[1, 2, 3, 4, 5].map((d) => (
+              <button
+                key={d}
+                onClick={() => setFilterDifficulty(d)}
+                className={`text-xs px-2 py-0.5 rounded ${
+                  filterDifficulty === d
+                    ? "bg-black text-white"
+                    : "bg-white border"
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          {/* Row 2: node filter + search */}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={filterNodeId}
+              onChange={(e) => setFilterNodeId(e.target.value)}
+              className="text-xs border rounded px-2 py-1 bg-white"
+            >
+              <option value="all">全部知识点</option>
+              {plan.knowledgeTree.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.title}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索题目..."
+              className="text-xs border rounded px-2 py-1 flex-1 min-w-[120px]"
+            />
+            {(filterBigTech !== "all" ||
+              filterDifficulty !== "all" ||
+              filterNodeId !== "all" ||
+              searchQuery) && (
+              <button
+                onClick={() => {
+                  setFilterBigTech("all");
+                  setFilterDifficulty("all");
+                  setFilterNodeId("all");
+                  setSearchQuery("");
+                }}
+                className="text-xs text-gray-400 hover:text-red-500"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
+          {/* Result count */}
+          <p className="text-xs text-gray-400">
+            显示 {filteredQuestions.length} / {plan.questions.length} 题
+          </p>
+        </div>
         {regenError && (
           <div className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-600">
             重新生成失败：{regenError}
@@ -298,7 +409,7 @@ export default function PlanDetailClient() {
         )}
         <p className="text-xs text-gray-400 mb-2">点击题目展开答案，可单题收藏或重新生成</p>
         <div className="space-y-2">
-          {plan.questions.map((q) => (
+          {filteredQuestions.map((q) => (
             <div key={q.id} ref={(el) => { questionRefs.current[q.id] = el; }}>
               <QuestionCard
                 question={q}

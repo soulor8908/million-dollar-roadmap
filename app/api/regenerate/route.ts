@@ -6,22 +6,31 @@ import { regenerateQuestion } from "@/lib/ai/question";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import type { KnowledgeNode } from "@/lib/types";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+
+  let body: { node?: KnowledgeNode; modelConfig?: ClientModelConfig };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
+  }
+
+  const { node, modelConfig } = body;
+  const { model, useServerModel } = resolveModel(modelConfig, "regenerate");
+
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
   try {
-    const body = await req.json();
-    const { node } = body as { node?: KnowledgeNode };
-
     if (!node || !node.id || !node.title) {
       return NextResponse.json({ error: "node 是必填项" }, { status: 400 });
     }
 
-    const question = await regenerateQuestion(node);
+    const question = await regenerateQuestion(node, model);
     return NextResponse.json({ question });
   } catch (error) {
     const message = error instanceof Error ? error.message : "未知错误";

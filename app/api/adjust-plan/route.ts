@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { createAIProvider } from "@/lib/ai/provider";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { getPrompt } from "@/lib/ai/prompts";
@@ -37,15 +37,17 @@ const WEEKDAY_NAMES = ["一", "二", "三", "四", "五", "六", "日"];
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+  const body = await req.json();
+  const { plan, instruction, routine, modelConfig } = body as {
+    plan?: LearningPlan;
+    instruction?: string;
+    routine?: Routine;
+    modelConfig?: ClientModelConfig;
+  };
+  const { model, useServerModel } = resolveModel(modelConfig, "adjust-plan");
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
   try {
-    const body = await req.json();
-    const { plan, instruction, routine } = body as {
-      plan?: LearningPlan;
-      instruction?: string;
-      routine?: Routine;
-    };
 
     if (!plan || !Array.isArray(plan.schedule) || !Array.isArray(plan.knowledgeTree)) {
       return NextResponse.json({ error: "plan 是必填项" }, { status: 400 });
@@ -110,7 +112,7 @@ export async function POST(req: NextRequest) {
     const prompt = lines.join("\n");
 
     const result = await generateObject({
-      model: createAIProvider(),
+      model,
       schema: adjustSchema,
       system: PROMPT_DEF.system,
       prompt,

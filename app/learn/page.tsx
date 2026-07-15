@@ -12,7 +12,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setItem, delItem } from "@/lib/storage/db";
-import { apiFetch } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES, type LearningPlan, type KnowledgeNode, type Question, type ScheduleItem, type PromptLibraryItem, type LearningPlanSummary } from "@/lib/types";
 import { PRESETS, type PresetMeta } from "@/lib/presets";
 import { MindMap } from "@/components/MindMap";
@@ -141,7 +141,7 @@ export default function LearnPage() {
     setRegenerating(true);
     setRegenError("");
     try {
-      const res = await apiFetch("/api/learn", {
+      const res = await aiFetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -206,7 +206,7 @@ export default function LearnPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch("/api/learn", {
+      const res = await aiFetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

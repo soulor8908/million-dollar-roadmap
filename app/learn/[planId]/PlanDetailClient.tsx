@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { getItem, setItem } from "@/lib/storage/db";
-import { apiFetch } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan, Question, ScheduleItem } from "@/lib/types";
 import { KnowledgeTree } from "@/components/KnowledgeTree";
@@ -166,7 +166,7 @@ export default function PlanDetailClient() {
     const stopTimer = startTimer();
 
     try {
-      const res = await apiFetch("/api/regenerate", {
+      const res = await aiFetch("/api/regenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ node }),
@@ -232,7 +232,7 @@ export default function PlanDetailClient() {
     setRegeneratingPlan(true);
     setRegenPlanError(null);
     try {
-      const res = await apiFetch("/api/learn", {
+      const res = await aiFetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

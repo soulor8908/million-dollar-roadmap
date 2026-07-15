@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getItem, setItem } from "@/lib/storage/db";
-import { apiFetch } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import {
   KEY_PREFIXES,
   type LearningPlan,
@@ -165,7 +165,7 @@ export default function PlanEditClient() {
     setAiError(null);
     setAiSuccess(false);
     try {
-      const res = await apiFetch("/api/adjust-plan", {
+      const res = await aiFetch("/api/adjust-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

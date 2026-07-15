@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { listItems, setItem } from "@/lib/storage/db";
-import { apiFetch } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
 import { KEY_PREFIXES } from "@/lib/types";
 
@@ -56,7 +56,7 @@ export function WeeklyReport({ learnLogs, reviewLogs, statuses }: Props) {
       const weekEndStr = weekEnd.toISOString().slice(0, 10);
       const emotions = allEmotions.filter((e) => e.date >= weekStart && e.date < weekEndStr);
 
-      const res = await apiFetch("/api/weekly", {
+      const res = await aiFetch("/api/weekly", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekStart, learnLogs, reviewLogs, statuses, emotions }),

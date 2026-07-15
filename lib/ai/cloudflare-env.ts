@@ -13,12 +13,13 @@ import { setCloudflareEnv } from "./provider";
 
 const CF_CTX_SYMBOL = Symbol.for("__cloudflare-request-context__");
 
-let initialized = false;
+// 注意：不用 initialized flag 缓存。
+// 原因：Cloudflare Pages 的请求上下文是 per-request 的，
+// 第一次请求时 symbol 可能尚未挂载，如果缓存了 initialized=true，
+// 后续请求即使 symbol 已就绪也不会再读取，导致 env 永远为空。
+// setCloudflareEnv 内部有 cachedModel 缓存，不会重复创建模型。
 
 export async function initCloudflareEnv(): Promise<void> {
-  if (initialized) return;
-  initialized = true;
-
   // 开发环境：process.env 已可用，无需注入
   if (
     process.env.AI_PROVIDER ||

@@ -9,6 +9,7 @@ import { enhanceAdjustment } from "@/lib/ai/status-enhance";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import type { DailyStatus, ScheduleItem, DopamineTrigger } from "@/lib/types";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
@@ -22,12 +23,12 @@ interface StatusRequestBody {
   dopamineTrigger?: DopamineTrigger;
   /** 最近 7 天历史状态（由客户端从 IndexedDB 读取后传入） */
   recentStatuses?: DailyStatus[];
+  /** 客户端传入的模型配置（可选，含 apiKey 时免鉴权） */
+  modelConfig?: ClientModelConfig;
 }
 
 export async function POST(req: Request) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
-  if (authError) return authError;
 
   let body: StatusRequestBody;
   try {
@@ -35,6 +36,11 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
   }
+
+  const { model, useServerModel } = resolveModel(body.modelConfig, "status");
+
+  const authError = requireAuth(req, { useServerModel });
+  if (authError) return authError;
 
   if (!body.date || !body.energy || !body.mood || typeof body.availableMinutes !== "number" || !Array.isArray(body.basePlan)) {
     return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
@@ -64,7 +70,7 @@ export async function POST(req: Request) {
   const trigger = detectEnhanceTrigger(recentStatuses, {});
   let suggestions: string[] = [];
   if (trigger.consecutiveLowDays >= 3 || Object.values(trigger.nodeFailCount).some((c) => c >= 3)) {
-    suggestions = await enhanceAdjustment(trigger);
+    suggestions = await enhanceAdjustment(trigger, model);
   }
 
   status.aiAdjustedLoad = adjustedPlan.length;

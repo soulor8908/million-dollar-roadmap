@@ -10,21 +10,31 @@ import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { nowISO } from "@/lib/time";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
+import type { ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+
+  let body: {
+    card?: ReviewCard;
+    rating?: Rating;
+    mode?: "conservative" | "standard" | "aggressive";
+    modelConfig?: ClientModelConfig;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
+  }
+
+  const { card, rating, mode = "standard", modelConfig } = body;
+  const useServerModel = !(modelConfig && modelConfig.apiKey);
+
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
   try {
-    const body = await req.json();
-    const { card, rating, mode = "standard" } = body as {
-      card?: ReviewCard;
-      rating?: Rating;
-      mode?: "conservative" | "standard" | "aggressive";
-    };
-
     if (!card || !card.id) {
       return NextResponse.json({ error: "card 是必填项" }, { status: 400 });
     }

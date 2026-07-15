@@ -11,9 +11,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
-import { hasAIKey, getModel } from "@/lib/ai/provider";
-import { wrapModelWithObservability } from "@/lib/ai/observability";
+import { hasAIKey } from "@/lib/ai/provider";
 import { getPrompt } from "@/lib/ai/prompts";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
@@ -22,13 +22,21 @@ const PROMPT_DEF = getPrompt("daily_nudge");
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+
+  let body: { contextSnapshot?: string; modelConfig?: ClientModelConfig };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
+  }
+
+  const { contextSnapshot, modelConfig } = body;
+  const { model, useServerModel } = resolveModel(modelConfig, "daily-nudge");
+
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
 
   try {
-    const body = await req.json();
-    const { contextSnapshot } = body as { contextSnapshot?: string };
-
     // 安全截断
     const safeSnapshot =
       typeof contextSnapshot === "string" && contextSnapshot.length > 0
@@ -36,7 +44,7 @@ export async function POST(req: NextRequest) {
         : "";
 
     // 无 AI key 降级到规则模板
-    if (!hasAIKey() || !safeSnapshot) {
+    if ((useServerModel && !hasAIKey()) || !safeSnapshot) {
       return NextResponse.json({
         nudge: ruleBasedNudge(safeSnapshot),
         source: "rule",
@@ -45,7 +53,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const model = wrapModelWithObservability(getModel(), "daily-nudge");
       const { text } = await generateText({
         model,
         system: PROMPT_DEF.system,

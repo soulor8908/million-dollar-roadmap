@@ -123,6 +123,8 @@ export default function ProfilePage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [modelSaving, setModelSaving] = useState(false);
   const [modelError, setModelError] = useState("");
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
   useEffect(() => {
     (async () => {
@@ -354,6 +356,49 @@ export default function ProfilePage() {
     scheduleAutoSync();
   }
 
+  /** 测试模型连接 */
+  async function handleTestModel(config: ModelConfig) {
+    setTestingId(config.id);
+    setTestResult((prev) => ({ ...prev, [config.id]: { ok: false, msg: "测试中..." } }));
+    try {
+      const res = await fetch("/api/ai-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelConfig: {
+            baseURL: config.baseURL,
+            apiKey: config.apiKey,
+            model: config.model,
+            name: config.name,
+            provider: config.provider,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestResult((prev) => ({
+          ...prev,
+          [config.id]: {
+            ok: true,
+            msg: `连接成功 (${data.elapsedMs}ms): ${data.reply?.slice(0, 50) || "OK"}`,
+          },
+        }));
+      } else {
+        setTestResult((prev) => ({
+          ...prev,
+          [config.id]: { ok: false, msg: data.error || `HTTP ${res.status}` },
+        }));
+      }
+    } catch (e) {
+      setTestResult((prev) => ({
+        ...prev,
+        [config.id]: { ok: false, msg: e instanceof Error ? e.message : "网络错误" },
+      }));
+    } finally {
+      setTestingId(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <h1 className="text-2xl font-bold">我的</h1>
@@ -460,6 +505,13 @@ export default function ProfilePage() {
                       </button>
                     )}
                     <button
+                      onClick={() => handleTestModel(c)}
+                      disabled={testingId === c.id}
+                      className="rounded border border-green-200 px-2 py-1 text-xs text-green-600 hover:bg-green-50 disabled:opacity-50"
+                    >
+                      {testingId === c.id ? "测试中..." : "测试"}
+                    </button>
+                    <button
                       onClick={() => openEditModelForm(c)}
                       className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
                     >
@@ -473,6 +525,17 @@ export default function ProfilePage() {
                     </button>
                   </div>
                 </div>
+                {testResult[c.id] && (
+                  <div
+                    className={`mt-1.5 rounded px-2 py-1 text-xs ${
+                      testResult[c.id].ok
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-600"
+                    }`}
+                  >
+                    {testResult[c.id].ok ? "✅ " : "❌ "}{testResult[c.id].msg}
+                  </div>
+                )}
               </div>
             ))
           )}

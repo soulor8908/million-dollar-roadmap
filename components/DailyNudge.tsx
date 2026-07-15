@@ -14,7 +14,7 @@ import { getItem, setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import { chinaDateNow } from "@/lib/time";
 import { buildChatContext } from "@/lib/ai/chat-context";
-import { getApiToken } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import {
   recordAICall,
   trackAIFeedback,
@@ -82,13 +82,8 @@ export function DailyNudge() {
       const newCallId = generateCallId();
       const stopTimer = startTimer();
       try {
-        const token = await getApiToken();
-        const res = await fetch("/api/daily-nudge", {
+        const res = await aiFetch("/api/daily-nudge", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
           body: JSON.stringify({ contextSnapshot }),
         });
 

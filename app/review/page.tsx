@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getItem, setItem } from "@/lib/storage/db";
-import { apiFetch } from "@/lib/api-client";
+import { aiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 import { getDueCards } from "@/lib/fsrs";
@@ -49,7 +49,7 @@ export default function ReviewPage() {
     if (!card) return;
 
     try {
-      const res = await apiFetch("/api/review", {
+      const res = await aiFetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ card, rating }),

@@ -7,22 +7,32 @@ import { buildFavoriteDeck, toggleQuestionInPlan } from "@/lib/favorite";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import type { LearningPlan } from "@/lib/types";
+import type { ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+
+  let body: {
+    action?: string;
+    plan?: LearningPlan;
+    deckId?: string;
+    questionId?: string;
+    modelConfig?: ClientModelConfig;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
+  }
+
+  const { action, plan, deckId, questionId, modelConfig } = body;
+  const useServerModel = !(modelConfig && modelConfig.apiKey);
+
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
   try {
-    const body = await req.json();
-    const { action, plan, deckId, questionId } = body as {
-      action?: string;
-      plan?: LearningPlan;
-      deckId?: string;
-      questionId?: string;
-    };
-
     switch (action) {
       case "create_deck": {
         if (!plan) {

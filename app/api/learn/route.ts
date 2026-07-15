@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { decomposeKnowledge } from "@/lib/ai/knowledge";
 import { generateQuestions } from "@/lib/ai/question";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { topoSort, allocateDaily } from "@/lib/schedule";
@@ -13,16 +14,18 @@ export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
+  const body = await req.json();
+  const { topic, dailyMinutes = 30, maxNewPerDay = 1, prompt, modelConfig } = body as {
+    topic?: string;
+    dailyMinutes?: number;
+    maxNewPerDay?: number;
+    prompt?: string;
+    modelConfig?: ClientModelConfig;
+  };
+  const { model, useServerModel } = resolveModel(modelConfig, "learn");
+  const authError = requireAuth(req, { useServerModel });
   if (authError) return authError;
   try {
-    const body = await req.json();
-    const { topic, dailyMinutes = 30, maxNewPerDay = 1, prompt } = body as {
-      topic?: string;
-      dailyMinutes?: number;
-      maxNewPerDay?: number;
-      prompt?: string;
-    };
 
     if (!topic || typeof topic !== "string" || !topic.trim()) {
       return NextResponse.json({ error: "topic 是必填项" }, { status: 400 });
@@ -49,10 +52,10 @@ export async function POST(req: NextRequest) {
         : undefined;
 
     // 1. 拆知识树（传入用户自定义提示词）
-    const nodes = await decomposeKnowledge(topic.trim(), userPrompt);
+    const nodes = await decomposeKnowledge(topic.trim(), userPrompt, undefined, model);
 
     // 2. 生成面试题（并行分批）
-    const questions = await generateQuestions(nodes);
+    const questions = await generateQuestions(nodes, model);
 
     // 3. 编排学习计划
     const sorted = topoSort(nodes);

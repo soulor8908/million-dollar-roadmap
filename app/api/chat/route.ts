@@ -5,26 +5,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { streamText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
-import { getModel } from "@/lib/ai/provider";
-import { wrapModelWithObservability } from "@/lib/ai/observability";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 import { getPrompt } from "@/lib/ai/prompts";
-import type { LanguageModel } from "ai";
 
 export const runtime = "edge";
 
 interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
-}
-
-interface ClientModelConfig {
-  baseURL: string;
-  apiKey: string;
-  model: string;
-  name: string;
 }
 
 // 从 Prompt Registry 读取基础 system（运行时拼接 contextSnapshot）
@@ -37,25 +27,20 @@ export async function POST(req: NextRequest) {
     const { messages, modelConfig, contextSnapshot } = body as {
       messages?: ChatMessage[];
       modelConfig?: ClientModelConfig;
-      // 客户端构建的上下文片段（已经过 chat-context.ts 聚合，体积 < 1.5KB）
       contextSnapshot?: string;
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
         { error: "messages 必须是非空数组" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 判断是否使用用户自带的 modelConfig（含 apiKey）
-    // 用户自带 key → 不需要服务端 API_TOKEN（用户用自己的额度）
-    // 使用默认模型 → 需要 API_TOKEN 校验
-    const useServerModel = !(modelConfig && modelConfig.apiKey);
+    const { model, useServerModel } = resolveModel(modelConfig, "chat");
     const authError = requireAuth(req, { useServerModel });
     if (authError) return authError;
 
-    // 安全限制上下文长度，防止滥用
     const safeContext =
       typeof contextSnapshot === "string" && contextSnapshot.length > 0
         ? contextSnapshot.slice(0, 4000)
@@ -64,17 +49,6 @@ export async function POST(req: NextRequest) {
     const systemPrompt = safeContext
       ? `${PROMPT_DEF.system}\n\n${safeContext}`
       : PROMPT_DEF.system;
-
-    let model: LanguageModel;
-    if (modelConfig && modelConfig.apiKey) {
-      const openai = createOpenAI({
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-      });
-      model = wrapModelWithObservability(openai(modelConfig.model), "chat:custom");
-    } else {
-      model = wrapModelWithObservability(getModel(), "chat:default");
-    }
 
     const result = await streamText({
       model,

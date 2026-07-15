@@ -9,6 +9,7 @@ import { initCloudflareEnv } from "@/lib/ai/cloudflare-env";
 import { requireAuth } from "@/lib/auth";
 import { nanoid } from "nanoid";
 import type { LearnLog, ReviewLog, DailyStatus, EmotionEntry } from "@/lib/types";
+import { resolveModel, type ClientModelConfig } from "@/lib/ai/resolve-model";
 
 export const runtime = "edge";
 
@@ -19,12 +20,12 @@ interface WeeklyRequestBody {
   statuses: DailyStatus[];
   /** 情绪觉察条目（可选） */
   emotions?: EmotionEntry[];
+  /** 客户端传入的模型配置（可选，含 apiKey 时免鉴权） */
+  modelConfig?: ClientModelConfig;
 }
 
 export async function POST(req: Request) {
   await initCloudflareEnv();
-  const authError = requireAuth(req);
-  if (authError) return authError;
 
   let body: WeeklyRequestBody;
   try {
@@ -32,6 +33,11 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
   }
+
+  const { model, useServerModel } = resolveModel(body.modelConfig, "weekly");
+
+  const authError = requireAuth(req, { useServerModel });
+  if (authError) return authError;
 
   if (!body.weekStart || !Array.isArray(body.learnLogs)) {
     return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
@@ -43,7 +49,7 @@ export async function POST(req: Request) {
     statuses: body.statuses,
     emotions: body.emotions,
     weekStart: body.weekStart,
-  });
+  }, model);
 
   const id = nanoid();
 

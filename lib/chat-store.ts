@@ -122,6 +122,57 @@ export async function updateMessage(id: string, content: string): Promise<void> 
   }
 }
 
+/**
+ * 删除单条消息（多轮对话中删除某次对话）
+ * 同步递减对话的 messageCount，但不删除对话本身
+ */
+export async function deleteMessage(id: string): Promise<void> {
+  const msg = await getItem<ChatMessage>(KEY_PREFIXES.CHAT_MESSAGE + id);
+  if (!msg) return;
+  await delItem(KEY_PREFIXES.CHAT_MESSAGE + id);
+  // 递减对话消息数
+  const conv = await getConversation(msg.conversationId);
+  if (conv) {
+    await setItem(KEY_PREFIXES.CONVERSATION + conv.id, {
+      ...conv,
+      messageCount: Math.max(0, conv.messageCount - 1),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+}
+
+/**
+ * 删除从某条消息开始（含）之后的全部消息（用于"重新生成答案"场景）
+ * 保留触发消息本身（通常是用户消息），删除其后的 AI 回复及后续消息
+ * @param fromMessageId 起始消息 ID（含）
+ * @returns 被删除的消息列表（用于回滚）
+ */
+export async function deleteMessagesFrom(fromMessageId: string): Promise<ChatMessage[]> {
+  const target = await getItem<ChatMessage>(KEY_PREFIXES.CHAT_MESSAGE + fromMessageId);
+  if (!target) return [];
+  const all = await listItems<ChatMessage>(KEY_PREFIXES.CHAT_MESSAGE);
+  const convMsgs = all
+    .filter((m) => m.conversationId === target.conversationId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const startIdx = convMsgs.findIndex((m) => m.id === fromMessageId);
+  if (startIdx === -1) return [];
+  // 删除该消息及其后所有消息
+  const toDelete = convMsgs.slice(startIdx);
+  await Promise.all(toDelete.map((m) => delItem(KEY_PREFIXES.CHAT_MESSAGE + m.id)));
+  // 更新对话消息数
+  const conv = await getConversation(target.conversationId);
+  if (conv) {
+    const remaining = Math.max(0, conv.messageCount - toDelete.length);
+    await setItem(KEY_PREFIXES.CONVERSATION + conv.id, {
+      ...conv,
+      messageCount: remaining,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  return toDelete;
+}
+
 /** 自动清理：删除未收藏且超过保留天数的对话 */
 export async function cleanupOldConversations(): Promise<number> {
   const convs = await listConversations();

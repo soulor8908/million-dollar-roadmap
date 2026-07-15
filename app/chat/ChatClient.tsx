@@ -25,6 +25,8 @@ import {
   renameConversation,
   cleanupOldConversations,
   searchConversations,
+  deleteMessage,
+  deleteMessagesFrom,
 } from "@/lib/chat-store";
 import { listModelConfigs, getDefaultModelConfig } from "@/lib/model-config";
 import { AnswerContent } from "@/components/CodeBlock";
@@ -362,6 +364,178 @@ export default function ChatClient() {
     inputRef.current?.focus();
   }, []);
 
+  // 共享：调用 /api/chat 流式获取 AI 回复，返回完整内容 + 执行 clientAction
+  // convId/msgs/history 由调用方决定（普通发送 vs 重新生成）
+  const streamAIResponse = useCallback(
+    async (params: {
+      convId: string;
+      history: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+      label: string;
+    }): Promise<{ content: string; callId: string } | { error: string }> => {
+      // 准备模型配置
+      let modelConfig = modelConfigs.find((m) => m.id === selectedModelId);
+      if (!modelConfig && modelConfigs.length > 0) {
+        modelConfig = modelConfigs[0];
+        setSelectedModelId(modelConfig.id);
+      }
+      if (!modelConfig) {
+        const freshConfigs = await listModelConfigs();
+        if (freshConfigs.length > 0) {
+          setModelConfigs(freshConfigs);
+          modelConfig = freshConfigs[0];
+          setSelectedModelId(modelConfig.id);
+        }
+      }
+      if (!modelConfig || !modelConfig.apiKey) {
+        return {
+          error:
+            '未配置 AI 模型。请前往「我的 → AI 模型配置」添加模型（需填写 API Key），或点击下方"去添加"链接。',
+        };
+      }
+
+      // 上下文快照 + 工具上下文（失败时静默降级）
+      let contextSnapshot = "";
+      try {
+        contextSnapshot = await buildChatContext();
+      } catch {
+        contextSnapshot = "";
+      }
+      let toolContext = undefined;
+      try {
+        toolContext = await buildToolContext();
+      } catch {
+        toolContext = undefined;
+      }
+
+      const callId = generateCallId();
+      const stopTimer = startTimer();
+
+      const token = await getApiToken();
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          messages: params.history,
+          modelConfig,
+          contextSnapshot,
+          toolContext,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { error: `请求失败 (${res.status})${errText ? `: ${errText}` : ""}` };
+      }
+      if (!res.body) {
+        return { error: "响应没有流式内容" };
+      }
+
+      setStreaming(true);
+      setStreamContent("");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let acc = "";
+      const pendingActions: ClientAction[] = [];
+
+      const parseDataLine = (line: string): string => {
+        const idx = line.indexOf(":");
+        if (idx <= 0) return "";
+        const type = line.slice(0, idx);
+        const payload = line.slice(idx + 1);
+        if (type === "0") {
+          try {
+            const parsed = JSON.parse(payload);
+            if (typeof parsed === "string") return parsed;
+          } catch {
+            return "";
+          }
+        }
+        if (type === "a") {
+          try {
+            const parsed = JSON.parse(payload) as {
+              result?: { clientAction?: ClientAction };
+            };
+            if (parsed.result?.clientAction) {
+              pendingActions.push(parsed.result.clientAction);
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        return "";
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nlIdx: number;
+        while ((nlIdx = buffer.indexOf("\n")) !== -1) {
+          const rawLine = buffer.slice(0, nlIdx);
+          buffer = buffer.slice(nlIdx + 1);
+          const line = rawLine.trim();
+          if (!line) continue;
+          if (line.startsWith("data:")) {
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") continue;
+            const chunk = parseDataLine(data);
+            if (chunk) {
+              acc += chunk;
+              setStreamContent(acc);
+            }
+          } else if (!line.startsWith(":")) {
+            const chunk = parseDataLine(line);
+            if (chunk) {
+              acc += chunk;
+              setStreamContent(acc);
+            }
+          }
+        }
+      }
+
+      const finalContent = acc || "(无响应内容)";
+      const aiMsg = await addMessage({
+        conversationId: params.convId,
+        role: "assistant",
+        content: finalContent,
+      });
+      setMessages((prev) => [...prev, aiMsg]);
+      setStreamContent("");
+      setStreaming(false);
+
+      // 执行工具返回的客户端动作
+      if (pendingActions.length > 0) {
+        void Promise.all(pendingActions.map((a) => executeClientAction(a))).catch(() => {});
+      }
+
+      // AI 质量追踪
+      const durationMs = stopTimer();
+      aiCallIdMap.current.set(aiMsg.id, callId);
+      void recordAICall({
+        callId,
+        scene: "chat",
+        promptId: "chat",
+        inputDigest: makeInputDigest({
+          conversationId: params.convId,
+          userMessage: params.label,
+        }),
+        outputDigest: makeOutputDigest(finalContent),
+        schemaValid: true,
+        durationMs,
+        source: "ai",
+        refId: params.convId,
+      }).catch(() => {});
+
+      return { content: finalContent, callId };
+    },
+    [modelConfigs, selectedModelId, executeClientAction],
+  );
+
   // 发送消息
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -392,193 +566,21 @@ export default function ChatClient() {
       setMessages(newMessages);
       setInput("");
 
-      // 准备请求
-      // 优先用选中的模型，否则用第一个（防止 selectedModelId 为空时回退到服务端默认模型）
-      let modelConfig = modelConfigs.find((m) => m.id === selectedModelId);
-      // 如果选中 ID 为空或未匹配到，但有配置列表，用第一个（getDefaultModelConfig 已排序）
-      if (!modelConfig && modelConfigs.length > 0) {
-        modelConfig = modelConfigs[0];
-        setSelectedModelId(modelConfig.id);
-      }
-      // 如果 modelConfigs 为空（可能页面刚加载还没刷新），尝试重新加载一次
-      if (!modelConfig) {
-        const freshConfigs = await listModelConfigs();
-        if (freshConfigs.length > 0) {
-          setModelConfigs(freshConfigs);
-          modelConfig = freshConfigs[0];
-          setSelectedModelId(modelConfig.id);
-        }
-      }
-      // 最终仍然没有模型配置 → 阻止发送，给出明确提示
-      if (!modelConfig || !modelConfig.apiKey) {
-        setError(
-          '未配置 AI 模型。请前往「我的 → AI 模型配置」添加模型（需填写 API Key），或点击下方"去添加"链接。'
-        );
-        return;
-      }
       const history = newMessages.map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      // AI Native 升级：构建当前用户上下文快照（最新计划/错题/能量等）
-      // 失败时静默降级为空字符串，不影响聊天主流程
-      let contextSnapshot = "";
-      try {
-        contextSnapshot = await buildChatContext();
-      } catch {
-        contextSnapshot = "";
-      }
-
-      // AI 工具上下文：结构化数据供工具读取（计划/日志/作息/提醒等）
-      // 失败时静默降级为 undefined（不启用工具）
-      let toolContext = undefined;
-      try {
-        toolContext = await buildToolContext();
-      } catch {
-        toolContext = undefined;
-      }
-
-      // AI 质量追踪：生成 callId + 计时
-      const callId = generateCallId();
-      const stopTimer = startTimer();
-
-      const token = await getApiToken();
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          messages: history,
-          modelConfig,
-          contextSnapshot,
-          toolContext,
-        }),
+      const result = await streamAIResponse({
+        convId: conv.id,
+        history,
+        label: text,
       });
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(
-          `请求失败 (${res.status})${errText ? `: ${errText}` : ""}`
-        );
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        await refreshConversations();
       }
-      if (!res.body) {
-        throw new Error("响应没有流式内容");
-      }
-
-      setStreaming(true);
-      setStreamContent("");
-
-      // 读取流并解析 SSE
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let acc = "";
-      // 收集工具返回的客户端动作（流结束后统一执行）
-      const pendingActions: ClientAction[] = [];
-
-      // 解析 Vercel AI SDK data stream 协议的 data 行
-      const parseDataLine = (line: string): string => {
-        // 形如 0:"text chunk" 或 a:{toolResult}
-        const idx = line.indexOf(":");
-        if (idx <= 0) return "";
-        const type = line.slice(0, idx);
-        const payload = line.slice(idx + 1);
-        // type "0" 表示文本块
-        if (type === "0") {
-          try {
-            const parsed = JSON.parse(payload);
-            if (typeof parsed === "string") return parsed;
-          } catch {
-            return "";
-          }
-        }
-        // type "a" 表示工具结果，检查是否包含 clientAction
-        if (type === "a") {
-          try {
-            const parsed = JSON.parse(payload) as {
-              result?: { clientAction?: ClientAction };
-            };
-            if (parsed.result?.clientAction) {
-              pendingActions.push(parsed.result.clientAction);
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-        // type "2" 表示结束，type "3" 表示错误
-        return "";
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        // 按行处理（SSE 以 \n 分隔）
-        let nlIdx: number;
-        while ((nlIdx = buffer.indexOf("\n")) !== -1) {
-          const rawLine = buffer.slice(0, nlIdx);
-          buffer = buffer.slice(nlIdx + 1);
-          const line = rawLine.trim();
-          if (!line) continue;
-          // 去掉 SSE 的 "data: " 前缀
-          if (line.startsWith("data:")) {
-            const data = line.slice(5).trim();
-            if (data === "[DONE]") continue;
-            const chunk = parseDataLine(data);
-            if (chunk) {
-              acc += chunk;
-              setStreamContent(acc);
-            }
-          } else if (!line.startsWith(":")) {
-            // 没有 data: 前缀的行也可能是 data stream 协议（部分实现直接输出）
-            const chunk = parseDataLine(line);
-            if (chunk) {
-              acc += chunk;
-              setStreamContent(acc);
-            }
-          }
-        }
-      }
-
-      // 保存 AI 消息
-      const finalContent = acc || "(无响应内容)";
-      const aiMsg = await addMessage({
-        conversationId: conv.id,
-        role: "assistant",
-        content: finalContent,
-      });
-      setMessages((prev) => [...prev, aiMsg]);
-      setStreamContent("");
-      setStreaming(false);
-
-      // 执行工具返回的客户端动作（创建提醒/调整计划等）
-      // 异步执行，不阻塞 UI
-      if (pendingActions.length > 0) {
-        void Promise.all(pendingActions.map((a) => executeClientAction(a))).catch(
-          () => {},
-        );
-      }
-
-      // AI 质量追踪：记录调用 + 关联到 AI 消息（异步，失败静默）
-      const durationMs = stopTimer();
-      aiCallIdMap.current.set(aiMsg.id, callId);
-      void recordAICall({
-        callId,
-        scene: "chat",
-        promptId: "chat",
-        inputDigest: makeInputDigest({ conversationId: conv.id, userMessage: text }),
-        outputDigest: makeOutputDigest(finalContent),
-        schemaValid: true,
-        durationMs,
-        source: "ai",
-        refId: conv.id,
-      }).catch(() => {});
-
-      await refreshConversations();
     } catch (e) {
       setStreaming(false);
       setStreamContent("");
@@ -590,12 +592,84 @@ export default function ChatClient() {
     streaming,
     activeConv,
     messages,
-    modelConfigs,
     selectedModelId,
     refreshConversations,
-    executeClientAction,
+    streamAIResponse,
     router,
   ]);
+
+  // 重新生成某条 AI 回复：删除该消息及其后所有消息，用前一条 user 消息重新请求 AI
+  const handleRegenerateAnswer = useCallback(
+    async (assistantMessageId: string) => {
+      if (streaming) return;
+      setError(null);
+      try {
+        // 1. 找到该 AI 消息及其前一条 user 消息
+        const idx = messages.findIndex((m) => m.id === assistantMessageId);
+        if (idx === -1) return;
+        const targetMsg = messages[idx];
+        if (targetMsg.role !== "assistant") return;
+        // 向前找最近的 user 消息
+        let userIdx = idx - 1;
+        while (userIdx >= 0 && messages[userIdx].role !== "user") userIdx--;
+        if (userIdx < 0) {
+          setError("找不到对应的用户提问，无法重新生成");
+          return;
+        }
+        const userMsg = messages[userIdx];
+
+        // 2. 删除该 AI 消息及其后的所有消息（保留 user 消息及更早的消息）
+        // 使用 deleteMessagesFrom 删除从 targetMsg 开始的（含）
+        await deleteMessagesFrom(assistantMessageId);
+        // 更新本地 state：只保留 userIdx（含）之前的消息
+        const remaining = messages.slice(0, idx);
+        setMessages(remaining);
+
+        // 3. 用截断后的历史重新请求 AI
+        const history = remaining.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+        const convId = targetMsg.conversationId;
+        const result = await streamAIResponse({
+          convId,
+          history,
+          label: userMsg.content,
+        });
+        if ("error" in result) {
+          setError(result.error);
+        } else {
+          await refreshConversations();
+        }
+      } catch (e) {
+        setStreaming(false);
+        setStreamContent("");
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(msg);
+      }
+    },
+    [messages, streaming, streamAIResponse, refreshConversations],
+  );
+
+  // 删除单条消息（多轮对话中删除某次对话）
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      // 本地先乐观删除，避免界面闪烁
+      const prevMessages = messages;
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      try {
+        await deleteMessage(messageId);
+        // 如果删的是 AI 消息，相关的 callId 也清掉
+        aiCallIdMap.current.delete(messageId);
+        await refreshConversations();
+      } catch (e) {
+        // 回滚
+        setMessages(prevMessages);
+        setError(e instanceof Error ? e.message : "删除失败");
+      }
+    },
+    [messages, refreshConversations],
+  );
 
   // 显式反馈：用户对某条 AI 回复点 👎
   const handleThumbsDown = useCallback((messageId: string) => {
@@ -739,9 +813,21 @@ export default function ChatClient() {
           m.role === "user" ? (
             <div
               key={m.id}
-              className="ml-auto max-w-[80%] bg-blue-500 text-white rounded-2xl rounded-br-sm px-3 py-2 text-sm whitespace-pre-wrap break-words"
+              className="ml-auto max-w-[80%] bg-blue-500 text-white rounded-2xl rounded-br-sm px-3 py-2 text-sm whitespace-pre-wrap break-words group relative"
             >
               {m.content}
+              {/* 删除单条消息按钮（hover 显示） */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("删除这条消息？")) handleDeleteMessage(m.id);
+                }}
+                className="absolute -left-7 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="删除消息"
+                title="删除消息"
+              >
+                <Icon name="trash" className="w-3.5 h-3.5" />
+              </button>
             </div>
           ) : (
             <div
@@ -749,18 +835,44 @@ export default function ChatClient() {
               className="mr-auto max-w-[80%] bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-sm group"
             >
               <AnswerContent text={m.content} />
-              {/* 显式反馈：👎 仅在当前会话生成的消息上展示（历史消息无 callId，不展示） */}
-              {aiCallIdMap.current.has(m.id) && (
+              {/* 操作工具栏：重新生成 / 删除 / 反馈（hover 显示） */}
+              <div className="mt-1 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* 重新生成：仅当不在流式输出中、且该消息后面没有更新的消息（即它是最后一条 AI 消息）时显示 */}
+                {!streaming && messages.indexOf(m) === messages.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRegenerateAnswer(m.id)}
+                    className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-blue-500"
+                    aria-label="重新生成"
+                    title="重新生成此回答"
+                  >
+                    <Icon name="refresh-cw" className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => handleThumbsDown(m.id)}
-                  className="mt-1 flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="这条回复没帮助"
-                  title="这条回复没帮助"
+                  onClick={() => {
+                    if (window.confirm("删除这条回复？")) handleDeleteMessage(m.id);
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500"
+                  aria-label="删除回复"
+                  title="删除回复"
                 >
-                  <Icon name="thumbs-down" className="w-3.5 h-3.5" />
+                  <Icon name="trash" className="w-3.5 h-3.5" />
                 </button>
-              )}
+                {/* 显式反馈：👎 仅在当前会话生成的消息上展示（历史消息无 callId，不展示） */}
+                {aiCallIdMap.current.has(m.id) && (
+                  <button
+                    type="button"
+                    onClick={() => handleThumbsDown(m.id)}
+                    className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500"
+                    aria-label="这条回复没帮助"
+                    title="这条回复没帮助"
+                  >
+                    <Icon name="thumbs-down" className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           )
         )}

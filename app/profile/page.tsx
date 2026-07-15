@@ -88,6 +88,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<PublicProfile>(defaultProfile);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // 公开主页同步错误（401/500 等向用户展示）
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // 编辑表单是否展开（默认折叠）
   const [editOpen, setEditOpen] = useState(false);
@@ -182,7 +184,25 @@ export default function ProfilePage() {
         body: JSON.stringify({ profile }),
       });
       if (!res.ok && res.status !== 404) {
-        console.warn("公开主页同步失败:", res.status);
+        // 解析服务端返回的错误消息，向用户展示（而不是仅 console.warn）
+        let serverMsg = "";
+        try {
+          const errBody = (await res.json()) as { message?: string; error?: string };
+          serverMsg = errBody.message ?? errBody.error ?? "";
+        } catch {
+          serverMsg = `HTTP ${res.status}`;
+        }
+        console.warn("公开主页同步失败:", res.status, serverMsg);
+        // 401 时给用户明确提示：要么配置 API Token，要么联系部署方
+        if (res.status === 401) {
+          setSyncError(
+            `公开主页同步未授权（${serverMsg}）。请在本页下方「设置 → API 鉴权 Token」中填入与部署方一致的 Token 后再保存。`,
+          );
+        } else {
+          setSyncError(`公开主页同步失败：${serverMsg}`);
+        }
+      } else {
+        setSyncError(null);
       }
       setSaved(true);
       // 触发自动云端同步（含 profile）
@@ -459,6 +479,16 @@ export default function ProfilePage() {
         <div className="mt-4 border-t pt-4">
           <SyncStatus />
         </div>
+        {/* 公开主页同步错误提示：让用户知道为什么 /u/[username] 看不到自己 */}
+        {syncError && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-200 space-y-1">
+            <p className="font-medium">⚠ 公开主页未同步</p>
+            <p>{syncError}</p>
+            <p className="text-amber-700 dark:text-amber-300">
+              提示：未同步时 /u/{profile.username || "username"} 会显示"用户不存在"。
+            </p>
+          </div>
+        )}
         <div className="mt-3">
           <ShareCardButton profile={profile} />
         </div>

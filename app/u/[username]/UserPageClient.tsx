@@ -32,7 +32,7 @@ export default function UserPageClient() {
       try {
         const res = await fetch(`/api/public/${encodeURIComponent(username)}`);
         if (res.status === 404) {
-          setError("用户不存在");
+          setError("not_found");
           return;
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -80,7 +80,35 @@ export default function UserPageClient() {
   }
 
   if (loading) return <div className="p-8 text-gray-500">加载中...</div>;
-  if (error) return <div className="p-8 text-red-600">{error}</div>;
+  if (error === "not_found") {
+    return (
+      <div className="mx-auto max-w-md p-8 space-y-3">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200 space-y-2">
+          <p className="font-medium text-base">用户「{username}」暂未公开主页</p>
+          <p className="text-xs">
+            可能原因：
+          </p>
+          <ul className="text-xs list-disc list-inside space-y-1">
+            <li>该用户尚未在「我的 → 个人信息编辑」中保存公开资料</li>
+            <li>该用户保存资料时公开主页同步失败（如未配置 API Token）</li>
+            <li>用户名拼写错误</li>
+          </ul>
+          <p className="text-xs pt-2 border-t border-amber-200 dark:border-amber-800">
+            如果这是你自己的主页，请前往「我的」→ 设置用户名并保存。
+          </p>
+          <div className="pt-2">
+            <a
+              href="/profile"
+              className="inline-block rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700"
+            >
+              去设置我的主页 →
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (error) return <div className="p-8 text-red-600">加载失败：{error}</div>;
   if (!data) return null;
 
   const { profile, stats } = data;

@@ -1,7 +1,12 @@
 // functions/api/public/[username].ts
 // Cloudflare Pages Function（边缘运行时）
 // GET：读 KV → 返回 PublicProfile + PublicStats
-// PUT：验证身份（简单 token）→ 更新 KV
+// PUT：验证身份 → 更新 KV
+//
+// 鉴权策略（与 /api/sync 的 dataOperation 保持一致）：
+//   - 服务端未配置任何 token（开发模式）→ 允许写入（profile 是用户自己的公开数据）
+//   - 服务端配置了 token → 客户端需在 Authorization 头中携带匹配的 token
+//   - GET 始终无需鉴权（公开数据）
 
 import { createKVStore } from "../../../lib/storage/kv";
 import type { PublicProfile } from "../../../lib/types";
@@ -15,7 +20,7 @@ interface KVNamespace {
 
 interface PagesEnv {
   KV: KVNamespace;
-  PUBLIC_AUTH_TOKEN: string;
+  PUBLIC_AUTH_TOKEN?: string;
   API_TOKEN?: string;
 }
 
@@ -53,15 +58,31 @@ export const onRequestPut: PagesFunction<PagesEnv> = async (context) => {
   const authHeader = context.request.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
 
-  // 接受 PUBLIC_AUTH_TOKEN 或 API_TOKEN（用户在 profile 页保存时携带的是自己的 API_TOKEN）
+  // 收集服务端配置的所有有效 token
   const validTokens = [context.env.PUBLIC_AUTH_TOKEN, context.env.API_TOKEN].filter(
     (t): t is string => typeof t === "string" && t.length > 0,
   );
-  if (!token || !validTokens.includes(token)) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+
+  // 鉴权策略：
+  // 1. 服务端未配置任何 token（开发模式）→ 放行（profile 是用户自己的公开数据）
+  // 2. 服务端配置了 token → 客户端必须携带匹配的 token
+  if (validTokens.length > 0 && !token) {
+    return new Response(
+      JSON.stringify({
+        error: "unauthorized",
+        message: "服务端已启用鉴权，请在「我的 → 设置 → API 鉴权 Token」中填入与部署方一致的 Token",
+      }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  if (validTokens.length > 0 && !validTokens.includes(token)) {
+    return new Response(
+      JSON.stringify({
+        error: "unauthorized",
+        message: "Token 不匹配，请检查「我的 → 设置 → API 鉴权 Token」中的值",
+      }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
   }
 
   const kv = createKVStore(context.env.KV as unknown as { get: (k: string) => Promise<string | null>; put: (k: string, v: string) => Promise<void> });

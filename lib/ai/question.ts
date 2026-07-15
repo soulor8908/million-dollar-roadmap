@@ -16,10 +16,12 @@ const PROMPT_DEF = getPrompt("question_generate");
 const questionSchema = z.object({
   question: z.string(),
   answer: z.string(),
-  keyPoints: z.array(z.string()),
-  followUps: z.array(z.string()),
+  // 使用默认值避免 AI 偶尔漏字段时整个生成失败（用户的 bug 报告：
+  // "生成代码部分题目失败后点击重新生成报异常 keyPoints/followUps/bigTech Required"）
+  keyPoints: z.array(z.string()).default([]),
+  followUps: z.array(z.string()).default([]),
   codeSnippet: z.string().optional(),
-  bigTech: z.boolean().describe("是否大厂高频面试题"),
+  bigTech: z.boolean().describe("是否大厂高频面试题").default(false),
 });
 
 function chunk<T>(arr: T[], size: number): T[][] {

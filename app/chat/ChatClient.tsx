@@ -28,6 +28,7 @@ import {
 } from "@/lib/chat-store";
 import { listModelConfigs, getDefaultModelConfig } from "@/lib/model-config";
 import { AnswerContent } from "@/components/CodeBlock";
+import { Icon } from "@/components/Icon";
 import { buildChatContext, buildToolContext } from "@/lib/ai/chat-context";
 import type { ClientAction } from "@/lib/ai/chat-tools";
 import { createReminder, startReminderPolling } from "@/lib/reminder";
@@ -620,52 +621,52 @@ export default function ChatClient() {
 
   if (loading) {
     return (
-      <div className="h-dvh flex items-center justify-center">
+      <div className="fixed inset-0 bottom-16 flex items-center justify-center">
         <p className="text-gray-400 dark:text-gray-500">加载中...</p>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100dvh-4rem)] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bottom-16 flex flex-col overflow-hidden">
       {/* 顶部栏（固定不动） */}
-      <header className="shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-3 flex items-center gap-2 z-20">
+      <header className="shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-3 py-2.5 flex items-center gap-1 z-20">
         <button
           type="button"
           onClick={() => setShowHistory(true)}
           aria-label="历史对话"
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
-          ☰
+          <Icon name="menu" className="w-5 h-5" />
         </button>
-        <h1 className="flex-1 truncate font-medium text-sm">
+        <h1 className="flex-1 truncate font-medium text-sm px-1">
           {activeConv?.title ?? "新对话"}
         </h1>
         <button
           type="button"
           onClick={() => activeConv && handleTogglePin(activeConv.id)}
           aria-label="收藏对话"
-          className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg ${
-            activeConv?.pinned ? "opacity-100" : "opacity-50"
+          className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+            activeConv?.pinned ? "text-blue-500" : "text-gray-400"
           }`}
           disabled={!activeConv}
         >
-          📌
+          <Icon name="pin" className="w-5 h-5" />
         </button>
         <button
           type="button"
           onClick={() => activeConv && handleDelete(activeConv.id)}
           aria-label="删除对话"
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-lg opacity-70"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-400"
           disabled={!activeConv}
         >
-          🗑️
+          <Icon name="trash" className="w-5 h-5" />
         </button>
       </header>
 
       {/* 来源横幅 */}
       {activeConv?.source && (
-        <div className="bg-amber-50 border-b px-3 py-2 text-xs flex items-center gap-2">
+        <div className="shrink-0 bg-amber-50 border-b px-3 py-2 text-xs flex items-center gap-2">
           <span>📎 来自：</span>
           {activeConv.source.planId ? (
             <Link
@@ -682,7 +683,7 @@ export default function ChatClient() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-3 py-2 text-xs text-red-600 flex items-center justify-between gap-2">
+        <div className="shrink-0 bg-red-50 border-b border-red-200 px-3 py-2 text-xs text-red-600 flex items-center justify-between gap-2">
           <span className="truncate">⚠️ {error}</span>
           <button
             type="button"
@@ -696,10 +697,12 @@ export default function ChatClient() {
       )}
 
       {/* 消息区（仅此区域滚动） */}
-      <main className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3">
         {messages.length === 0 && !streaming && (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 py-10">
-            <div className="text-5xl mb-4">💬</div>
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mb-4">
+              <Icon name="chat" className="w-8 h-8 text-blue-400" />
+            </div>
             <p className="mb-1 text-gray-600 dark:text-gray-300 font-medium">
               开始一段新对话
             </p>
@@ -751,11 +754,11 @@ export default function ChatClient() {
                 <button
                   type="button"
                   onClick={() => handleThumbsDown(m.id)}
-                  className="mt-1 text-[11px] text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="mt-1 flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="这条回复没帮助"
                   title="这条回复没帮助"
                 >
-                  👎
+                  <Icon name="thumbs-down" className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -801,11 +804,11 @@ export default function ChatClient() {
             type="button"
             onClick={() => setShowPrompts((v) => !v)}
             aria-label="提示词库"
-            className={`p-2 rounded shrink-0 text-lg ${
-              showPrompts ? "bg-amber-100 dark:bg-amber-900/50" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+            className={`p-2.5 rounded-lg shrink-0 transition-colors ${
+              showPrompts ? "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"
             }`}
           >
-            ⚡
+            <Icon name="zap" className="w-5 h-5" />
           </button>
           <textarea
             ref={inputRef}
@@ -821,9 +824,10 @@ export default function ChatClient() {
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || streaming}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="p-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 transition-colors"
+            aria-label="发送"
           >
-            {streaming ? "..." : "发送"}
+            <Icon name="send" className="w-5 h-5" />
           </button>
         </div>
         {/* 模型选择器 */}
@@ -867,9 +871,10 @@ export default function ChatClient() {
               <button
                 type="button"
                 onClick={handleNewConversation}
-                className="w-full px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600"
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
               >
-                + 新建对话
+                <Icon name="plus" className="w-4 h-4" />
+                新建对话
               </button>
             </div>
             {/* 对话列表 */}
@@ -889,7 +894,7 @@ export default function ChatClient() {
                   >
                     <div className="flex items-start gap-1">
                       <span className="text-sm flex-1 truncate text-gray-800 dark:text-gray-200">{c.title}</span>
-                      {c.pinned && <span className="text-xs shrink-0">📌</span>}
+                      {c.pinned && <Icon name="pin" className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />}
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[11px] text-gray-400 dark:text-gray-500">
@@ -902,10 +907,10 @@ export default function ChatClient() {
                             e.stopPropagation();
                             handleTogglePin(c.id);
                           }}
-                          className="text-[11px] text-gray-400 hover:text-gray-600"
+                          className="p-1 text-gray-400 hover:text-blue-500 rounded"
                           aria-label="收藏"
                         >
-                          📌
+                          <Icon name="pin" className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
@@ -913,10 +918,10 @@ export default function ChatClient() {
                             e.stopPropagation();
                             handleRename(c.id);
                           }}
-                          className="text-[11px] text-gray-400 hover:text-gray-600"
+                          className="p-1 text-gray-400 hover:text-gray-600 rounded"
                           aria-label="重命名"
                         >
-                          ✏️
+                          <Icon name="pen" className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
@@ -926,10 +931,10 @@ export default function ChatClient() {
                               handleDelete(c.id);
                             }
                           }}
-                          className="text-[11px] text-gray-400 hover:text-red-500"
+                          className="p-1 text-gray-400 hover:text-red-500 rounded"
                           aria-label="删除"
                         >
-                          🗑️
+                          <Icon name="trash" className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>

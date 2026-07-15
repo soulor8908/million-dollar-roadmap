@@ -182,7 +182,7 @@ export default function ProfilePage() {
         body: JSON.stringify({ profile }),
       });
       if (!res.ok && res.status !== 404) {
-        console.warn("KV sync skipped:", res.status);
+        console.warn("公开主页同步失败:", res.status);
       }
       setSaved(true);
       // 触发自动云端同步（含 profile）

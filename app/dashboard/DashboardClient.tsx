@@ -8,6 +8,7 @@ import Link from "next/link";
 import { listItems, getItem } from "@/lib/storage/db";
 import { KEY_PREFIXES, type LearningPlan, type LearnStats } from "@/lib/types";
 import { computeStats } from "@/lib/learn-log";
+import { Icon, type IconName } from "@/components/Icon";
 
 // 格式化日期为 YYYY-MM-DD（本地时区）
 function formatDate(d: Date): string {
@@ -86,9 +87,14 @@ export default function DashboardClient() {
   if (!stats || (plans.length === 0 && stats.totalActions === 0)) {
     return (
       <div className="min-h-screen p-4 max-w-3xl mx-auto pb-20">
-        <h1 className="text-2xl font-bold mb-6">📊 学习仪表盘</h1>
+        <div className="flex items-center gap-2 mb-6">
+          <Icon name="chart" className="w-6 h-6 text-blue-500" />
+          <h1 className="text-2xl font-bold">学习仪表盘</h1>
+        </div>
         <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-4">📚</div>
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 mx-auto">
+            <Icon name="book" className="w-8 h-8 text-gray-400" />
+          </div>
           <p className="mb-2">还没有学习数据</p>
           <Link href="/learn" className="text-blue-500 hover:underline">
             去创建第一个学习计划 →
@@ -154,52 +160,64 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen p-4 max-w-3xl mx-auto pb-20">
-      <h1 className="text-2xl font-bold mb-6">📊 学习仪表盘</h1>
+      <div className="flex items-center gap-2 mb-6">
+        <Icon name="chart" className="w-6 h-6 text-blue-500" />
+        <h1 className="text-2xl font-bold">学习仪表盘</h1>
+      </div>
 
       {/* 快捷入口 */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <Link href="/learn" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          📚 学习计划
-        </Link>
-        <Link href="/chat" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          💬 AI 聊天
-        </Link>
-        <Link href="/stats" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          📈 学习统计
-        </Link>
-        <Link href="/stats/ai-quality" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          🤖 AI 质量
-        </Link>
-        <Link href="/daily" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          📅 每日日志
-        </Link>
-        <Link href="/emotion" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          📝 情绪日记
-        </Link>
-        <Link href="/mistakes" className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          ❌ 错题本
-        </Link>
+        {([
+          { href: "/learn", icon: "book", label: "学习计划" },
+          { href: "/chat", icon: "chat", label: "AI 聊天" },
+          { href: "/stats", icon: "trending-up", label: "学习统计" },
+          { href: "/stats/ai-quality", icon: "sparkles", label: "AI 质量" },
+          { href: "/daily", icon: "calendar", label: "每日日志" },
+          { href: "/emotion", icon: "heart", label: "情绪日记" },
+          { href: "/mistakes", icon: "x-circle", label: "错题本" },
+        ] as Array<{ href: string; icon: IconName; label: string }>).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+          >
+            <Icon name={item.icon} className="w-3.5 h-3.5" />
+            {item.label}
+          </Link>
+        ))}
       </div>
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="border rounded-lg p-3 bg-white">
-          <div className="text-xs text-gray-500">🔥 连续学习</div>
+        <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Icon name="flame" className="w-3.5 h-3.5 text-orange-500" />
+            连续学习
+          </div>
           <div className="text-xl font-bold mt-1">{stats.currentStreak} 天</div>
           <div className="text-[10px] text-gray-400 mt-0.5">
             最长 {stats.longestStreak} 天
           </div>
         </div>
-        <div className="border rounded-lg p-3 bg-white">
-          <div className="text-xs text-gray-500">📚 已学知识点</div>
+        <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Icon name="book" className="w-3.5 h-3.5 text-blue-500" />
+            已学知识点
+          </div>
           <div className="text-xl font-bold mt-1">{stats.learnedCount} 个</div>
         </div>
-        <div className="border rounded-lg p-3 bg-white">
-          <div className="text-xs text-gray-500">🔁 已复习</div>
+        <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Icon name="repeat" className="w-3.5 h-3.5 text-green-500" />
+            已复习
+          </div>
           <div className="text-xl font-bold mt-1">{stats.reviewedCount} 次</div>
         </div>
-        <div className="border rounded-lg p-3 bg-white">
-          <div className="text-xs text-gray-500">⭐ 已收藏</div>
+        <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Icon name="heart" className="w-3.5 h-3.5 text-red-400" />
+            已收藏
+          </div>
           <div className="text-xl font-bold mt-1">
             {stats.favoritedQuestions} 题
           </div>
@@ -207,9 +225,9 @@ export default function DashboardClient() {
       </div>
 
       {/* 学习热力图 */}
-      <section className="mb-6 border rounded-lg p-4 bg-white">
-        <h2 className="text-sm font-medium text-gray-700 mb-3">
-          🗓️ 学习热力图（最近 30 天）
+      <section className="mb-6 border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800">
+        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          学习热力图（最近 30 天）
         </h2>
         <div className="flex gap-2">
           {/* 星期标签 */}
@@ -277,9 +295,9 @@ export default function DashboardClient() {
       </section>
 
       {/* 知识点掌握度 */}
-      <section className="mb-6 border rounded-lg p-4 bg-white">
-        <h2 className="text-sm font-medium text-gray-700 mb-3">
-          🎯 知识点掌握度
+      <section className="mb-6 border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800">
+        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          知识点掌握度
         </h2>
         {nodeProgressList.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-4">
@@ -316,13 +334,15 @@ export default function DashboardClient() {
       </section>
 
       {/* 薄弱知识点 */}
-      <section className="mb-6 border rounded-lg p-4 bg-white">
-        <h2 className="text-sm font-medium text-gray-700 mb-3">
-          ⚠️ 薄弱知识点
+      <section className="mb-6 border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800">
+        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          薄弱知识点
         </h2>
         {weakAreasList.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <div className="text-3xl mb-2">🎉</div>
+          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+            <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-2 mx-auto">
+              <Icon name="check" className="w-6 h-6 text-green-500" />
+            </div>
             <p className="text-sm">太棒了！没有薄弱知识点</p>
           </div>
         ) : (
@@ -351,8 +371,8 @@ export default function DashboardClient() {
       </section>
 
       {/* 最近计划 */}
-      <section className="border rounded-lg p-4 bg-white">
-        <h2 className="text-sm font-medium text-gray-700 mb-3">📝 最近计划</h2>
+      <section className="border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800">
+        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">最近计划</h2>
         {plans.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-4">
             还没有学习计划，

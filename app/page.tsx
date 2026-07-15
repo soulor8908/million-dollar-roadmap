@@ -14,6 +14,7 @@ import { getDueCards } from "@/lib/fsrs";
 import { StatusCard } from "@/components/StatusCard";
 import { CurrentTaskCard } from "@/components/CurrentTaskCard";
 import { DailyNudge } from "@/components/DailyNudge";
+import { Icon } from "@/components/Icon";
 
 export default function Home() {
   const [dueCount, setDueCount] = useState(0);
@@ -192,9 +193,10 @@ export default function Home() {
         <button
           type="button"
           onClick={handleShare}
-          className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
         >
-          🔗 分享主页
+          <Icon name="share" className="w-3.5 h-3.5" />
+          分享主页
         </button>
       </div>
       {shareMsg && (
@@ -258,10 +260,15 @@ export default function Home() {
       {lowEnergy && (
         <Link
           href="/rest"
-          className="mb-4 flex items-center justify-between rounded-lg bg-green-50 border border-green-200 p-3 hover:bg-green-100"
+          className="mb-4 flex items-center justify-between rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
         >
-          <span className="text-sm text-green-800">😴 检测到今天能量偏低，去休息一下？</span>
-          <span className="text-xs text-green-700">478 呼吸 →</span>
+          <span className="flex items-center gap-2 text-sm text-green-800 dark:text-green-300">
+            <Icon name="leaf" className="w-4 h-4" />
+            检测到今天能量偏低，去休息一下？
+          </span>
+          <span className="text-xs text-green-700 dark:text-green-400 flex items-center gap-0.5">
+            478 呼吸 <Icon name="chevron-right" className="w-3.5 h-3.5" />
+          </span>
         </Link>
       )}
 
@@ -318,23 +325,29 @@ export default function Home() {
       {latestPlan && (
         <Link
           href={`/learn/${latestPlan.id}`}
-          className="mb-3 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-3 hover:bg-blue-100"
+          className="mb-3 flex items-center justify-between rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-3 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
         >
-          <span className="text-sm text-blue-800">📚 继续学习：{latestPlan.topic}</span>
-          <span className="text-xs text-blue-600">→</span>
+          <span className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
+            <Icon name="book" className="w-4 h-4" />
+            继续学习：{latestPlan.topic}
+          </span>
+          <Icon name="chevron-right" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         </Link>
       )}
 
       {/* 快捷入口 */}
       <div className="grid grid-cols-3 gap-3">
-        <Link href="/learn" className="bg-black text-white rounded-lg p-4 text-center font-medium">
-          📚 学习
+        <Link href="/learn" className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl p-4 text-center font-medium flex flex-col items-center gap-1.5 hover:opacity-90 transition-opacity">
+          <Icon name="book" className="w-5 h-5" />
+          <span className="text-sm">学习</span>
         </Link>
-        <Link href="/review" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 text-center font-medium">
-          🔁 复习
+        <Link href="/review" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 text-center font-medium flex flex-col items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <Icon name="repeat" className="w-5 h-5" />
+          <span className="text-sm">复习</span>
         </Link>
-        <Link href="/emotion" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 text-center font-medium">
-          📝 情绪
+        <Link href="/emotion" className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 text-center font-medium flex flex-col items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <Icon name="heart" className="w-5 h-5" />
+          <span className="text-sm">情绪</span>
         </Link>
       </div>
     </div>

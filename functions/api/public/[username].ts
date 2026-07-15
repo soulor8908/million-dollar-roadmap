@@ -16,6 +16,7 @@ interface KVNamespace {
 interface PagesEnv {
   KV: KVNamespace;
   PUBLIC_AUTH_TOKEN: string;
+  API_TOKEN?: string;
 }
 
 interface PagesContext {
@@ -52,7 +53,11 @@ export const onRequestPut: PagesFunction<PagesEnv> = async (context) => {
   const authHeader = context.request.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
 
-  if (!token || token !== context.env.PUBLIC_AUTH_TOKEN) {
+  // 接受 PUBLIC_AUTH_TOKEN 或 API_TOKEN（用户在 profile 页保存时携带的是自己的 API_TOKEN）
+  const validTokens = [context.env.PUBLIC_AUTH_TOKEN, context.env.API_TOKEN].filter(
+    (t): t is string => typeof t === "string" && t.length > 0,
+  );
+  if (!token || !validTokens.includes(token)) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

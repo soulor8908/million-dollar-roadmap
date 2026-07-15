@@ -7,6 +7,7 @@ import { useState } from "react";
 import { generateShareCard } from "@/lib/share-image";
 import { listItems } from "@/lib/storage/db";
 import type { PublicProfile, LearnLog, ReviewCard } from "@/lib/types";
+import { Icon } from "@/components/Icon";
 
 interface Props {
   profile: PublicProfile;
@@ -70,9 +71,10 @@ export function ShareCardButton({ profile }: Props) {
     <button
       onClick={handleClick}
       disabled={generating}
-      className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+      className="flex items-center gap-1.5 rounded-lg border dark:border-gray-600 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
     >
-      {generating ? "生成中..." : "🖼️ 生成分享图"}
+      <Icon name="sparkles" className="w-4 h-4" />
+      {generating ? "生成中..." : "生成分享图"}
     </button>
   );
 }

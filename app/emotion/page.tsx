@@ -16,6 +16,7 @@ import {
 } from "@/lib/types";
 import { chinaDateNow } from "@/lib/time";
 import { scheduleAutoSync } from "@/lib/sync";
+import { Icon } from "@/components/Icon";
 
 const EMOTION_OPTIONS: Array<{ tag: EmotionTag; emoji: string }> = [
   { tag: "焦虑", emoji: "😰" },
@@ -130,13 +131,17 @@ export default function EmotionPage() {
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto pb-20">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">📝 情绪日记</h1>
+        <div className="flex items-center gap-2">
+          <Icon name="heart" className="w-6 h-6 text-red-400" />
+          <h1 className="text-2xl font-bold">情绪日记</h1>
+        </div>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600"
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
         >
-          {showForm ? "取消" : "+ 记录情绪"}
+          <Icon name="plus" className="w-4 h-4" />
+          {showForm ? "取消" : "记录情绪"}
         </button>
       </div>
 
@@ -261,7 +266,9 @@ export default function EmotionPage() {
       {/* 历史记录 */}
       {entries.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-4">📝</div>
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 mx-auto">
+            <Icon name="heart" className="w-8 h-8 text-gray-400" />
+          </div>
           <p className="mb-2">还没有情绪记录</p>
           <p className="text-sm">点击右上角「记录情绪」开始觉察</p>
         </div>
@@ -290,10 +297,10 @@ export default function EmotionPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(entry)}
-                        className="text-xs text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1"
                         aria-label="删除"
                       >
-                        🗑️
+                        <Icon name="trash" className="w-4 h-4" />
                       </button>
                     </div>
                     {(entry.trigger || entry.impact || entry.coping) && (

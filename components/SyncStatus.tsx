@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getUserId, setUserId, uploadAll, downloadAll, getLastSyncedAt } from "@/lib/sync";
+import { Icon } from "@/components/Icon";
 
 type Status = "idle" | "syncing" | "success" | "error";
 
@@ -52,8 +53,12 @@ export function SyncStatus() {
     try {
       const has = await downloadAll();
       setStatus("success");
-      setMessage(has ? "已从云端恢复" : "云端暂无数据");
+      setMessage(has ? "已从云端恢复，正在刷新页面..." : "云端暂无数据");
       await refresh();
+      // 恢复后自动刷新页面以加载新数据
+      if (has) {
+        setTimeout(() => window.location.reload(), 800);
+      }
     } catch (e) {
       setStatus("error");
       setMessage(e instanceof Error ? e.message : "恢复失败");
@@ -166,9 +171,10 @@ export function SyncStatus() {
             />
             <button
               onClick={copyUserId}
-              className="shrink-0 rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+              className="shrink-0 flex items-center gap-1 rounded-lg border dark:border-gray-600 px-3 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              {copied ? "已复制 ✓" : "复制"}
+              <Icon name={copied ? "check" : "copy"} className="w-3.5 h-3.5" />
+              {copied ? "已复制" : "复制"}
             </button>
           </div>
         )}
@@ -185,22 +191,25 @@ export function SyncStatus() {
         <button
           onClick={handleUpload}
           disabled={status === "syncing"}
-          className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
+          <Icon name="cloud" className="w-4 h-4" />
           上传到云端
         </button>
         <button
           onClick={handleDownload}
           disabled={status === "syncing"}
-          className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg border dark:border-gray-600 px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
+          <Icon name="cloud-download" className="w-4 h-4" />
           从云端恢复
         </button>
         {!importing && (
           <button
             onClick={startImport}
-            className="rounded-lg border border-blue-300 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+            className="flex items-center gap-1.5 rounded-lg border border-blue-300 dark:border-blue-700 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
           >
+            <Icon name="plus" className="w-4 h-4" />
             导入已有 ID
           </button>
         )}

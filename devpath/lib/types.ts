@@ -17,6 +17,20 @@ export interface LearningPlan {
   updatedAt: string;
 }
 
+// 学习计划摘要（仅用于列表展示，体积小、加载快）
+// 列表页只加载摘要，点击进入详情时才加载完整 plan
+export interface LearningPlanSummary {
+  id: string;
+  topic: string;
+  knowledgeCount: number;
+  questionCount: number;
+  scheduleDays: number;
+  dailyMinutes: number;
+  maxNewPerDay: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 知识节点
 export interface KnowledgeNode {
   id: string;
@@ -217,6 +231,8 @@ export type Rating = 1 | 2 | 3 | 4; // Again / Hard / Good / Easy
 // IndexedDB key 前缀常量
 export const KEY_PREFIXES = {
   PLAN: "plan:",
+  /** 学习计划摘要（轻量列表数据，避免每次都加载完整 plan） */
+  PLAN_SUMMARY: "plan_summary:",
   CARD: "card:",
   DECK: "favorite_deck:",
   REVIEW_LOG: "review_log:",

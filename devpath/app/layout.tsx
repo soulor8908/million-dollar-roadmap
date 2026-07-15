@@ -10,6 +10,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#2563eb",
+  // 禁止移动端整体缩放：脑图内部自行处理两指缩放
+  userScalable: false,
+  maximumScale: 1,
+  minimumScale: 1,
+  initialScale: 1,
+  width: "device-width",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

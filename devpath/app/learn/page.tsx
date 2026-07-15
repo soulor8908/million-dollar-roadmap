@@ -6,14 +6,14 @@
 // - 中部：4 个预设知识库（算法200题/前端/后端/AI）—— 内置数据秒级加载
 //   · 点击预设 → 弹窗展示知识树脑图（可点击节点开始学习）
 //   · 右上角"重新生成"按钮 → 调用 AI 重新生成整个知识树
-// - 底部：历史计划列表
+// - 底部：历史计划列表（只加载摘要，按需读取完整 plan）
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { setItem, listKeys, getItem, delItem } from "@/lib/storage/db";
+import { setItem, delItem } from "@/lib/storage/db";
 import { apiFetch } from "@/lib/api-client";
-import { KEY_PREFIXES, type LearningPlan, type KnowledgeNode, type Question, type ScheduleItem, type PromptLibraryItem } from "@/lib/types";
+import { KEY_PREFIXES, type LearningPlan, type KnowledgeNode, type Question, type ScheduleItem, type PromptLibraryItem, type LearningPlanSummary } from "@/lib/types";
 import { PRESETS, type PresetMeta } from "@/lib/presets";
 import { MindMap } from "@/components/MindMap";
 import {
@@ -23,6 +23,12 @@ import {
   deletePrompt,
   BUILTIN_PROMPTS,
 } from "@/lib/prompt-library";
+import {
+  listPlanSummaries,
+  savePlanSummary,
+  deletePlanSummary,
+  migrateSummaries,
+} from "@/lib/plan-summary";
 import { nanoid } from "nanoid";
 
 const EXAMPLES = [
@@ -46,8 +52,10 @@ export default function LearnPage() {
   const [error, setError] = useState("");
   const [dailyMinutes, setDailyMinutes] = useState(30);
   const [maxNewPerDay, setMaxNewPerDay] = useState(1);
-  const [history, setHistory] = useState<LearningPlan[]>([]);
+  const [history, setHistory] = useState<LearningPlanSummary[]>([]);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  // 历史计划是否正在迁移（首次访问旧数据时一次性补齐 summary）
+  const [historyMigrating, setHistoryMigrating] = useState(false);
 
   // 预设弹窗状态
   const [activePreset, setActivePreset] = useState<PresetMeta | null>(null);
@@ -60,30 +68,36 @@ export default function LearnPage() {
   // 用户自定义提示词
   const [promptText, setPromptText] = useState("");
   const [promptLibrary, setPromptLibrary] = useState<PromptLibraryItem[]>([]);
+  // 提示词库懒加载：仅当用户首次点击"常用"按钮时才加载（避免页面初始化时多读一次 IndexedDB）
+  const [promptLibraryLoaded, setPromptLibraryLoaded] = useState(false);
   const [showPromptLib, setShowPromptLib] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [savePromptTitle, setSavePromptTitle] = useState("");
 
-  // 加载历史计划 + 提示词库
-  useEffect(() => {
-    (async () => {
-      const allKeys = await listKeys();
-      const planKeys = allKeys.filter(
-        (k): k is string => typeof k === "string" && k.startsWith(KEY_PREFIXES.PLAN)
-      );
-      const plans = await Promise.all(
-        planKeys.map((k) => getItem<LearningPlan>(k))
-      );
-      const valid = plans
-        .filter((p): p is LearningPlan => p !== undefined)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setHistory(valid);
-
-      // 加载提示词库
-      const prompts = await listPrompts();
-      setPromptLibrary(prompts);
-    })();
+  // 加载历史计划摘要（轻量），首次访问自动迁移旧数据
+  const refreshHistory = useCallback(async () => {
+    setHistoryMigrating(true);
+    try {
+      // 兼容旧版本：扫描缺失 summary 并补齐（只读一次完整 plan）
+      await migrateSummaries();
+      const summaries = await listPlanSummaries();
+      setHistory(summaries);
+    } finally {
+      setHistoryMigrating(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshHistory();
+  }, [refreshHistory]);
+
+  // 按需加载提示词库（首次展开时调用）
+  const ensurePromptLibrary = useCallback(async () => {
+    if (promptLibraryLoaded) return;
+    const prompts = await listPrompts();
+    setPromptLibrary(prompts);
+    setPromptLibraryLoaded(true);
+  }, [promptLibraryLoaded]);
 
   async function deletePlan(planId: string, e: React.MouseEvent) {
     e.preventDefault();
@@ -94,6 +108,7 @@ export default function LearnPage() {
       return;
     }
     await delItem(KEY_PREFIXES.PLAN + planId);
+    await deletePlanSummary(planId);
     setHistory((h) => h.filter((p) => p.id !== planId));
     setConfirmingDeleteId(null);
   }
@@ -179,6 +194,7 @@ export default function LearnPage() {
       updatedAt: now,
     };
     await setItem(KEY_PREFIXES.PLAN + plan.id, plan);
+    await savePlanSummary(plan);
     // 如果点击了具体节点，通过 query 选中该节点
     const query = node ? `?node=${encodeURIComponent(node.id)}` : "";
     router.push(`/learn/${plan.id}${query}`);
@@ -206,14 +222,23 @@ export default function LearnPage() {
       }
       const { planId, plan } = (await res.json()) as { planId: string; plan: LearningPlan };
       await setItem(KEY_PREFIXES.PLAN + planId, plan);
+      await savePlanSummary(plan);
       // 如果使用了提示词，标记使用
       if (promptText.trim()) {
-        const matched = promptLibrary.find((p) => p.content === promptText.trim());
-        if (matched) {
-          await markPromptUsed(matched.id);
-          // 刷新提示词库
-          const prompts = await listPrompts();
-          setPromptLibrary(prompts);
+        // 提示词库可能尚未加载，仅在已加载时尝试匹配
+        if (promptLibraryLoaded) {
+          const matched = promptLibrary.find((p) => p.content === promptText.trim());
+          if (matched) {
+            await markPromptUsed(matched.id);
+            // 刷新提示词库
+            const prompts = await listPrompts();
+            setPromptLibrary(prompts);
+          }
+        } else {
+          // 库未加载：直接按内容查找一次（按需）
+          const all = await listPrompts();
+          const matched = all.find((p) => p.content === promptText.trim());
+          if (matched) await markPromptUsed(matched.id);
         }
       }
       router.push(`/learn/${planId}`);
@@ -332,10 +357,13 @@ export default function LearnPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowPromptLib((v) => !v)}
+                onClick={async () => {
+                  await ensurePromptLibrary();
+                  setShowPromptLib((v) => !v);
+                }}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
-                📚 常用 ({promptLibrary.length})
+                📚 常用 {promptLibraryLoaded ? `(${promptLibrary.length})` : ""}
               </button>
               {promptText.trim() && (
                 <button
@@ -507,7 +535,7 @@ export default function LearnPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.topic}</p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {p.knowledgeTree.length} 知识点 · {p.questions.length} 题 ·{" "}
+                      {p.knowledgeCount} 知识点 · {p.questionCount} 题 ·{" "}
                       {new Date(p.createdAt).toLocaleDateString("zh-CN")}
                     </p>
                   </div>
@@ -529,6 +557,13 @@ export default function LearnPage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* 历史计划迁移中提示（仅首次访问旧数据时短暂出现） */}
+      {historyMigrating && history.length === 0 && (
+        <div className="mt-8 text-xs text-gray-400 text-center">
+          正在加载历史计划…
         </div>
       )}
 

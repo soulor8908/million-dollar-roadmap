@@ -2,23 +2,28 @@
 
 // components/SyncStatus.tsx
 // 数据同步状态组件：显示同步状态 + 上次同步时间 + 手动上传 + 跨设备恢复
+// 支持导入已有 userId：在新设备粘贴旧 ID 即可继承云端数据
 // 可在 profile 页面或首页使用。
 
 import { useState, useEffect, useCallback } from "react";
-import { getUserId, uploadAll, downloadAll, getLastSyncedAt } from "@/lib/sync";
+import { getUserId, setUserId, uploadAll, downloadAll, getLastSyncedAt } from "@/lib/sync";
 
 type Status = "idle" | "syncing" | "success" | "error";
 
 export function SyncStatus() {
-  const [userId, setUserId] = useState("");
+  const [userId, setUserIdState] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // 导入已有 ID 模式
+  const [importing, setImporting] = useState(false);
+  const [importValue, setImportValue] = useState("");
+  const [importError, setImportError] = useState("");
 
   const refresh = useCallback(async () => {
     const id = await getUserId();
-    setUserId(id);
+    setUserIdState(id);
     setLastSync(await getLastSyncedAt());
   }, []);
 
@@ -62,6 +67,39 @@ export function SyncStatus() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // 切换到"导入已有 userId"模式
+  function startImport() {
+    setImporting(true);
+    setImportValue("");
+    setImportError("");
+  }
+
+  function cancelImport() {
+    setImporting(false);
+    setImportValue("");
+    setImportError("");
+  }
+
+  // 提交导入：保存到 IndexedDB，并提示用户从云端恢复
+  async function submitImport() {
+    const trimmed = importValue.trim();
+    if (!trimmed) {
+      setImportError("请粘贴你的 userId");
+      return;
+    }
+    try {
+      await setUserId(trimmed);
+      await refresh();
+      setImporting(false);
+      setImportValue("");
+      setImportError("");
+      setMessage("userId 已切换，点击下方「从云端恢复」即可拉取旧设备数据");
+      setStatus("idle");
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : "导入失败");
+    }
+  }
+
   const statusText =
     status === "syncing"
       ? "同步中…"
@@ -91,22 +129,54 @@ export function SyncStatus() {
 
       <div>
         <label className="block text-sm font-medium">用户 ID</label>
-        <div className="mt-1 flex gap-2">
-          <input
-            value={userId}
-            readOnly
-            className="w-full rounded border bg-gray-50 px-2 py-1 font-mono text-xs"
-          />
-          <button
-            onClick={copyUserId}
-            className="shrink-0 rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
-          >
-            {copied ? "已复制 ✓" : "复制"}
-          </button>
-        </div>
-        <p className="mt-1 text-xs text-gray-500">
-          跨设备恢复时在新设备粘贴同一 userId
-        </p>
+        {importing ? (
+          <div className="mt-1 space-y-2">
+            <input
+              type="text"
+              value={importValue}
+              onChange={(e) => setImportValue(e.target.value)}
+              placeholder="粘贴旧设备的 userId"
+              autoFocus
+              className="w-full rounded border px-2 py-1 font-mono text-xs"
+            />
+            {importError && (
+              <p className="text-xs text-red-600">{importError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={submitImport}
+                className="rounded-lg bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+              >
+                确认导入
+              </button>
+              <button
+                onClick={cancelImport}
+                className="rounded-lg border px-3 py-1 text-xs hover:bg-gray-50"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 flex gap-2">
+            <input
+              value={userId}
+              readOnly
+              className="w-full rounded border bg-gray-50 px-2 py-1 font-mono text-xs"
+            />
+            <button
+              onClick={copyUserId}
+              className="shrink-0 rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+            >
+              {copied ? "已复制 ✓" : "复制"}
+            </button>
+          </div>
+        )}
+        {!importing && (
+          <p className="mt-1 text-xs text-gray-500">
+            跨设备同步：旧设备先「上传到云端」并复制此 ID；新设备点击「导入已有 ID」粘贴即可
+          </p>
+        )}
       </div>
 
       {message && <p className={`text-sm ${status === "error" ? "text-red-600" : "text-gray-600"}`}>{message}</p>}
@@ -126,6 +196,14 @@ export function SyncStatus() {
         >
           从云端恢复
         </button>
+        {!importing && (
+          <button
+            onClick={startImport}
+            className="rounded-lg border border-blue-300 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          >
+            导入已有 ID
+          </button>
+        )}
       </div>
     </div>
   );

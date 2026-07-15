@@ -12,6 +12,7 @@ import {
   type KnowledgeNode,
 } from "@/lib/types";
 import { getRoutine, saveRoutine, DEFAULT_ROUTINE } from "@/lib/learn-log";
+import { savePlanSummary } from "@/lib/plan-summary";
 import { nowISO } from "@/lib/time";
 
 type RoutineSlot = Routine["slots"][number];
@@ -206,6 +207,7 @@ export default function PlanEditClient() {
         updatedAt: nowISO(),
       };
       await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+      await savePlanSummary(updated);
       await saveRoutine(routine);
       await setItem(includedKey(plan.id), Array.from(includedIds));
       setPlan(updated);

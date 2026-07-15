@@ -4,7 +4,8 @@
 // 知识树脑图组件（水平树形布局，左→右展开）
 // 功能：
 // 1. DAG → Tree 转换（节点挂到最深 prereq 下，保证唯一父节点）
-// 2. 内部缩放（滚轮 zoom + 拖拽 pan），不影响外层页面
+// 2. 内部缩放（桌面滚轮 zoom / 移动端两指 pinch zoom + 单指拖拽 pan）
+//    使用 touch-action: none 拦截浏览器默认手势，避免外层页面被缩放
 // 3. 节点可点击：点击后调用 onSelectNode
 // 4. 大厂标记渲染（bigTech=true 的节点用 🏢 + 黄色边框）
 
@@ -167,9 +168,22 @@ export function MindMap({
   // 缩放与平移状态
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  // 拖拽中
+  // 鼠标拖拽中
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 触摸手势状态（两指 pinch zoom + 单指 pan）
+  const touchRef = useRef<{
+    mode: "pan" | "pinch" | null;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    initialDist?: number;
+    initialScale?: number;
+    midX?: number;
+    midY?: number;
+  } | null>(null);
 
   const { positions, edges, width, height } = useMemo(() => {
     const roots = buildTree(nodes);
@@ -184,7 +198,8 @@ export function MindMap({
     };
   }, [nodes]);
 
-  // 滚轮缩放（在容器内拦截，不影响外层页面）
+  // 桌面端滚轮缩放（在容器内拦截，不影响外层页面）
+  // 移动端不依赖滚轮，改用 touch 事件实现 pinch zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -195,7 +210,7 @@ export function MindMap({
     });
   }, []);
 
-  // 鼠标拖拽平移
+  // 鼠标拖拽平移（桌面）
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // 只对非节点的空白区域响应拖拽
     if (e.target !== e.currentTarget && (e.target as SVGElement).tagName !== "svg") return;
@@ -220,6 +235,90 @@ export function MindMap({
   const handleMouseUp = useCallback(() => {
     dragRef.current = null;
   }, []);
+
+  // ============ 移动端触摸手势 ============
+  // 单指 → 平移；双指 → pinch zoom（同时支持平移）
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // 阻止浏览器默认手势（页面缩放、滚动等）
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchRef.current = {
+        mode: "pan",
+        startX: t.clientX,
+        startY: t.clientY,
+        originX: translate.x,
+        originY: translate.y,
+      };
+    } else if (e.touches.length === 2) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const midX = (t1.clientX + t2.clientX) / 2;
+      const midY = (t1.clientY + t2.clientY) / 2;
+      touchRef.current = {
+        mode: "pinch",
+        startX: midX,
+        startY: midY,
+        originX: translate.x,
+        originY: translate.y,
+        initialDist: dist,
+        initialScale: scale,
+        midX,
+        midY,
+      };
+    }
+  }, [translate.x, translate.y, scale]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // 必须 preventDefault 才能阻止页面级 pinch-to-zoom
+    e.preventDefault();
+    const t = touchRef.current;
+    if (!t) return;
+
+    if (t.mode === "pan" && e.touches.length === 1) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - t.startX;
+      const dy = touch.clientY - t.startY;
+      setTranslate({
+        x: t.originX + dx,
+        y: t.originY + dy,
+      });
+    } else if (t.mode === "pinch" && e.touches.length === 2 && t.initialDist && t.initialScale) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const ratio = dist / t.initialDist;
+      const next = Math.max(0.3, Math.min(2.5, t.initialScale * ratio));
+      setScale(next);
+      // 同时支持双指平移（按中点位移）
+      const midX = (t1.clientX + t2.clientX) / 2;
+      const midY = (t1.clientY + t2.clientY) / 2;
+      const dx = midX - t.startX;
+      const dy = midY - t.startY;
+      setTranslate({
+        x: t.originX + dx,
+        y: t.originY + dy,
+      });
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    // 手指全部离开时结束手势；从双指变单指时切回 pan 模式
+    if (e.touches.length === 0) {
+      touchRef.current = null;
+    } else if (e.touches.length === 1 && touchRef.current?.mode === "pinch") {
+      const t = e.touches[0];
+      touchRef.current = {
+        mode: "pan",
+        startX: t.clientX,
+        startY: t.clientY,
+        originX: translate.x,
+        originY: translate.y,
+      };
+    }
+  }, [translate.x, translate.y]);
 
   // 重置缩放
   const resetView = useCallback(() => {
@@ -281,7 +380,7 @@ export function MindMap({
 
       {/* 缩放提示 */}
       <div className="absolute bottom-2 left-2 z-10 text-[10px] text-gray-400 bg-white/70 px-2 py-1 rounded">
-        滚轮缩放 · 拖拽平移
+        双指缩放 · 单指拖拽
       </div>
 
       {/* SVG 画布 */}
@@ -292,8 +391,14 @@ export function MindMap({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
-        style={{ minHeight: "400px" }}
+        // touch-action: none 阻止浏览器默认手势，确保我们的 touch handler 全权处理
+        // 这样移动端整页不会被 pinch-to-zoom
+        style={{ minHeight: "400px", touchAction: "none" }}
       >
         <svg
           width="100%"

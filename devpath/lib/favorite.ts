@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { nowISO } from "./time";
 import { KEY_PREFIXES } from "./types";
 import type { FavoriteDeck, LearningPlan, Question } from "./types";
+import { savePlanSummary } from "./plan-summary";
 
 // ===== 纯逻辑函数 =====
 
@@ -107,4 +108,6 @@ export async function unfavorQuestion(planId: string, questionId: string): Promi
   if (!plan) return;
   const updated = toggleQuestionInPlan(plan, questionId);
   await setItem(KEY_PREFIXES.PLAN + planId, updated);
+  // 同步摘要（updatedAt 已变化）
+  await savePlanSummary(updated);
 }

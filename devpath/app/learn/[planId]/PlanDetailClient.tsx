@@ -10,6 +10,7 @@ import type { LearningPlan, Question, ScheduleItem } from "@/lib/types";
 import { KnowledgeTree } from "@/components/KnowledgeTree";
 import { QuestionCard } from "@/components/QuestionCard";
 import { toggleQuestionInPlan, createFavoriteDeck, listFavoriteDecks, deleteFavoriteDeck } from "@/lib/favorite";
+import { savePlanSummary } from "@/lib/plan-summary";
 import { nowISO } from "@/lib/time";
 import { logLearning } from "@/lib/learn-log";
 
@@ -70,6 +71,7 @@ export default function PlanDetailClient() {
     const updated = toggleQuestionInPlan(plan, questionId);
     setPlan(updated);
     await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+    await savePlanSummary(updated);
     // 记录收藏日志（仅在新增收藏时）
     if (oldQ && !oldQ.favorited) {
       logLearning({
@@ -122,6 +124,7 @@ export default function PlanDetailClient() {
     };
     setPlan(updated);
     await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+    await savePlanSummary(updated);
     // 记录学习日志
     if (willComplete) {
       logLearning({
@@ -172,6 +175,7 @@ export default function PlanDetailClient() {
       };
       setPlan(updated);
       await setItem(KEY_PREFIXES.PLAN + plan.id, updated);
+      await savePlanSummary(updated);
     } catch (e) {
       setRegenError(e instanceof Error ? e.message : "重新生成失败");
     } finally {
@@ -224,6 +228,7 @@ export default function PlanDetailClient() {
       };
       setPlan(replaced);
       await setItem(KEY_PREFIXES.PLAN + plan.id, replaced);
+      await savePlanSummary(replaced);
       setShowRegenModal(false);
     } catch (e) {
       setRegenPlanError(e instanceof Error ? e.message : "重新生成失败");

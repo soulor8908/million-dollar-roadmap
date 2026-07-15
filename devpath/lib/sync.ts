@@ -41,6 +41,19 @@ export async function getUserId(): Promise<string> {
   return id;
 }
 
+/**
+ * 导入已有 userId（跨设备恢复用）
+ * 新设备/换 App 时粘贴旧设备的 userId，即可继承云端数据
+ * @param userId 用户输入的旧 userId
+ * @returns 持久化后的 userId
+ */
+export async function setUserId(userId: string): Promise<string> {
+  const trimmed = userId.trim();
+  if (!trimmed) throw new Error("userId 不能为空");
+  await setItem(USER_ID_KEY, trimmed);
+  return trimmed;
+}
+
 /** 读取上次成功同步时间，未同步过返回 null */
 export async function getLastSyncedAt(): Promise<string | null> {
   const v = await getItem<string>(LAST_SYNC_KEY);

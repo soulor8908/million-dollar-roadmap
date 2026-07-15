@@ -71,8 +71,12 @@ const FAQS: Array<{ q: string; a: string }> = [
     a: "Free Spaced Repetition Scheduler，科学的间隔重复算法，根据你的遗忘曲线安排复习时间",
   },
   {
-    q: "AI 接口失败怎么办？",
-    a: "1) 在「AI 模型配置」添加你自己的模型配置（自带 API Key，无需服务端 Token）；2) 如果用默认模型，需在设置里填入与生产环境相同的 API Token；3) 预设知识库无需 AI 也可使用",
+    q: "API Token 和 API Key 有什么区别？",
+    a: "API Key 是你从模型服务商（智谱/DeepSeek/OpenAI）获取的密钥，在「AI 模型配置」里填写，用于调用你自己的 AI 额度。API Token 是部署管理员设置的服务端鉴权密钥，仅在未配置自己的模型而使用「服务端默认模型」时才需要。大多数用户只需配置 API Key 即可。",
+  },
+  {
+    q: "AI 接口失败/报错怎么办？",
+    a: "1) 确保在「AI 模型配置」添加了自己的模型（含 API Key），这是最常见的原因；2) 在聊天页底部确认模型选择器已选中你配置的模型；3) 预设知识库无需 AI 也可使用",
   },
   {
     q: "支持哪些语言？",
@@ -839,10 +843,28 @@ export default function ProfilePage() {
 
         {/* API 鉴权 Token */}
         <div className="space-y-3 pt-4">
-          <h3 className="font-medium">API 鉴权 Token</h3>
-          <p className="text-xs text-gray-500">
-            使用服务端默认模型时需填入与生产环境 API_TOKEN 相同的值。如果你在「AI 模型配置」里添加了自己的模型（含 API Key），则无需此 Token。开发模式留空即可。
+          <h3 className="font-medium">API 鉴权 Token（可选）</h3>
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-xs text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>API Token ≠ API Key，两者完全不同：</strong></p>
+            <p>· <strong>API Key</strong>（在上方「AI 模型配置」填写）：你从模型服务商（智谱/DeepSeek/OpenAI 等）获取的密钥，用于调用你自己的 AI 额度。</p>
+            <p>· <strong>API Token</strong>（此处）：部署管理员设置的服务端鉴权密钥，仅在使用「服务端默认模型」时需要。</p>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ✅ <strong>如果你已在上方配置了自己的 AI 模型（含 API Key），无需填写此项，直接关闭即可。</strong>
+            <br />
+            ⚠️ 仅当生产环境部署了服务端默认模型且设置了 API_TOKEN 密钥时，才需在此填入相同值。大多数用户不需要填写。
           </p>
+          <details className="text-xs text-gray-400 dark:text-gray-500">
+            <summary className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">API_TOKEN 怎么获取？（点击展开）</summary>
+            <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded space-y-1">
+              <p>API_TOKEN 不是 API Key，不能从模型服务商获取。它是部署此项目时由管理员设置的服务端密钥：</p>
+              <p>1. 如果你是自己部署的（Cloudflare Pages），在项目根目录运行：</p>
+              <pre className="bg-gray-800 text-green-400 p-2 rounded text-[11px] overflow-x-auto">npx wrangler pages secret put API_TOKEN --project-name=你的项目名</pre>
+              <p>2. 然后输入你想设置的 Token 值（任意字符串，如 <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">my-secret-token-123</code>）</p>
+              <p>3. 将这个值填入上方输入框</p>
+              <p className="text-orange-500">⚠️ 如果没有部署服务端默认模型（未设 OPENAI_API_KEY 等环境变量），即使填了 API_TOKEN 也无法使用默认模型。建议直接配置自己的 AI 模型。</p>
+            </div>
+          </details>
           <input
             type="password"
             value={apiToken}
@@ -850,8 +872,8 @@ export default function ProfilePage() {
               setApiTokenState(e.target.value);
               setTokenSaved(false);
             }}
-            placeholder="留空=开发模式（不鉴权）"
-            className="w-full rounded border px-2 py-1"
+            placeholder="大多数用户留空即可"
+            className="w-full rounded border px-2 py-1 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
           />
           <div className="flex items-center gap-2">
             <button

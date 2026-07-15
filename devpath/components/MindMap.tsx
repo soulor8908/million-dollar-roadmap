@@ -353,22 +353,22 @@ export function MindMap({
       className={`relative bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden ${fillHeight ? "h-full" : ""}`}
       style={{ minHeight: fillHeight ? "100%" : "400px" }}
     >
-      {/* 工具栏 */}
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur rounded-lg shadow-sm p-1">
+      {/* 工具栏 - 固定在容器右上角，不随内容滚动 */}
+      <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white dark:bg-gray-700 rounded-lg shadow-md p-1 border dark:border-gray-600">
         <button
           onClick={zoomOut}
-          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded"
+          className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-lg font-bold"
           aria-label="缩小"
           title="缩小"
         >
           −
         </button>
-        <span className="text-xs text-gray-500 w-10 text-center">
+        <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-center font-mono">
           {Math.round(scale * 100)}%
         </span>
         <button
           onClick={zoomIn}
-          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded"
+          className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-lg font-bold"
           aria-label="放大"
           title="放大"
         >
@@ -376,7 +376,7 @@ export function MindMap({
         </button>
         <button
           onClick={resetView}
-          className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-xs"
+          className="w-8 h-8 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm"
           aria-label="重置"
           title="重置视图"
         >
@@ -385,7 +385,7 @@ export function MindMap({
       </div>
 
       {/* 缩放提示 */}
-      <div className="absolute bottom-2 left-2 z-10 text-[10px] text-gray-400 bg-white/70 px-2 py-1 rounded">
+      <div className="absolute bottom-2 left-2 z-20 text-[10px] text-gray-400 dark:text-gray-500 bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded">
         双指缩放 · 单指拖拽
       </div>
 

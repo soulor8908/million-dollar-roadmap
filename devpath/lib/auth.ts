@@ -58,7 +58,7 @@ export function requireAuth(
       return NextResponse.json(
         {
           error:
-            "服务端未配置 API_TOKEN，无法使用默认模型。请在「我的 → AI 模型配置」中添加你自己的模型配置。",
+            "未选择 AI 模型。请在「我的 → 设置 → AI 模型配置」中添加你自己的模型（需填写 API Key），或在聊天页底部模型选择器中选中已配置的模型。",
         },
         { status: 503 }
       );

@@ -629,7 +629,8 @@ function PresetMindMapModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-0 sm:p-4 sm:pb-24"
+      className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-0 sm:p-4 sm:pb-24 overscroll-contain"
+      style={{ touchAction: "none" }}
       onClick={onClose}
     >
       <div
@@ -637,7 +638,10 @@ function PresetMindMapModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部：标题 + 右上角操作 */}
-        <div className="shrink-0 flex items-start justify-between p-4 border-b dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div
+          className="shrink-0 flex items-start justify-between p-4 border-b dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800"
+          style={{ touchAction: "manipulation" }}
+        >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-3xl">{preset.icon}</span>
@@ -688,8 +692,8 @@ function PresetMindMapModal({
           </div>
         )}
 
-        {/* 脑图 - 填充剩余空间 */}
-        <div className="flex-1 min-h-0 overflow-auto p-2 sm:p-4 bg-gray-50 dark:bg-gray-900">
+        {/* 脑图 - 填充剩余空间，不滚动（MindMap 内部处理 pan/zoom） */}
+        <div className="flex-1 min-h-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
           {regenerating ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[200px]">
               <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
@@ -712,7 +716,10 @@ function PresetMindMapModal({
         </div>
 
         {/* 底部：操作 */}
-        <div className="shrink-0 p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between gap-2">
+        <div
+          className="shrink-0 p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between gap-2"
+          style={{ touchAction: "manipulation" }}
+        >
           <p className="text-xs text-gray-500 dark:text-gray-400 flex-1 hidden sm:block">
             💡 点击任意知识点可立即开始学习该节点 · 🏢 标记为大厂高频考点
           </p>

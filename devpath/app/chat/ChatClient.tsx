@@ -250,7 +250,22 @@ export default function ChatClient() {
       setInput("");
 
       // 准备请求
-      const modelConfig = modelConfigs.find((m) => m.id === selectedModelId);
+      // 优先用选中的模型，否则用第一个（防止 selectedModelId 为空时回退到服务端默认模型）
+      let modelConfig = modelConfigs.find((m) => m.id === selectedModelId);
+      // 如果选中 ID 为空或未匹配到，但有配置列表，用第一个（getDefaultModelConfig 已排序）
+      if (!modelConfig && modelConfigs.length > 0) {
+        modelConfig = modelConfigs[0];
+        setSelectedModelId(modelConfig.id);
+      }
+      // 如果 modelConfigs 为空（可能页面刚加载还没刷新），尝试重新加载一次
+      if (!modelConfig) {
+        const freshConfigs = await listModelConfigs();
+        if (freshConfigs.length > 0) {
+          setModelConfigs(freshConfigs);
+          modelConfig = freshConfigs[0];
+          setSelectedModelId(modelConfig.id);
+        }
+      }
       const history = newMessages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -577,9 +592,10 @@ export default function ChatClient() {
           <span className="text-gray-500 dark:text-gray-400">模型:</span>
           {modelConfigs.length === 0 ? (
             <span className="text-gray-400 dark:text-gray-500">
-              默认模型（环境变量） ·{" "}
+              <span className="text-red-500 font-medium">⚠ 未配置模型</span>{" "}
+              ·{" "}
               <Link href="/profile" className="text-blue-500 hover:underline">
-                去配置 →
+                去添加 →
               </Link>
             </span>
           ) : (

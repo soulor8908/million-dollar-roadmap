@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 import { getDueCards } from "@/lib/fsrs";
+import { recordMistake } from "@/lib/mistake-book";
 import { ReviewCardView } from "@/components/ReviewCardView";
 
 export default function ReviewPage() {
@@ -66,6 +67,20 @@ export default function ReviewPage() {
       // 存回 IndexedDB
       await setItem(KEY_PREFIXES.CARD + updatedCard.id, updatedCard);
       await setItem(KEY_PREFIXES.REVIEW_LOG + log.id, log);
+
+      // 答错（Again）自动加入错题本
+      if (rating === 1) {
+        try {
+          await recordMistake({
+            planId: card.planId,
+            questionId: card.questionId,
+            nodeId: card.nodeId,
+            questionText: card.front,
+          });
+        } catch {
+          // 错题记录失败不影响复习流程
+        }
+      }
 
       // 更新统计
       setStats((prev) => ({

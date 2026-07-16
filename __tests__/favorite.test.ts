@@ -9,7 +9,7 @@ import {
   getFavoriteDeck,
   listFavoritedQuestions,
 } from "../lib/favorite";
-import { set, del, keys } from "idb-keyval";
+import { getItem, setItem, delItem, listKeys } from "../lib/storage/db";
 import { KEY_PREFIXES } from "../lib/types";
 import type { LearningPlan } from "../lib/types";
 
@@ -35,9 +35,9 @@ function makePlan(): LearningPlan {
 }
 
 async function clearAll() {
-  const allKeys = await keys();
+  const allKeys = await listKeys();
   for (const k of allKeys) {
-    if (typeof k === "string") await del(k);
+    if (typeof k === "string") await delItem(k);
   }
 }
 
@@ -120,7 +120,7 @@ describe("favorite (IndexedDB)", () => {
     // 标记 q1 和 q3 为已收藏
     plan.questions[0].favorited = true;
     plan.questions[2].favorited = true;
-    await set(KEY_PREFIXES.PLAN + plan.id, plan);
+    await setItem(KEY_PREFIXES.PLAN + plan.id, plan);
 
     const favorited = await listFavoritedQuestions();
     expect(favorited).toHaveLength(2);

@@ -17,6 +17,7 @@
     "@ai-sdk/openai": "^0.0.66",
     "ai": "^3.4.0",
     "date-fns": "^4.4.0",
+    "dexie": "^4.4.4",
     "html-to-image": "^1.11.13",
     "idb-keyval": "^6.2.1",
     "nanoid": "^5.0.7",

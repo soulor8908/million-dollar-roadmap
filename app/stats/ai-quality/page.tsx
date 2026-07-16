@@ -28,6 +28,7 @@ const SCENE_LABELS: Record<AIScene, string> = {
   status_enhance: "状态增强",
   weekly_report: "周报",
   adjust_plan: "计划调整",
+  chat_tool_action: "工具动作执行",
 };
 
 // 时间范围选项

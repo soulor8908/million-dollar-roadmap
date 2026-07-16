@@ -19,3 +19,8 @@ archive/scripts/node_modules/
 
 # AI 周报生成产物
 reviews/
+
+# Playwright 产物
+/test-results/
+/playwright-report/
+/playwright/.cache/

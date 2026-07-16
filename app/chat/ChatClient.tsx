@@ -199,8 +199,10 @@ export default function ChatClient() {
     startReminderPolling();
   }, []);
 
-  // 执行工具返回的客户端动作（写入 IndexedDB）
-  const executeClientAction = useCallback(async (action: ClientAction): Promise<void> => {
+  // 执行工具返回的客户端动作（写入 IndexedDB）+ 结果回传到质量追踪
+  const executeClientAction = useCallback(async (action: ClientAction, callRecordId?: string): Promise<void> => {
+    const startTime = Date.now();
+    let success = false;
     try {
       switch (action.type) {
         case "create_reminder": {
@@ -212,6 +214,7 @@ export default function ChatClient() {
           await createReminder(params.title, params.scheduledFor, {
             body: params.body,
           });
+          success = true;
           break;
         }
         case "toggle_plan_freeze": {
@@ -224,6 +227,7 @@ export default function ChatClient() {
               updatedAt: new Date().toISOString(),
             });
             scheduleAutoSync();
+            success = true;
           }
           break;
         }
@@ -237,6 +241,7 @@ export default function ChatClient() {
               updatedAt: new Date().toISOString(),
             });
             scheduleAutoSync();
+            success = true;
           }
           break;
         }
@@ -257,13 +262,11 @@ export default function ChatClient() {
               }
             } else if (params.action === "delay") {
               // 延后：将该天所有任务的 day +1，后续任务也顺延
-              const maxDay = Math.max(...plan.schedule.map((s) => s.day));
               for (const task of plan.schedule) {
                 if (task.day >= params.targetDay) {
                   task.day += 1;
                 }
               }
-              void maxDay;
             } else if (params.action === "redistribute") {
               // 重新分配：将该天任务分散到未来 3 天
               const futureDays = [params.targetDay + 1, params.targetDay + 2, params.targetDay + 3];
@@ -276,12 +279,22 @@ export default function ChatClient() {
               updatedAt: new Date().toISOString(),
             });
             scheduleAutoSync();
+            success = true;
           }
           break;
         }
       }
     } catch (e) {
       console.warn("[chat] 执行客户端动作失败:", e);
+    }
+    // 结果回传：记录工具动作执行结果（成功/失败 + 耗时 + 动作类型）
+    if (callRecordId) {
+      void trackAIFeedback({
+        callRecordId,
+        scene: "chat_tool_action",
+        action: success ? "adopted" : "discarded",
+        reason: `${action.type} (${Date.now() - startTime}ms)`,
+      }).catch(() => {});
     }
   }, []);
 
@@ -508,9 +521,9 @@ export default function ChatClient() {
       setStreamContent("");
       setStreaming(false);
 
-      // 执行工具返回的客户端动作
+      // 执行工具返回的客户端动作（传入 callId 用于结果回传）
       if (pendingActions.length > 0) {
-        void Promise.all(pendingActions.map((a) => executeClientAction(a))).catch(() => {});
+        void Promise.all(pendingActions.map((a) => executeClientAction(a, callId))).catch(() => {});
       }
 
       // AI 质量追踪

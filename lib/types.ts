@@ -346,6 +346,10 @@ export const KEY_PREFIXES = {
   DAILY_LOG: "daily_log:",
   /** AI 工具创建的提醒：reminder:<id> */
   REMINDER: "reminder:",
+  /** 能量样本（学习时长采集）：energy_sample:<id> */
+  ENERGY_SAMPLE: "energy_sample:",
+  /** 已训练的能量回归模型：energy_model:current（单例） */
+  ENERGY_MODEL: "energy_model:",
 } as const;
 
 // AI 模型配置（用户可在 profile 配置多个）
@@ -378,7 +382,8 @@ export type AIScene =
   | "energy_pattern"
   | "status_enhance"
   | "weekly_report"
-  | "adjust_plan";
+  | "adjust_plan"
+  | "chat_tool_action";
 
 /** AI 调用记录（一次 AI 调用 = 一条记录） */
 export interface AICallRecord {
@@ -406,7 +411,15 @@ export interface AICallRecord {
 /** AI 输出反馈动作（显式 + 隐式） */
 export type AIFeedbackRating = 1 | 2 | 3 | 4 | 5;
 export type AIFeedbackAction = "adopted" | "discarded" | "regenerated" | "edited";
-export type AIImplicitAction = "viewed" | "expanded" | "ignored" | "followed_up" | "copied" | "favorited";
+export type AIImplicitAction =
+  | "viewed"
+  | "expanded"
+  | "ignored"
+  | "followed_up"
+  | "copied"
+  | "favorited"
+  | "too_simple"      // 停留过短（< 3s 即切走）→ 标记太简单
+  | "needs_practice"; // 停留过长（> 5min）→ 标记需要更多练习
 
 /** AI 输出反馈（用户对某次输出的评价） */
 export interface AIFeedback {

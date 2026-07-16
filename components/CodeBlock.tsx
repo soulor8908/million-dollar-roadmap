@@ -15,6 +15,8 @@ interface CodeBlockProps {
   filename?: string;
   /** 默认折叠过长的代码（> 30 行），用户可展开 */
   collapsible?: boolean;
+  /** 复制回调（用于隐式反馈追踪） */
+  onCopy?: () => void;
 }
 
 // ============================================================
@@ -404,7 +406,7 @@ function TextBlock({ content }: { content: string }) {
 // CodeBlock：渲染带行号 + 高亮 + 折叠的代码块
 // ============================================================
 
-export function CodeBlock({ code, language, filename, collapsible = true }: CodeBlockProps) {
+export function CodeBlock({ code, language, filename, collapsible = true, onCopy }: CodeBlockProps) {
   const lang = normalizeLang(language);
   const tokens = useMemo(() => tokenize(code, lang), [code, lang]);
   const lines = useMemo(() => code.split("\n"), [code]);
@@ -429,6 +431,7 @@ export function CodeBlock({ code, language, filename, collapsible = true }: Code
         <button
           onClick={() => {
             navigator.clipboard?.writeText(code).catch(() => {});
+            onCopy?.();
           }}
           className="text-[11px] text-gray-400 hover:text-white transition-colors"
           aria-label="复制代码"

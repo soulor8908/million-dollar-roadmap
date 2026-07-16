@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Question } from "@/lib/types";
 import { AnswerContent, CodeBlock } from "@/components/CodeBlock";
 import { trackAIFeedback } from "@/lib/ai/quality-tracker";
 import { Icon } from "@/components/Icon";
+
+// 停留时间阈值（毫秒）
+const DWELL_TOO_SIMPLE_MS = 3_000;   // < 3s → 太简单
+const DWELL_NEEDS_PRACTICE_MS = 300_000; // > 5min → 需要更多练习
 
 interface Props {
   question: Question;
@@ -20,8 +24,12 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
   const [expanded, setExpanded] = useState(false);
   const isFailed = question.question === "生成失败，点击重试";
 
+  // 停留时间追踪：记录答案展开的时间戳
+  const expandTimeRef = useRef<number | null>(null);
+  const dwellTrackedRef = useRef(false);
+
   // 隐式反馈：记录用户对这道题的行为（仅当有 aiCallId 时触发，老题目静默跳过）
-  const trackImplicit = (implicitAction: "expanded" | "followed_up" | "favorited") => {
+  const trackImplicit = (implicitAction: "expanded" | "followed_up" | "favorited" | "too_simple" | "needs_practice" | "copied") => {
     if (!question.aiCallId) return;
     void trackAIFeedback({
       callRecordId: question.aiCallId,
@@ -29,6 +37,26 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
       implicitAction,
     });
   };
+
+  // 根据停留时间推断隐式反馈
+  const trackDwell = () => {
+    if (!expandTimeRef.current || dwellTrackedRef.current) return;
+    const dwellMs = Date.now() - expandTimeRef.current;
+    if (dwellMs < DWELL_TOO_SIMPLE_MS) {
+      trackImplicit("too_simple");
+      dwellTrackedRef.current = true;
+    } else if (dwellMs > DWELL_NEEDS_PRACTICE_MS) {
+      trackImplicit("needs_practice");
+      dwellTrackedRef.current = true;
+    }
+  };
+
+  // 组件卸载时记录停留时间
+  useEffect(() => {
+    return () => {
+      trackDwell();
+    };
+  }, []);
 
   const handleFollowUpClick = (fu: string) => {
     trackImplicit("followed_up");
@@ -44,7 +72,14 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
       <div className="flex items-start gap-2">
         <button
           onClick={() => {
-            if (!expanded) trackImplicit("expanded");
+            if (!expanded) {
+              trackImplicit("expanded");
+              expandTimeRef.current = Date.now();
+              dwellTrackedRef.current = false;
+            } else {
+              trackDwell();
+              expandTimeRef.current = null;
+            }
             setExpanded(!expanded);
           }}
           className="flex-1 text-left text-sm font-medium hover:text-blue-600"
@@ -101,7 +136,11 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
             </div>
           )}
           {question.codeSnippet && (
-            <CodeBlock code={question.codeSnippet} language="javascript" />
+            <CodeBlock
+              code={question.codeSnippet}
+              language="javascript"
+              onCopy={() => trackImplicit("copied")}
+            />
           )}
         </div>
       )}
@@ -109,7 +148,12 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
       <div className="flex items-center gap-2 mt-2">
         {!expanded && question.answer && (
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => {
+              trackImplicit("expanded");
+              expandTimeRef.current = Date.now();
+              dwellTrackedRef.current = false;
+              setExpanded(true);
+            }}
             className="text-xs text-blue-500"
           >
             展开答案 ▼
@@ -118,6 +162,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
         {onRegenerate && (
           <button
             onClick={() => {
+              trackDwell();
               // 隐式反馈：用户主动换题 = 对当前题目不满意
               if (question.aiCallId && !isFailed) {
                 void trackAIFeedback({

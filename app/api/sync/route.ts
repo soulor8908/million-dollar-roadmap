@@ -17,6 +17,22 @@ export const runtime = "edge";
 
 const BACKUP_VERSION = 1;
 
+/** 同步请求体：以 mode 作为判别字段，区分全量 / 增量两种模式 */
+type SyncRequestBody =
+  | {
+      userId: string;
+      mode?: "full"; // 省略时默认全量，向后兼容旧客户端
+      data: Record<string, unknown>;
+      updatedAt?: string;
+      version?: number;
+    }
+  | {
+      userId: string;
+      mode: "incremental";
+      changes: Record<string, unknown>;
+      baseUpdatedAt?: string;
+    };
+
 export async function GET(req: NextRequest) {
   await initCloudflareEnv();
   // 数据操作：不消耗 AI 额度，未配置 API_TOKEN 时放行
@@ -42,29 +58,43 @@ export async function POST(req: NextRequest) {
   const authError = requireAuth(req, { dataOperation: true });
   if (authError) return authError;
 
-  let body: Partial<UserBackup> & { userId?: string };
+  let body: SyncRequestBody;
   try {
-    body = (await req.json()) as Partial<UserBackup> & { userId?: string };
+    body = (await req.json()) as SyncRequestBody;
   } catch {
     return NextResponse.json({ error: "请求体格式错误" }, { status: 400 });
   }
 
-  const userId = body.userId;
-  if (!userId || typeof userId !== "string") {
+  if (!body.userId || typeof body.userId !== "string") {
     return NextResponse.json({ error: "缺少 userId" }, { status: 400 });
   }
+
+  const store = createKVStore(getCloudflareKV());
+
+  // 增量同步模式：只合并变更的 key
+  if (body.mode === "incremental") {
+    if (!body.changes || typeof body.changes !== "object") {
+      return NextResponse.json(
+        { error: "增量同步缺少 changes 字段" },
+        { status: 400 },
+      );
+    }
+    const updatedAt = await store.mergeUserBackup(body.userId, body.changes);
+    return NextResponse.json({ ok: true, updatedAt });
+  }
+
+  // 全量备份模式（mode 省略或 "full"，向后兼容旧客户端）
   if (!body.data || typeof body.data !== "object") {
     return NextResponse.json({ error: "缺少 data 字段" }, { status: 400 });
   }
 
   const backup: UserBackup = {
-    userId,
-    updatedAt: typeof body.updatedAt === "string" ? body.updatedAt : new Date().toISOString(),
-    version: typeof body.version === "number" ? body.version : BACKUP_VERSION,
+    userId: body.userId,
+    updatedAt: body.updatedAt ?? new Date().toISOString(),
+    version: body.version ?? BACKUP_VERSION,
     data: body.data,
   };
 
-  const store = createKVStore(getCloudflareKV());
-  await store.setUserBackup(userId, backup);
+  await store.setUserBackup(body.userId, backup);
   return NextResponse.json({ ok: true, updatedAt: backup.updatedAt });
 }

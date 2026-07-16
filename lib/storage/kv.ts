@@ -22,6 +22,21 @@ export interface KVStore {
   updateStats(username: string, stats: Partial<PublicStats>): Promise<void>;
   getUserBackup(userId: string): Promise<UserBackup | null>;
   setUserBackup(userId: string, data: UserBackup): Promise<void>;
+  /**
+   * 增量合并：将客户端变更的 key 合并到云端 backup.data
+   * - 每个 key 按 value.updatedAt 较新者为准（last-write-wins）
+   * - key 仅在变更集中存在 → 直接写入
+   * - 无 updatedAt 字段 → 以变更集为准（保守取最新）
+   * - 若云端无 backup，等价于 setUserBackup（首次同步兜底）
+   *
+   * @param userId 用户 ID
+   * @param changes 变更的 key → value 映射
+   * @returns 合并后的 backup.updatedAt
+   */
+  mergeUserBackup(
+    userId: string,
+    changes: Record<string, unknown>,
+  ): Promise<string>;
 }
 
 interface KVLike {
@@ -84,7 +99,53 @@ export function createKVStore(envKV?: KVLike): KVStore {
     async setUserBackup(userId: string, data: UserBackup) {
       await kv.put(`user:${userId}:backup`, JSON.stringify(data));
     },
+    async mergeUserBackup(
+      userId: string,
+      changes: Record<string, unknown>,
+    ): Promise<string> {
+      // 读旧 backup（不存在则视为空）
+      const existing = await this.getUserBackup(userId);
+      const mergedData: Record<string, unknown> = {
+        ...(existing?.data ?? {}),
+      };
+
+      // 每个 key 按 updatedAt 较新者为准（与 sync.ts mergeData 一致的 LWW 语义）
+      for (const [key, newVal] of Object.entries(changes)) {
+        const oldVal = mergedData[key];
+        if (oldVal === undefined) {
+          mergedData[key] = newVal;
+          continue;
+        }
+        const oldTs = pickUpdatedAt(oldVal);
+        const newTs = pickUpdatedAt(newVal);
+        if (oldTs && newTs) {
+          mergedData[key] = newTs > oldTs ? newVal : oldVal;
+        } else {
+          // 无法比较 → 取新值（保守假设客户端最新）
+          mergedData[key] = newVal;
+        }
+      }
+
+      const updatedAt = new Date().toISOString();
+      const backup: UserBackup = {
+        userId,
+        updatedAt,
+        version: existing?.version ?? 1,
+        data: mergedData,
+      };
+      await kv.put(`user:${userId}:backup`, JSON.stringify(backup));
+      return updatedAt;
+    },
   };
+}
+
+/** 从 unknown value 中安全提取 updatedAt 字符串 */
+function pickUpdatedAt(v: unknown): string | undefined {
+  if (v && typeof v === "object" && "updatedAt" in v) {
+    const ts = (v as { updatedAt?: unknown }).updatedAt;
+    return typeof ts === "string" ? ts : undefined;
+  }
+  return undefined;
 }
 
 function createMockKV(): KVLike {

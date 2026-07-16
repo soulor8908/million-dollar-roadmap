@@ -2,10 +2,17 @@
 // 能量样本采集：记录每日 (energy, mood, availableMinutes, predictedLoad) 与学习结束后的 actualMinutes
 // 所有数据存浏览器本地 IndexedDB，不离开设备
 // P3.2 阶段：为线性回归模型提供训练数据
+//
+// 冷启动修复（Issue 4）：
+//   - 新增 autoFillTodayActualMinutes() 自动回填当天实际学习时长
+//   - 首页加载时调用，无需用户手动触发
+//   - 这样模型训练循环 closed-loop：record → autoFill → maybeRetrain
 
 import { nanoid } from "nanoid";
 import { getItem, setItem, listItems } from "./storage/db";
 import { KEY_PREFIXES } from "./types";
+import type { LearnLog } from "./types";
+import { chinaDateNow } from "./time";
 
 /**
  * 能量样本：一天一条（recordEnergySample 写入，updateActualMinutes 回填实际时长）
@@ -81,4 +88,47 @@ export async function updateActualMinutes(
 /** 内部使用：按 id 直接读取（供回归模块复用） */
 export async function getEnergySampleById(id: string): Promise<EnergySample | undefined> {
   return getItem<EnergySample>(KEY_PREFIXES.ENERGY_SAMPLE + id);
+}
+
+/**
+ * 自动回填今日 actualMinutes（冷启动修复）
+ *
+ * 工作原理：
+ *   1. 读取今日所有 LearnLog，累加 duration（学习时长）
+ *   2. 若今天有 EnergySample，调 updateActualMinutes 回填
+ *   3. 若今天无 sample（用户还没设过能量），什么都不做
+ *
+ * 设计目标：
+ *   - 让 maybeRetrain 的"无 actualMinutes → 无法训练"问题自动消失
+ *   - 用户只要正常使用 App（记录学习日志），actualMinutes 会被自动维护
+ *   - 不需要用户手动触发任何"回填"按钮
+ *
+ * 调用时机：首页加载时（lib/home.ts 的 useHomeData hook 中触发）
+ *
+ * @returns 回填的分钟数；若今天无 sample 则返回 null
+ */
+export async function autoFillTodayActualMinutes(): Promise<number | null> {
+  const today = chinaDateNow();
+  // 读今日 LearnLog 累计 duration
+  const logs = await listItems<LearnLog>(KEY_PREFIXES.LEARN_LOG);
+  const todayMinutes = logs
+    .filter((l) => l.date === today)
+    .reduce((sum, l) => sum + (l.duration ?? 0), 0);
+
+  // 检查今天是否有 sample
+  const allSamples = await listItems<EnergySample>(KEY_PREFIXES.ENERGY_SAMPLE);
+  const todaySamples = allSamples.filter((s) => s.date === today);
+  if (todaySamples.length === 0) {
+    return null; // 今天没 sample，不回填
+  }
+
+  // 仅当 actualMinutes 与当前累计值不同时才写入（避免无意义 IO）
+  const latest = todaySamples.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )[0];
+  if (latest.actualMinutes === todayMinutes) {
+    return todayMinutes;
+  }
+  await updateActualMinutes(today, todayMinutes);
+  return todayMinutes;
 }

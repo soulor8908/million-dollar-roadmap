@@ -95,6 +95,14 @@ export interface ClientAction {
     | "toggle_plan_freeze"
     | "set_plan_priority";
   params: Record<string, unknown>;
+  /**
+   * 幂等键：基于 action.type + params 内容自动计算
+   * - 客户端在执行前检查此 key 是否已记录（24h TTL）
+   * - 已记录 → 跳过执行（防止流式响应重试导致重复写入）
+   * - 未记录 → 执行成功后写入此 key 标记完成
+   * - 失败时不写入，允许后续重试
+   */
+  idempotencyKey: string;
 }
 
 /** 工具执行结果 */
@@ -118,6 +126,24 @@ function getTodayWeekday(now: string): number {
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/**
+ * 基于 action.type + params 内容生成幂等键
+ * 同一个 (type, params) 总是产生相同的 key，客户端可据此去重
+ * 使用 djb2 hash（不需要密码学强度，只需稳定 + 低冲突率）
+ */
+function makeIdempotencyKey(
+  type: ClientAction["type"],
+  params: Record<string, unknown>,
+): string {
+  const content = `${type}:${JSON.stringify(params)}`;
+  let hash = 5381;
+  for (let i = 0; i < content.length; i++) {
+    hash = (hash << 5) + hash + content.charCodeAt(i); // hash * 33 + c
+    hash = hash & 0xffffffff; // 32-bit 截断
+  }
+  return `idem:${(hash >>> 0).toString(16)}`;
 }
 
 // ============ 8 个工具定义 ============
@@ -275,6 +301,11 @@ export function createChatTools(ctx: ToolContext) {
               scheduledFor,
               body: args.body,
             },
+            idempotencyKey: makeIdempotencyKey("create_reminder", {
+              title: args.title,
+              scheduledFor,
+              body: args.body,
+            }),
           },
         } as ToolResult;
       },
@@ -409,6 +440,11 @@ export function createChatTools(ctx: ToolContext) {
               targetDay: args.targetDay,
               reason: args.reason,
             },
+            idempotencyKey: makeIdempotencyKey("adjust_plan", {
+              planId: args.planId,
+              action: args.action,
+              targetDay: args.targetDay,
+            }),
           },
         } as ToolResult;
       },
@@ -442,6 +478,10 @@ export function createChatTools(ctx: ToolContext) {
               planId: args.planId,
               freeze: args.freeze,
             },
+            idempotencyKey: makeIdempotencyKey("toggle_plan_freeze", {
+              planId: args.planId,
+              freeze: args.freeze,
+            }),
           },
         } as ToolResult;
       },
@@ -478,6 +518,10 @@ export function createChatTools(ctx: ToolContext) {
               planId: args.planId,
               priority: args.priority,
             },
+            idempotencyKey: makeIdempotencyKey("set_plan_priority", {
+              planId: args.planId,
+              priority: args.priority,
+            }),
           },
         } as ToolResult;
       },

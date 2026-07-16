@@ -200,60 +200,100 @@ export default function ChatClient() {
   }, []);
 
   // 执行工具返回的客户端动作（写入 IndexedDB）+ 结果回传到质量追踪
-  const executeClientAction = useCallback(async (action: ClientAction, callRecordId?: string): Promise<void> => {
+  // 增强项（Issue 3 修复）：
+  //   - 幂等性：基于 action.idempotencyKey 去重（24h TTL），防止流式响应重试导致重复写入
+  //   - 事务性：adjust_plan 用不可变克隆 + 单次原子写入，避免中途失败留下半成品状态
+  //   - 错误反馈：失败时回传 trackAIFeedback action="discarded" + 设置 error state 给用户可见反馈
+  const executeClientAction = useCallback(async (action: ClientAction, callRecordId?: string): Promise<{ ok: boolean; error?: string }> => {
     const startTime = Date.now();
     let success = false;
-    try {
-      switch (action.type) {
-        case "create_reminder": {
-          const params = action.params as {
-            title: string;
-            scheduledFor: string;
-            body?: string;
-          };
-          await createReminder(params.title, params.scheduledFor, {
-            body: params.body,
-          });
-          success = true;
-          break;
+    let skipped = false;
+    let errorMsg: string | undefined;
+
+    // 幂等检查：已执行过的 action 跳过
+    if (action.idempotencyKey) {
+      try {
+        const idemKey = `idempotency:${action.idempotencyKey}`;
+        const existing = await dbGet<{ timestamp: number }>(idemKey);
+        const TTL_MS = 24 * 60 * 60 * 1000; // 24h
+        if (existing && Date.now() - existing.timestamp < TTL_MS) {
+          skipped = true;
+          console.info("[chat] 跳过已执行的 clientAction:", action.type);
+        } else {
+          // 占位标记（执行成功后更新时间戳；失败时不写入，允许重试）
+          // 注意：这里先不写，等执行成功后再写
         }
-        case "toggle_plan_freeze": {
-          const params = action.params as { planId: string; freeze: boolean };
-          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
-          if (plan) {
-            await dbSet(KEY_PREFIXES.PLAN + params.planId, {
-              ...plan,
-              frozen: params.freeze,
-              updatedAt: new Date().toISOString(),
+      } catch (e) {
+        console.warn("[chat] 幂等检查失败，继续执行:", e);
+      }
+    }
+
+    if (!skipped) {
+      try {
+        switch (action.type) {
+          case "create_reminder": {
+            const params = action.params as {
+              title: string;
+              scheduledFor: string;
+              body?: string;
+            };
+            await createReminder(params.title, params.scheduledFor, {
+              body: params.body,
             });
-            scheduleAutoSync();
             success = true;
+            break;
           }
-          break;
-        }
-        case "set_plan_priority": {
-          const params = action.params as { planId: string; priority: number };
-          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
-          if (plan) {
-            await dbSet(KEY_PREFIXES.PLAN + params.planId, {
-              ...plan,
-              priority: params.priority,
-              updatedAt: new Date().toISOString(),
-            });
-            scheduleAutoSync();
-            success = true;
+          case "toggle_plan_freeze": {
+            const params = action.params as { planId: string; freeze: boolean };
+            const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+            if (plan) {
+              await dbSet(KEY_PREFIXES.PLAN + params.planId, {
+                ...plan,
+                frozen: params.freeze,
+                updatedAt: new Date().toISOString(),
+              });
+              scheduleAutoSync();
+              success = true;
+            } else {
+              errorMsg = `计划 ${params.planId} 不存在`;
+            }
+            break;
           }
-          break;
-        }
-        case "adjust_plan": {
-          const params = action.params as {
-            planId: string;
-            action: "delay" | "skip" | "redistribute";
-            targetDay?: number;
-          };
-          const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
-          if (plan && params.targetDay !== undefined) {
-            const dayTasks = plan.schedule.filter((s) => s.day === params.targetDay);
+          case "set_plan_priority": {
+            const params = action.params as { planId: string; priority: number };
+            const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+            if (plan) {
+              await dbSet(KEY_PREFIXES.PLAN + params.planId, {
+                ...plan,
+                priority: params.priority,
+                updatedAt: new Date().toISOString(),
+              });
+              scheduleAutoSync();
+              success = true;
+            } else {
+              errorMsg = `计划 ${params.planId} 不存在`;
+            }
+            break;
+          }
+          case "adjust_plan": {
+            const params = action.params as {
+              planId: string;
+              action: "delay" | "skip" | "redistribute";
+              targetDay?: number;
+            };
+            const plan = await dbGet<LearningPlan>(KEY_PREFIXES.PLAN + params.planId);
+            if (!plan) {
+              errorMsg = `计划 ${params.planId} 不存在`;
+              break;
+            }
+            if (params.targetDay === undefined) {
+              errorMsg = "adjust_plan 缺少 targetDay";
+              break;
+            }
+            // 关键改动：克隆 schedule 数组，避免修改原 plan 对象
+            // 这样即使中途异常，原 plan 状态不被破坏，IndexedDB 中的数据保持一致
+            const newSchedule = plan.schedule.map((s) => ({ ...s }));
+            const dayTasks = newSchedule.filter((s) => s.day === params.targetDay);
             if (params.action === "skip") {
               // 跳过：标记为已完成（跳过）
               for (const task of dayTasks) {
@@ -262,40 +302,57 @@ export default function ChatClient() {
               }
             } else if (params.action === "delay") {
               // 延后：将该天所有任务的 day +1，后续任务也顺延
-              for (const task of plan.schedule) {
-                if (task.day >= params.targetDay) {
+              for (const task of newSchedule) {
+                if (task.day >= params.targetDay!) {
                   task.day += 1;
                 }
               }
             } else if (params.action === "redistribute") {
               // 重新分配：将该天任务分散到未来 3 天
-              const futureDays = [params.targetDay + 1, params.targetDay + 2, params.targetDay + 3];
+              const futureDays = [params.targetDay! + 1, params.targetDay! + 2, params.targetDay! + 3];
               dayTasks.forEach((task, i) => {
                 task.day = futureDays[i % futureDays.length];
               });
             }
+            // 原子写入：一次性更新整个 plan
             await dbSet(KEY_PREFIXES.PLAN + params.planId, {
               ...plan,
+              schedule: newSchedule,
               updatedAt: new Date().toISOString(),
             });
             scheduleAutoSync();
             success = true;
+            break;
           }
-          break;
         }
+
+        // 执行成功后写入幂等标记（防止后续重复执行）
+        if (success && action.idempotencyKey) {
+          try {
+            await dbSet(`idempotency:${action.idempotencyKey}`, {
+              timestamp: Date.now(),
+            });
+          } catch {
+            // 标记失败不影响主流程
+          }
+        }
+      } catch (e) {
+        errorMsg = e instanceof Error ? e.message : String(e);
+        console.warn("[chat] 执行客户端动作失败:", e);
       }
-    } catch (e) {
-      console.warn("[chat] 执行客户端动作失败:", e);
     }
-    // 结果回传：记录工具动作执行结果（成功/失败 + 耗时 + 动作类型）
+
+    // 结果回传：记录工具动作执行结果（成功/失败/跳过 + 耗时 + 动作类型）
     if (callRecordId) {
       void trackAIFeedback({
         callRecordId,
         scene: "chat_tool_action",
-        action: success ? "adopted" : "discarded",
-        reason: `${action.type} (${Date.now() - startTime}ms)`,
+        action: skipped ? "viewed" : success ? "adopted" : "discarded",
+        reason: `${action.type} (${Date.now() - startTime}ms)${skipped ? " [skipped-duplicate]" : errorMsg ? ` [error: ${errorMsg}]` : ""}`,
       }).catch(() => {});
     }
+
+    return { ok: success || skipped, error: success || skipped ? undefined : errorMsg };
   }, []);
 
   // 自动滚动到底部
@@ -522,8 +579,26 @@ export default function ChatClient() {
       setStreaming(false);
 
       // 执行工具返回的客户端动作（传入 callId 用于结果回传）
+      // 失败时收集错误信息展示给用户（不再静默吞掉）
       if (pendingActions.length > 0) {
-        void Promise.all(pendingActions.map((a) => executeClientAction(a, callId))).catch(() => {});
+        const results = await Promise.allSettled(
+          pendingActions.map((a) => executeClientAction(a, callId)),
+        );
+        const failedMessages: string[] = [];
+        for (const r of results) {
+          if (r.status === "fulfilled") {
+            if (!r.value.ok && r.value.error) {
+              failedMessages.push(r.value.error);
+            }
+          } else {
+            failedMessages.push(r.reason instanceof Error ? r.reason.message : String(r.reason));
+          }
+        }
+        if (failedMessages.length > 0) {
+          // 不覆盖已有错误，追加工具执行失败提示
+          const toolError = `工具执行失败：${failedMessages.join("; ")}`;
+          setError((prev) => (prev ? `${prev} | ${toolError}` : toolError));
+        }
       }
 
       // AI 质量追踪

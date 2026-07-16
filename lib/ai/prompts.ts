@@ -13,6 +13,13 @@
 //   await generateObject({ system: def.system, ... });
 //   const fp = promptFingerprint("knowledge_decompose", def.version);
 //   // → "knowledge_decompose:v1:5e8b3a01"
+//
+// 版本管理（Issue 7 修复）：
+//   修改任何 prompt 的 system 内容时，必须 bump version（v1→v2）。
+//   __tests__/prompts.test.ts 中的 PROMPT_VERSION_HASHES 快照会校验
+//   "version:contentHash" 对——改内容不改 version 会让 hash 不匹配，测试失败。
+//   修改后运行 `npx vitest run __tests__/prompts.test.ts` 看失败信息里的
+//   「实际值」，复制到快照即可。
 
 import type { AIScene } from "../types";
 

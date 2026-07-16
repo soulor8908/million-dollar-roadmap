@@ -3,40 +3,29 @@
 // app/emotion/page.tsx
 // P3 情绪简化 — 1 秒觉察 + AI 应对
 // 重构自旧版 5 字段（trigger/impact/coping/...）→ 新版 4 步流程
-// 旧数据兼容：读取时若旧字段存在，UI 降级展示为单行文本
+// 旧数据兼容：通过 migrateEmotionEntry 在读写时自动迁移
+//
+// Issue 5 修复：
+//   - 移除本地兼容函数，改用 lib/emotion-migrate.ts 的 getDisplayReason/getDisplayCoping
+//   - 加载时调用 migrateAllEmotionEntries 一次性迁移旧数据
+//   - 显示时用 EmotionEntry & LegacyEmotionFields 联合类型兼容读取
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { EmotionRecorder } from "@/components/EmotionRecorder";
 import { Icon } from "@/components/Icon";
 import { listItems, delItem } from "@/lib/storage/db";
-import { KEY_PREFIXES, type EmotionEntry } from "@/lib/types";
-
-// 历史条目降级读取：兼容旧数据（trigger/impact/coping 字段）
-function getDisplayReason(entry: EmotionEntry): string {
-  if (entry.reason) return entry.reason;
-  // 旧数据兼容
-  const parts: string[] = [];
-  if (entry.trigger) parts.push(`原因: ${entry.trigger}`);
-  if (entry.impact) parts.push(`影响: ${entry.impact}`);
-  return parts.join(" / ");
-}
-
-function getDisplayCoping(entry: EmotionEntry): string {
-  // 新数据：选中建议 + 自定义
-  const parts: string[] = [];
-  if (entry.selectedCoping?.length > 0) parts.push(entry.selectedCoping.join("、"));
-  if (entry.customCoping) parts.push(entry.customCoping);
-  if (parts.length > 0) return parts.join(" + ");
-
-  // 旧数据
-  if (entry.coping) return entry.coping;
-  return "";
-}
+import { KEY_PREFIXES, type EmotionEntry, type LegacyEmotionFields } from "@/lib/types";
+import {
+  getDisplayReason,
+  getDisplayCoping,
+  migrateAllEmotionEntries,
+} from "@/lib/emotion-migrate";
 
 // 按日期分组
-function groupByDate(entries: EmotionEntry[]): Array<{ date: string; items: EmotionEntry[] }> {
-  const groups = new Map<string, EmotionEntry[]>();
+type EmotionEntryWithLegacy = EmotionEntry & LegacyEmotionFields;
+function groupByDate(entries: EmotionEntryWithLegacy[]): Array<{ date: string; items: EmotionEntryWithLegacy[] }> {
+  const groups = new Map<string, EmotionEntryWithLegacy[]>();
   for (const e of entries) {
     if (!groups.has(e.date)) groups.set(e.date, []);
     groups.get(e.date)!.push(e);
@@ -47,11 +36,18 @@ function groupByDate(entries: EmotionEntry[]): Array<{ date: string; items: Emot
 }
 
 export default function EmotionPage() {
-  const [entries, setEntries] = useState<EmotionEntry[]>([]);
+  const [entries, setEntries] = useState<EmotionEntryWithLegacy[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadEntries = useCallback(async () => {
-    const list = await listItems<EmotionEntry>(KEY_PREFIXES.EMOTION);
+    // 惰性迁移：首次加载时把所有旧版条目合并到新字段
+    // 已迁移过的数据再次调用无副作用（幂等）
+    try {
+      await migrateAllEmotionEntries();
+    } catch (e) {
+      console.warn("[emotion] 迁移旧数据失败，继续展示:", e);
+    }
+    const list = await listItems<EmotionEntryWithLegacy>(KEY_PREFIXES.EMOTION);
     list.sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       return b.time.localeCompare(a.time);
@@ -66,7 +62,7 @@ export default function EmotionPage() {
     })();
   }, [loadEntries]);
 
-  const handleDelete = async (entry: EmotionEntry) => {
+  const handleDelete = async (entry: EmotionEntryWithLegacy) => {
     if (!confirm("确定删除这条情绪记录？")) return;
     await delItem(`${KEY_PREFIXES.EMOTION}${entry.date}_${entry.id}`);
     await loadEntries();

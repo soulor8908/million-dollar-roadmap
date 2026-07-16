@@ -10,6 +10,8 @@ vi.mock("../lib/ai/question", () => ({
 
 vi.mock("../lib/ai/provider", () => ({
   createAIProvider: vi.fn(() => ({})),
+  getModel: vi.fn(() => ({})),
+  hasAIKey: () => false,
 }));
 
 import { decomposeKnowledge } from "../lib/ai/knowledge";

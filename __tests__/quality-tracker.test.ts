@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import "fake-indexeddb/auto";
 import { setItem, getItem, listKeys } from "../lib/storage/db";
 import { KEY_PREFIXES, type AICallRecord, type AIFeedback } from "../lib/types";
+import { PROMPTS } from "../lib/ai/prompts";
 
 // 在 fake-indexeddb 环境下，isBrowser 检测需要 window 存在
 // fake-indexeddb/auto 会设置 indexedDB，但不会设置 window
@@ -152,7 +153,7 @@ describe("recordAICall", () => {
     expect(stored?.durationMs).toBe(1500);
     expect(stored?.source).toBe("ai");
     expect(stored?.refId).toBe("q-1");
-    expect(stored?.promptVersion).toMatch(/^question_generate:v1:[0-9a-f]+$/);
+    expect(stored?.promptVersion).toMatch(new RegExp(`^question_generate:${PROMPTS.question_generate.version}:[0-9a-f]+$`));
     expect(stored?.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
@@ -355,7 +356,7 @@ describe("getQualityReport", () => {
 
     const report = await getQualityReport();
     expect(report.promptVersions.length).toBe(1);
-    expect(report.promptVersions[0].promptVersion).toMatch(/^knowledge_decompose:v1:[0-9a-f]+$/);
+    expect(report.promptVersions[0].promptVersion).toMatch(new RegExp(`^knowledge_decompose:${PROMPTS.knowledge_decompose.version}:[0-9a-f]+$`));
     expect(report.promptVersions[0].calls).toBe(2);
   });
 

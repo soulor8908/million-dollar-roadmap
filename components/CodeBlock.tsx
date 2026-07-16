@@ -196,8 +196,153 @@ const TOKEN_COLORS: Record<TokenType, string> = {
 };
 
 // ============================================================
-// AnswerContent：解析答案文本，渲染代码块（带高亮）和普通文本
+// 轻量 Markdown 渲染（无外部依赖，解析失败自动降级为纯文本）
 // ============================================================
+
+/** 解析行内 Markdown：**粗体** *斜体* `代码` [链接](url) */
+function parseInline(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  // 合并匹配：粗体 / 斜体 / 行内代码 / 链接
+  const regex = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(\[([^\]]+)\]\(([^)]+)\))/g;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      nodes.push(text.slice(lastIdx, match.index));
+    }
+    if (match[1]) {
+      nodes.push(<strong key={key++} className="font-semibold">{match[2]}</strong>);
+    } else if (match[3]) {
+      nodes.push(<em key={key++}>{match[4]}</em>);
+    } else if (match[5]) {
+      nodes.push(
+        <code key={key++} className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 text-[13px] font-mono">
+          {match[6]}
+        </code>
+      );
+    } else if (match[7]) {
+      nodes.push(
+        <a key={key++} href={match[9]} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline break-all">
+          {match[8]}
+        </a>
+      );
+    }
+    lastIdx = regex.lastIndex;
+  }
+  if (lastIdx < text.length) {
+    nodes.push(text.slice(lastIdx));
+  }
+  return nodes;
+}
+
+/** 将 markdown 文本渲染为结构化 React 节点（标题/列表/引用/分割线/段落） */
+function renderMarkdownBlocks(text: string): React.ReactNode[] {
+  const lines = text.split("\n");
+  const blocks: React.ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+
+  const headingSizes = [
+    "text-xl font-bold mt-4 mb-2",
+    "text-lg font-bold mt-3 mb-1.5",
+    "text-base font-semibold mt-3 mb-1",
+    "text-sm font-semibold mt-2 mb-1",
+  ];
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // 空行跳过
+    if (!trimmed) { i++; continue; }
+
+    // 标题 # ## ### ####
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      blocks.push(
+        <p key={key++} className={headingSizes[level - 1]}>
+          {parseInline(headingMatch[2])}
+        </p>
+      );
+      i++;
+      continue;
+    }
+
+    // 水平分割线 --- *** ___
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      blocks.push(<hr key={key++} className="my-3 border-gray-200 dark:border-gray-700" />);
+      i++;
+      continue;
+    }
+
+    // 引用块 >
+    if (trimmed.startsWith(">")) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ""));
+        i++;
+      }
+      blocks.push(
+        <blockquote key={key++} className="my-2 pl-3 border-l-4 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400">
+          {quoteLines.map((l, idx) => <p key={idx}>{parseInline(l)}</p>)}
+        </blockquote>
+      );
+      continue;
+    }
+
+    // 无序列表 - * +
+    if (/^[-*+]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*+]\s+/, ""));
+        i++;
+      }
+      blocks.push(
+        <ul key={key++} className="my-2 list-disc list-inside space-y-0.5 marker:text-gray-400">
+          {items.map((item, idx) => <li key={idx}>{parseInline(item)}</li>)}
+        </ul>
+      );
+      continue;
+    }
+
+    // 有序列表 1. 2.
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ""));
+        i++;
+      }
+      blocks.push(
+        <ol key={key++} className="my-2 list-decimal list-inside space-y-0.5 marker:text-gray-400">
+          {items.map((item, idx) => <li key={idx}>{parseInline(item)}</li>)}
+        </ol>
+      );
+      continue;
+    }
+
+    // 段落（收集连续的普通文本行）
+    const paraLines: string[] = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !/^(#{1,4}\s|[-*+]\s|\d+\.\s|>|(-{3,}|\*{3,}|_{3,})$)/.test(lines[i].trim())
+    ) {
+      paraLines.push(lines[i]);
+      i++;
+    }
+    if (paraLines.length > 0) {
+      blocks.push(
+        <p key={key++} className="my-1.5 leading-relaxed whitespace-pre-wrap">
+          {parseInline(paraLines.join("\n"))}
+        </p>
+      );
+    }
+  }
+
+  return blocks;
+}
 
 interface AnswerContentProps {
   text: string;
@@ -230,18 +375,29 @@ function parseAnswer(text: string): Array<{ type: "text" | "code"; content: stri
 export function AnswerContent({ text, className }: AnswerContentProps) {
   const parts = useMemo(() => parseAnswer(text), [text]);
   return (
-    <div className={className ?? "text-sm text-gray-700"}>
+    <div className={className ?? "text-sm text-gray-700 dark:text-gray-300"}>
       {parts.map((p, i) =>
         p.type === "text" ? (
-          <p key={i} className="whitespace-pre-wrap leading-relaxed">
-            {p.content}
-          </p>
+          <TextBlock key={i} content={p.content} />
         ) : (
           <CodeBlock key={i} code={p.content} language={p.lang} />
         )
       )}
     </div>
   );
+}
+
+/** 文本块渲染：尝试 Markdown 解析，异常时降级为纯文本 */
+function TextBlock({ content }: { content: string }) {
+  const rendered = useMemo(() => {
+    try {
+      return renderMarkdownBlocks(content);
+    } catch {
+      // 解析失败 → 降级为纯文本（whitespace-pre-wrap 保留原始格式）
+      return [<p key="fallback" className="whitespace-pre-wrap leading-relaxed">{content}</p>];
+    }
+  }, [content]);
+  return <>{rendered}</>;
 }
 
 // ============================================================

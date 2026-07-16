@@ -316,11 +316,11 @@ export default function ProfilePage() {
     setShowModelForm(true);
   }
 
-  /** Provider 改变时，若为 glm/deepseek/mimo 自动回填 baseURL+model */
+  /** Provider 改变时，若为 glm/deepseek/mimo/kimi 自动回填 baseURL+model */
   function handleProviderChange(provider: ModelConfig["provider"]) {
     setModelProvider(provider);
     const preset = MODEL_PRESETS.find((p) => p.provider === provider);
-    if (preset && (provider === "glm" || provider === "deepseek" || provider === "mimo")) {
+    if (preset && (provider === "glm" || provider === "deepseek" || provider === "mimo" || provider === "kimi")) {
       setModelBaseURL(preset.baseURL);
       setModelModel(preset.model);
     }
@@ -640,6 +640,7 @@ export default function ProfilePage() {
                 <option value="glm">glm（智谱）</option>
                 <option value="deepseek">deepseek</option>
                 <option value="mimo">mimo（小米）</option>
+                <option value="kimi">kimi（Moonshot AI）</option>
                 <option value="custom">custom</option>
               </select>
             </div>
@@ -1026,6 +1027,18 @@ export default function ProfilePage() {
 
       {/* 7. 帮助 */}
       <Section icon="help-circle" title="帮助" desc="常见问题 / 反馈 / 快捷键">
+        {/* 完整使用文档入口 */}
+        <Link
+          href="/docs"
+          className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-3 py-2.5 mb-3 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-300">
+            <Icon name="book" className="w-4 h-4" />
+            查看完整使用文档
+          </span>
+          <Icon name="chevron-right" className="w-4 h-4 text-blue-400" />
+        </Link>
+
         {/* 常见问题 */}
         <div className="space-y-2">
           <h3 className="font-medium">常见问题</h3>

@@ -26,6 +26,12 @@ export const MODEL_PRESETS: Array<Pick<ModelConfig, "name" | "provider" | "baseU
     model: "mimo-v2-pro",
   },
   {
+    name: "Kimi (Moonshot AI)",
+    provider: "kimi",
+    baseURL: "https://api.moonshot.cn/v1",
+    model: "moonshot-v1-8k",
+  },
+  {
     name: "OpenAI",
     provider: "custom",
     baseURL: "https://api.openai.com/v1",

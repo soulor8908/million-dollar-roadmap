@@ -354,7 +354,7 @@ export interface ModelConfig {
   /** 配置名称（如"我的 GPT"、"DeepSeek"） */
   name: string;
   /** 提供商类型 */
-  provider: "glm" | "deepseek" | "mimo" | "custom";
+  provider: "glm" | "deepseek" | "mimo" | "kimi" | "custom";
   /** API baseURL（OpenAI 兼容格式） */
   baseURL: string;
   /** API Key（存储在 IndexedDB，不上传到云端） */

@@ -31,6 +31,7 @@ import {
 } from "@/lib/model-config";
 import type { ModelConfig } from "@/lib/types";
 import { Icon, type IconName } from "@/components/Icon";
+import { maybeRetrain } from "@/lib/energy-regression";
 
 const STORAGE_KEY = "my:profile";
 
@@ -158,6 +159,9 @@ export default function ProfilePage() {
       // 加载 AI 模型配置
       const configs = await listModelConfigs();
       setModelConfigs(configs);
+
+      // P3.4：页面加载时静默检查能量模型是否需要重训练（不阻塞 UI，失败仅 console.warn）
+      void maybeRetrain();
     })();
   }, []);
 
@@ -259,6 +263,27 @@ export default function ProfilePage() {
         }
       } catch (e) {
         console.warn("Push 订阅失败:", e);
+      }
+      // 注册 Periodic Background Sync（后台定期检查，让 AI "在呼吸"）
+      if ("serviceWorker" in navigator && "PeriodicSyncManager" in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const periodicSync = (
+            reg as ServiceWorkerRegistration & {
+              periodicSync?: {
+                register: (
+                  tag: string,
+                  options?: { minInterval?: number },
+                ) => Promise<void>;
+              };
+            }
+          ).periodicSync;
+          await periodicSync?.register("devpath-background-check", {
+            minInterval: 30 * 60 * 1000, // 30 分钟
+          });
+        } catch (e) {
+          console.warn("Periodic Sync 注册失败:", e);
+        }
       }
       // 测试通知
       new Notification("devpath 打卡提醒已开启", {

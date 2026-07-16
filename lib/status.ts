@@ -3,6 +3,7 @@
 
 import type { ScheduleItem, DailyStatus } from "./types";
 import { DEFAULT_ENERGY_CONFIG, type EnergyConfig } from "./energy-config";
+import { predictActualMinutes, type TrainedModel } from "./energy-regression";
 
 /**
  * 计算当日容量系数
@@ -26,6 +27,31 @@ export function computeCapacity(
     moodFactor *
     (status.availableMinutes / config.timeDivisor)
   );
+}
+
+/**
+ * 模型感知的容量计算（P3.4：用学习到的模型替代规则）
+ * - 有已训练模型时：用模型预测 actualMinutes 作为当日容量（更贴近真实学习表现）
+ * - 无模型 / 样本不足 / model 为 null：回退到规则计算（computeCapacity + DEFAULT_ENERGY_CONFIG）
+ *
+ * 注意：模型预测值单位为「分钟」，规则计算值单位为「容量系数（无量纲）」，
+ * 二者语义不同；调用方需根据来源选择对应的调档阈值。
+ * 迁移期建议优先用本函数的返回值，配合实际数据再校准 adjustDailyLoad 阈值。
+ */
+export function computeCapacityWithModel(
+  status: Pick<DailyStatus, "energy" | "mood" | "availableMinutes">,
+  model?: TrainedModel | null,
+  config: EnergyConfig = DEFAULT_ENERGY_CONFIG,
+): number {
+  if (model) {
+    return predictActualMinutes(
+      model,
+      status.energy,
+      status.mood,
+      status.availableMinutes,
+    );
+  }
+  return computeCapacity(status, config);
 }
 
 /**

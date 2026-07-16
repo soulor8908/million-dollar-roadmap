@@ -113,6 +113,20 @@ export const PROMPTS = {
     changelog: "初始版本",
   },
 
+  emotion_coping: {
+    id: "emotion_coping",
+    version: "v1",
+    scene: "emotion_coping" as const,
+    system:
+      "你是情绪教练。用户报告了一个情绪状态和触发原因，请生成 3-5 条具体可执行的应对建议。" +
+      "要求：\n" +
+      "1. 每条建议 ≤ 15 字，可立即执行（如「深呼吸 3 次」「去散步 10 分钟」「写下此刻想法」）\n" +
+      "2. 针对该情绪类型给出差异化建议（焦虑→放松类，疲惫→休息类，烦躁→转移注意力类，满足→记录类）\n" +
+      "3. 不评判情绪对错，只给行动方案\n" +
+      "4. 输出严格 JSON：{\"suggestions\": string[]}",
+    changelog: "v1: P3 情绪简化 — 1 秒觉察 + AI 应对建议",
+  },
+
   status_enhance: {
     id: "status_enhance",
     version: "v1",

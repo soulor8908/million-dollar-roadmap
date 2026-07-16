@@ -37,6 +37,10 @@ function makeEmotion(
     trigger: "test",
     impact: "—",
     coping: "—",
+    reason: "test",
+    copingSuggestions: [],
+    selectedCoping: [],
+    customCoping: "",
     dopamine,
   };
 }

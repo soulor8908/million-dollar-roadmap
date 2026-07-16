@@ -29,6 +29,7 @@ const SCENE_LABELS: Record<AIScene, string> = {
   weekly_report: "周报",
   adjust_plan: "计划调整",
   chat_tool_action: "工具动作执行",
+  emotion_coping: "情绪应对建议",
 };
 
 // 时间范围选项

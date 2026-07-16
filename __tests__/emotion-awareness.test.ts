@@ -36,6 +36,10 @@ function makeEmotion(date: string, tag: EmotionEntry["tag"], dopamine: EmotionEn
     trigger: "test",
     impact: "—",
     coping: "—",
+    reason: "test",
+    copingSuggestions: [],
+    selectedCoping: [],
+    customCoping: "",
     dopamine,
   };
 }

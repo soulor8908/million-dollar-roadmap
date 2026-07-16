@@ -135,6 +135,11 @@ export type EmotionTag =
 export type DopamineTrigger = "无" | "刷手机" | "游戏" | "短视频" | "甜食" | "其他";
 
 // 情绪觉察条目（嵌入情绪觉察流程时存入 IndexedDB，key 前缀 emotion:）
+// P3 简化：5 字段 → 4 字段 + AI 应对建议
+//   - trigger + impact → reason（合并为 1 个输入框）
+//   - coping → copingSuggestions（AI 生成）+ selectedCoping（用户多选）+ customCoping（自定义）
+//   - tag/emoji/dopamine 保留
+// 旧数据兼容：读取时 trigger+impact+coping 字段如果存在，UI 层降级展示
 export interface EmotionEntry {
   /** id 作为 IndexedDB key 后缀，保证一天多条不冲突 */
   id: string;
@@ -144,10 +149,22 @@ export interface EmotionEntry {
   time: string;
   tag: EmotionTag;
   emoji: string;
-  trigger: string;
-  impact: string;
-  coping: string;
+  /** 原因+影响合并（P3 简化前是 trigger/impact 两个字段） */
+  reason: string;
+  /** AI 生成的应对建议（3-5 条） */
+  copingSuggestions: string[];
+  /** 用户选中的应对建议（多选） */
+  selectedCoping: string[];
+  /** 用户自定义的应对方式（可选） */
+  customCoping: string;
   dopamine: DopamineTrigger;
+  // ============ 向后兼容字段（旧数据，新写入不再使用） ============
+  /** @deprecated P3 前用，已合并到 reason */
+  trigger?: string;
+  /** @deprecated P3 前用，已合并到 reason */
+  impact?: string;
+  /** @deprecated P3 前用，已拆分为 copingSuggestions + selectedCoping + customCoping */
+  coping?: string;
 }
 
 // 每日时间表时段
@@ -383,7 +400,8 @@ export type AIScene =
   | "status_enhance"
   | "weekly_report"
   | "adjust_plan"
-  | "chat_tool_action";
+  | "chat_tool_action"
+  | "emotion_coping";
 
 /** AI 调用记录（一次 AI 调用 = 一条记录） */
 export interface AICallRecord {

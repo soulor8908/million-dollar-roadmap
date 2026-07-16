@@ -4,14 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/Icon";
 
+// 底部导航：8→5 Tab 减法（乔布斯焦点原则）
+// 移除的 3 个 Tab 折叠到「今日」：
+//   - 错题 → 今日「错题回顾」卡片（首页内联）
+//   - 情绪 → 今日「情绪快捷记录」（首页内联）
+//   - 仪表盘 → 今日底部「统计 + 热力图」（首页内联）
+// 原 /mistakes /emotion /dashboard 路由保留（直接访问 URL 仍可用）
 const items: Array<{ href: string; label: string; icon: IconName }> = [
   { href: "/", label: "今日", icon: "home" },
   { href: "/learn", label: "学习", icon: "book" },
   { href: "/chat", label: "AI", icon: "chat" },
   { href: "/review", label: "复习", icon: "repeat" },
-  { href: "/mistakes", label: "错题", icon: "x-circle" },
-  { href: "/emotion", label: "情绪", icon: "heart" },
-  { href: "/dashboard", label: "仪表盘", icon: "chart" },
   { href: "/profile", label: "我的", icon: "user" },
 ];
 

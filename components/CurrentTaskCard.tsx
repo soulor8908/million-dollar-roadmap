@@ -16,6 +16,7 @@ import { listItems } from "@/lib/storage/db";
 import { getDueCards } from "@/lib/fsrs";
 import { KEY_PREFIXES } from "@/lib/types";
 import type { CurrentTask as CurrentTaskType, ReviewCard } from "@/lib/types";
+import { Icon } from "@/components/Icon";
 
 const TYPE_COLORS: Record<string, string> = {
   运动: "bg-orange-50 border-orange-200",
@@ -125,7 +126,7 @@ export function CurrentTaskCard() {
           className="mt-3 flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 hover:bg-white"
         >
           <span className="text-sm">
-            📚 学习时段 · 今日待复习 <b className="text-blue-600">{dueCount}</b> 张
+            <Icon name="book" className="w-4 h-4 inline-block align-middle" /> 学习时段 · 今日待复习 <b className="text-blue-600">{dueCount}</b> 张
           </span>
           <span className="text-xs text-blue-600">去复习 →</span>
         </Link>
@@ -137,7 +138,7 @@ export function CurrentTaskCard() {
           href="/rest"
           className="mt-3 flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 hover:bg-white"
         >
-          <span className="text-sm">😴 休息时段 · 去呼吸放松</span>
+          <span className="text-sm"><Icon name="moon" className="w-4 h-4 inline-block align-middle" /> 休息时段 · 去呼吸放松</span>
           <span className="text-xs text-green-600">开始 478 呼吸 →</span>
         </Link>
       )}

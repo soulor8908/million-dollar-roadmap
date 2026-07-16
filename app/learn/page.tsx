@@ -30,6 +30,7 @@ import {
   migrateSummaries,
 } from "@/lib/plan-summary";
 import { nanoid } from "nanoid";
+import { Icon } from "@/components/Icon";
 
 const EXAMPLES = [
   "前端性能优化",
@@ -281,7 +282,9 @@ export default function LearnPage() {
   if (loadingState && !activePreset) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
-        <div className="text-5xl mb-6 animate-pulse">🤖</div>
+        <div className="mb-6 animate-pulse">
+          <Icon name="sparkles" className="w-12 h-12 inline-block" />
+        </div>
         <p className="text-xl font-bold mb-2">
           {regenerating ? "AI 正在重新生成知识树..." : "AI 正在拆解知识树..."}
         </p>
@@ -352,7 +355,7 @@ export default function LearnPage() {
         <div className="border rounded-lg p-3 bg-amber-50/50">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600">
-              🎯 自定义提示词（可选）
+              <Icon name="target" className="w-4 h-4 inline-block align-middle" /> 自定义提示词（可选）
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -363,7 +366,7 @@ export default function LearnPage() {
                 }}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
-                📚 常用 {promptLibraryLoaded ? `(${promptLibrary.length})` : ""}
+                <Icon name="book" className="w-4 h-4 inline-block align-middle" /> 常用 {promptLibraryLoaded ? `(${promptLibrary.length})` : ""}
               </button>
               {promptText.trim() && (
                 <button
@@ -427,7 +430,7 @@ export default function LearnPage() {
                         className="text-gray-300 hover:text-red-500 text-xs"
                         aria-label="删除"
                       >
-                        ✕
+                        <Icon name="x" className="w-3.5 h-3.5 inline-block" />
                       </button>
                     )}
                   </div>
@@ -482,7 +485,7 @@ export default function LearnPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-gray-500">
-            🎁 内置知识库（{PRESETS.length} 个方向）
+            <Icon name="package" className="w-4 h-4 inline-block align-middle" /> 内置知识库（{PRESETS.length} 个方向）
           </h2>
           <span className="text-xs text-gray-400">秒级加载 · 可重新生成</span>
         </div>
@@ -549,7 +552,7 @@ export default function LearnPage() {
                       }`}
                       aria-label="删除计划"
                     >
-                      {confirmingDeleteId === p.id ? "确认删除" : "✕"}
+                      {confirmingDeleteId === p.id ? "确认删除" : <Icon name="x" className="w-3.5 h-3.5 inline-block" />}
                     </button>
                     <span className="text-xs text-gray-400">查看 →</span>
                   </div>
@@ -672,7 +675,7 @@ function PresetMindMapModal({
                   生成中...
                 </>
               ) : (
-                <>🔄 重新生成</>
+                <><Icon name="refresh-cw" className="w-4 h-4 inline-block align-middle" /> 重新生成</>
               )}
             </button>
             <button
@@ -680,7 +683,7 @@ function PresetMindMapModal({
               className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               aria-label="关闭"
             >
-              ✕
+              <Icon name="x" className="w-4 h-4 inline-block" />
             </button>
           </div>
         </div>
@@ -721,7 +724,7 @@ function PresetMindMapModal({
           style={{ touchAction: "manipulation" }}
         >
           <p className="text-xs text-gray-500 dark:text-gray-400 flex-1 hidden sm:block">
-            💡 点击任意知识点可立即开始学习该节点 · 🏢 标记为大厂高频考点
+            <Icon name="lightbulb" className="w-4 h-4 inline-block align-middle" /> 点击任意知识点可立即开始学习该节点 · <Icon name="building" className="w-4 h-4 inline-block align-middle" /> 标记为大厂高频考点
           </p>
           <button
             onClick={onImportAll}

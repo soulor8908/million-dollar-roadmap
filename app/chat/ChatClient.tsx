@@ -741,7 +741,7 @@ export default function ChatClient() {
       {/* 来源横幅 */}
       {activeConv?.source && (
         <div className="shrink-0 bg-amber-50 border-b px-3 py-2 text-xs flex items-center gap-2">
-          <span>📎 来自：</span>
+          <span className="inline-flex items-center gap-1"><Icon name="paperclip" className="w-3.5 h-3.5 inline-block" />来自：</span>
           {activeConv.source.planId ? (
             <Link
               href={`/learn/${activeConv.source.planId}`}
@@ -758,14 +758,14 @@ export default function ChatClient() {
       {/* 错误提示 */}
       {error && (
         <div className="shrink-0 bg-red-50 border-b border-red-200 px-3 py-2 text-xs text-red-600 flex items-center justify-between gap-2">
-          <span className="truncate">⚠️ {error}</span>
+          <span className="truncate"><Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> {error}</span>
           <button
             type="button"
             onClick={() => setError(null)}
             className="text-red-400 hover:text-red-600 shrink-0"
             aria-label="关闭错误"
           >
-            ✕
+            <Icon name="x" className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -947,7 +947,7 @@ export default function ChatClient() {
           <span className="text-gray-500 dark:text-gray-400">模型:</span>
           {modelConfigs.length === 0 ? (
             <span className="text-gray-400 dark:text-gray-500">
-              <span className="text-red-500 font-medium">⚠ 未配置模型</span>{" "}
+              <span className="text-red-500 font-medium"><Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> 未配置模型</span>{" "}
               ·{" "}
               <Link href="/profile" className="text-blue-500 hover:underline">
                 去添加 →

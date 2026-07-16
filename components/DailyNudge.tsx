@@ -23,6 +23,7 @@ import {
   makeOutputDigest,
   generateCallId,
 } from "@/lib/ai/quality-tracker";
+import { Icon } from "@/components/Icon";
 
 interface NudgePayload {
   nudge: string;
@@ -135,7 +136,7 @@ export function DailyNudge() {
         aria-busy="true"
       >
         <div className="flex items-center gap-2">
-          <span className="text-base">🤖</span>
+          <Icon name="sparkles" className="w-4 h-4" />
           <span className="text-sm text-gray-500 dark:text-gray-400">
             AI 正在为你准备今日建议...
           </span>
@@ -149,7 +150,7 @@ export function DailyNudge() {
       <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-gray-400 truncate">
-            ⚠️ AI 提醒加载失败：{error}
+            <Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> AI 提醒加载失败：{error}
           </span>
           <button
             type="button"
@@ -191,7 +192,7 @@ export function DailyNudge() {
   return (
     <div className="mb-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 dark:border-blue-800 dark:from-blue-950 dark:to-indigo-950">
       <div className="flex items-start gap-2">
-        <span className="text-base shrink-0" aria-hidden>🤖</span>
+        <Icon name="sparkles" className="w-4 h-4 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
             {nudge.nudge}
@@ -220,7 +221,7 @@ export function DailyNudge() {
                 aria-label="这条建议没帮助"
                 title="这条建议没帮助"
               >
-                👎
+                <Icon name="thumbs-down" className="w-4 h-4" />
               </button>
             )}
           </div>

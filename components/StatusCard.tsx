@@ -5,11 +5,12 @@ import { setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import { chinaDateNow } from "@/lib/time";
 import type { DailyStatus } from "@/lib/types";
+import { Icon } from "@/components/Icon";
 
 const QUICK_OPTIONS = [
-  { energy: 2 as const, mood: "bad" as const, label: "不太好", emoji: "😕" },
-  { energy: 3 as const, mood: "neutral" as const, label: "一般", emoji: "😐" },
-  { energy: 4 as const, mood: "good" as const, label: "状态不错", emoji: "🙂" },
+  { energy: 2 as const, mood: "bad" as const, label: "不太好", icon: "frown" as const },
+  { energy: 3 as const, mood: "neutral" as const, label: "一般", icon: "meh" as const },
+  { energy: 4 as const, mood: "good" as const, label: "状态不错", icon: "smile" as const },
 ];
 
 export function StatusCard() {
@@ -33,7 +34,7 @@ export function StatusCard() {
       <div className="bg-white border rounded-lg p-4">
         <p className="text-sm text-gray-500 mb-1">今日状态</p>
         <p className="text-lg font-medium">
-          {selected.energy >= 4 ? "🙂" : selected.energy >= 3 ? "😐" : "😕"} 精力 {selected.energy}/5
+          {selected.energy >= 4 ? <Icon name="smile" className="w-5 h-5 inline-block align-middle" /> : selected.energy >= 3 ? <Icon name="meh" className="w-5 h-5 inline-block align-middle" /> : <Icon name="frown" className="w-5 h-5 inline-block align-middle" />} 精力 {selected.energy}/5
         </p>
         <p className="text-xs text-gray-400 mt-1">
           可用时间 {selected.availableMinutes}min · 建议负载 {selected.aiAdjustedLoad.toFixed(1)}x
@@ -52,7 +53,7 @@ export function StatusCard() {
             onClick={() => handleClick(opt.energy, opt.mood)}
             className="flex-1 py-3 border rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <div className="text-2xl mb-1">{opt.emoji}</div>
+            <div className="mb-1"><Icon name={opt.icon} className="w-6 h-6 inline-block" /></div>
             <div className="text-xs text-gray-600">{opt.label}</div>
           </button>
         ))}

@@ -6,6 +6,7 @@
 // 采用 token 流式扫描，避免正则回溯灾难
 
 import { useMemo, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 interface CodeBlockProps {
   code: string;
@@ -276,7 +277,7 @@ export function CodeBlock({ code, language, filename, collapsible = true }: Code
           className="text-[11px] text-gray-400 hover:text-white transition-colors"
           aria-label="复制代码"
         >
-          📋 复制
+          <Icon name="copy" className="w-3.5 h-3.5 inline-block align-middle" /> 复制
         </button>
       </div>
       {/* 代码区 */}

@@ -14,6 +14,7 @@ import {
 import { getRoutine, saveRoutine, DEFAULT_ROUTINE } from "@/lib/learn-log";
 import { savePlanSummary } from "@/lib/plan-summary";
 import { nowISO } from "@/lib/time";
+import { Icon } from "@/components/Icon";
 
 type RoutineSlot = Routine["slots"][number];
 
@@ -545,7 +546,7 @@ export default function PlanEditClient() {
             保存中...
           </>
         ) : saved ? (
-          "✓ 已保存"
+          <><Icon name="check" className="w-3.5 h-3.5 inline-block" /> 已保存</>
         ) : (
           "保存全部修改"
         )}

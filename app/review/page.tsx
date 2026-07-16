@@ -8,6 +8,7 @@ import type { ReviewCard, ReviewLog, Rating } from "@/lib/types";
 import { getDueCards } from "@/lib/fsrs";
 import { recordMistake } from "@/lib/mistake-book";
 import { ReviewCardView } from "@/components/ReviewCardView";
+import { Icon } from "@/components/Icon";
 
 export default function ReviewPage() {
   const [dueCards, setDueCards] = useState<ReviewCard[]>([]);
@@ -114,16 +115,18 @@ export default function ReviewPage() {
     const total = stats.again + stats.hard + stats.good + stats.easy;
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
-        <div className="text-5xl mb-4">🎉</div>
+        <div className="mb-4">
+          <Icon name="party" className="w-12 h-12 inline-block" />
+        </div>
         <h1 className="text-xl font-bold mb-2">
           {total === 0 ? "今天没有需要复习的卡片" : "复习完成！"}
         </h1>
         {total > 0 && (
           <div className="mt-4 space-y-1 text-sm">
-            <p>😕 Again: {stats.again}</p>
-            <p>😐 Hard: {stats.hard}</p>
-            <p>🙂 Good: {stats.good}</p>
-            <p>😎 Easy: {stats.easy}</p>
+            <p><Icon name="frown" className="w-4 h-4 inline-block align-middle" /> Again: {stats.again}</p>
+            <p><Icon name="meh" className="w-4 h-4 inline-block align-middle" /> Hard: {stats.hard}</p>
+            <p><Icon name="smile" className="w-4 h-4 inline-block align-middle" /> Good: {stats.good}</p>
+            <p><Icon name="smile" className="w-4 h-4 inline-block align-middle" /> Easy: {stats.easy}</p>
             <p className="font-medium mt-2">总计: {total} 张</p>
           </div>
         )}

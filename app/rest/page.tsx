@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { BreathTimer } from "@/components/BreathTimer";
 import { REST_METHODS, getMethodsByEnergy, type RestMethod } from "@/lib/rest-methods";
+import { Icon } from "@/components/Icon";
 
 // 可折叠的方法卡片
 function MethodCard({ method, defaultOpen }: { method: RestMethod; defaultOpen?: boolean }) {
@@ -67,7 +68,7 @@ export default function RestPage() {
 
   return (
     <main className="mx-auto max-w-md space-y-4 p-4 pb-20">
-      <h1 className="text-lg font-bold">😴 高效休息</h1>
+      <h1 className="text-lg font-bold"><Icon name="moon" className="w-4 h-4 inline-block align-middle" /> 高效休息</h1>
 
       <BreathTimer />
 
@@ -96,7 +97,7 @@ export default function RestPage() {
       {recommended.length > 0 && (
         <div>
           <h2 className="text-sm font-medium text-gray-500 mb-2">
-            🎯 适合你现在的方法（{recommended.length}）
+            <Icon name="target" className="w-4 h-4 inline-block align-middle" /> 适合你现在的方法（{recommended.length}）
           </h2>
           <div className="space-y-2">
             {recommended.map((m, i) => (

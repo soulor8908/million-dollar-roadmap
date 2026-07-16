@@ -30,6 +30,7 @@ import {
   MODEL_PRESETS,
 } from "@/lib/model-config";
 import type { ModelConfig } from "@/lib/types";
+import { Icon, type IconName } from "@/components/Icon";
 
 const STORAGE_KEY = "my:profile";
 
@@ -424,7 +425,7 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold">我的</h1>
 
       {/* 1. 我的收藏（置顶） */}
-      <Section icon="⭐" title="我的收藏" desc="收藏的试题集与单题">
+      <Section icon="star" title="我的收藏" desc="收藏的试题集与单题">
         <div className="flex items-center justify-between gap-3">
           <div className="flex gap-6">
             <div>
@@ -447,7 +448,7 @@ export default function ProfilePage() {
 
       {/* 2. 我的个人信息 */}
       <Section
-        icon="👤"
+        icon="user"
         title="我的个人信息"
         desc="头像与基本资料"
       >
@@ -460,8 +461,8 @@ export default function ProfilePage() {
               className="h-16 w-16 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-2xl text-gray-400">
-              👤
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+              <Icon name="user" className="w-8 h-8" />
             </div>
           )}
           <div className="min-w-0 flex-1">
@@ -482,7 +483,7 @@ export default function ProfilePage() {
         {/* 公开主页同步错误提示：让用户知道为什么 /u/[username] 看不到自己 */}
         {syncError && (
           <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-200 space-y-1">
-            <p className="font-medium">⚠ 公开主页未同步</p>
+            <p className="font-medium"><Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> 公开主页未同步</p>
             <p>{syncError}</p>
             <p className="text-amber-700 dark:text-amber-300">
               提示：未同步时 /u/{profile.username || "username"} 会显示"用户不存在"。
@@ -495,7 +496,7 @@ export default function ProfilePage() {
       </Section>
 
       {/* 2. AI 模型配置（核心使用功能，上移） */}
-      <Section icon="🤖" title="AI 模型配置" desc="管理 OpenAI 兼容模型">
+      <Section icon="sparkles" title="AI 模型配置" desc="管理 OpenAI 兼容模型">
         {/* 配置列表 */}
         <div className="space-y-2">
           {modelConfigs.length === 0 ? (
@@ -563,7 +564,7 @@ export default function ProfilePage() {
                         : "bg-red-50 text-red-600"
                     }`}
                   >
-                    {testResult[c.id].ok ? "✅ " : "❌ "}{testResult[c.id].msg}
+                    {testResult[c.id].ok ? <Icon name="check-circle" className="w-3.5 h-3.5 inline-block align-middle" /> : <Icon name="x-circle" className="w-3.5 h-3.5 inline-block align-middle" />} {testResult[c.id].msg}
                   </div>
                 )}
               </div>
@@ -725,7 +726,7 @@ export default function ProfilePage() {
 
       {/* 3. 个人信息编辑 */}
       <Section
-        icon="✏️"
+        icon="pen"
         title="个人信息编辑"
         desc="用户名 / 显示名 / 简介 / 头像"
       >
@@ -803,9 +804,9 @@ export default function ProfilePage() {
                 {profile.bio || "(暂无简介)"}
               </p>
               <div className="mt-2 flex gap-2 text-xs text-gray-500">
-                {profile.visibility.radar && <span>📊 雷达图</span>}
-                {profile.visibility.heatmap && <span>🔥 热力图</span>}
-                {profile.visibility.currentTopic && <span>📚 当前主题</span>}
+                {profile.visibility.radar && <span className="inline-flex items-center gap-1"><Icon name="chart" className="w-3.5 h-3.5 inline-block" />雷达图</span>}
+                {profile.visibility.heatmap && <span className="inline-flex items-center gap-1"><Icon name="flame" className="w-3.5 h-3.5 inline-block" />热力图</span>}
+                {profile.visibility.currentTopic && <span className="inline-flex items-center gap-1"><Icon name="book" className="w-3.5 h-3.5 inline-block" />当前主题</span>}
               </div>
             </div>
 
@@ -817,14 +818,14 @@ export default function ProfilePage() {
               >
                 {saving ? "保存中..." : "保存"}
               </button>
-              {saved && <span className="text-sm text-green-600">已保存 ✓</span>}
+              {saved && <span className="text-sm text-green-600 inline-flex items-center gap-1">已保存 <Icon name="check" className="w-3.5 h-3.5 inline-block" /></span>}
             </div>
           </div>
         )}
       </Section>
 
       {/* 4. 设置 */}
-      <Section icon="⚙️" title="设置" desc="主题 / 时间表 / 隐私 / 通知 / Token">
+      <Section icon="settings" title="设置" desc="主题 / 时间表 / 隐私 / 通知 / Token">
         {/* 主题模式（原"外观"分区合并到设置） */}
         <div className="space-y-3 border-b pb-4">
           <h3 className="font-medium">主题模式</h3>
@@ -869,7 +870,7 @@ export default function ProfilePage() {
               使用模板
             </button>
             {routineSaved && (
-              <span className="text-sm text-green-600">已保存 ✓</span>
+              <span className="text-sm text-green-600 inline-flex items-center gap-1">已保存 <Icon name="check" className="w-3.5 h-3.5 inline-block" /></span>
             )}
             {routineHint && (
               <span className="text-xs text-gray-500">{routineHint}</span>
@@ -909,7 +910,7 @@ export default function ProfilePage() {
             >
               {saving ? "保存中..." : "保存隐私设置"}
             </button>
-            {saved && <span className="text-sm text-green-600">已保存 ✓</span>}
+            {saved && <span className="text-sm text-green-600 inline-flex items-center gap-1">已保存 <Icon name="check" className="w-3.5 h-3.5 inline-block" /></span>}
             {!profile.username && (
               <span className="text-xs text-gray-400">需先设置用户名</span>
             )}
@@ -922,7 +923,7 @@ export default function ProfilePage() {
           {!notifSupported ? (
             <p className="text-sm text-gray-500">当前环境不支持通知</p>
           ) : notifPermission === "granted" ? (
-            <p className="text-sm text-green-600">✓ 通知已开启</p>
+            <p className="text-sm text-green-600"><Icon name="check" className="w-3.5 h-3.5 inline-block align-middle" /> 通知已开启</p>
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-gray-500">
@@ -947,9 +948,9 @@ export default function ProfilePage() {
             <p>· <strong>API Token</strong>（此处）：部署管理员设置的服务端鉴权密钥，仅在使用「服务端默认模型」时需要。</p>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            ✅ <strong>如果你已在上方配置了自己的 AI 模型（含 API Key），无需填写此项，直接关闭即可。</strong>
+            <Icon name="check-circle" className="w-3.5 h-3.5 inline-block align-middle" /> <strong>如果你已在上方配置了自己的 AI 模型（含 API Key），无需填写此项，直接关闭即可。</strong>
             <br />
-            ⚠️ 仅当生产环境部署了服务端默认模型且设置了 API_TOKEN 密钥时，才需在此填入相同值。大多数用户不需要填写。
+            <Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> 仅当生产环境部署了服务端默认模型且设置了 API_TOKEN 密钥时，才需在此填入相同值。大多数用户不需要填写。
           </p>
           <details className="text-xs text-gray-400 dark:text-gray-500">
             <summary className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">API_TOKEN 怎么获取？（点击展开）</summary>
@@ -959,7 +960,7 @@ export default function ProfilePage() {
               <pre className="bg-gray-800 text-green-400 p-2 rounded text-[11px] overflow-x-auto">npx wrangler pages secret put API_TOKEN --project-name=你的项目名</pre>
               <p>2. 然后输入你想设置的 Token 值（任意字符串，如 <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">my-secret-token-123</code>）</p>
               <p>3. 将这个值填入上方输入框</p>
-              <p className="text-orange-500">⚠️ 如果没有部署服务端默认模型（未设 OPENAI_API_KEY 等环境变量），即使填了 API_TOKEN 也无法使用默认模型。建议直接配置自己的 AI 模型。</p>
+              <p className="text-orange-500"><Icon name="alert" className="w-3.5 h-3.5 inline-block align-middle" /> 如果没有部署服务端默认模型（未设 OPENAI_API_KEY 等环境变量），即使填了 API_TOKEN 也无法使用默认模型。建议直接配置自己的 AI 模型。</p>
             </div>
           </details>
           <input
@@ -980,14 +981,14 @@ export default function ProfilePage() {
               保存 Token
             </button>
             {tokenSaved && (
-              <span className="text-sm text-green-600">已保存 ✓</span>
+              <span className="text-sm text-green-600 inline-flex items-center gap-1">已保存 <Icon name="check" className="w-3.5 h-3.5 inline-block" /></span>
             )}
           </div>
         </div>
       </Section>
 
       {/* 6. 应用信息 */}
-      <Section icon="📦" title="应用信息" desc="版本 / 技术栈 / 仓库">
+      <Section icon="package" title="应用信息" desc="版本 / 技术栈 / 仓库">
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
             <dt className="text-gray-500">应用名称</dt>
@@ -1024,7 +1025,7 @@ export default function ProfilePage() {
       </Section>
 
       {/* 7. 帮助 */}
-      <Section icon="❓" title="帮助" desc="常见问题 / 反馈 / 快捷键">
+      <Section icon="help-circle" title="帮助" desc="常见问题 / 反馈 / 快捷键">
         {/* 常见问题 */}
         <div className="space-y-2">
           <h3 className="font-medium">常见问题</h3>
@@ -1080,7 +1081,7 @@ function Section({
   desc,
   children,
 }: {
-  icon: string;
+  icon: IconName;
   title: string;
   desc: string;
   children: React.ReactNode;
@@ -1089,9 +1090,7 @@ function Section({
     <section className="space-y-3 rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
       <header className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-semibold">
-          <span className="text-xl" aria-hidden>
-            {icon}
-          </span>
+          <Icon name={icon} className="w-5 h-5 shrink-0" />
           {title}
         </h2>
         <span className="text-right text-xs text-gray-400">{desc}</span>

@@ -14,7 +14,7 @@ import { getDueCards } from "@/lib/fsrs";
 import { StatusCard } from "@/components/StatusCard";
 import { CurrentTaskCard } from "@/components/CurrentTaskCard";
 import { DailyNudge } from "@/components/DailyNudge";
-import { Icon } from "@/components/Icon";
+import { Icon, type IconName } from "@/components/Icon";
 
 export default function Home() {
   const [dueCount, setDueCount] = useState(0);
@@ -170,18 +170,18 @@ export default function Home() {
       if (lastStreak >= 3) {
         return {
           color: "bg-red-50 border-red-300 text-red-600",
-          emoji: "💔",
+          emoji: "heart",
           sub: `断卡！上次连续 ${lastStreak} 天`,
           shock: true,
         };
       }
-      return { color: "bg-gray-50 border-gray-200 text-gray-500", emoji: "⚪", sub: "今日未打卡", shock: false };
+      return { color: "bg-gray-50 border-gray-200 text-gray-500", emoji: "", sub: "今日未打卡", shock: false };
     }
-    if (streak >= 30) return { color: "bg-purple-50 border-purple-300 text-purple-700", emoji: "🔥", sub: "满月达成！", shock: false };
-    if (streak >= 14) return { color: "bg-orange-50 border-orange-300 text-orange-700", emoji: "🔥", sub: "两周连胜！", shock: false };
-    if (streak >= 7) return { color: "bg-orange-50 border-orange-300 text-orange-600", emoji: "🔥", sub: "一周连胜！", shock: false };
-    if (streak >= 3) return { color: "bg-yellow-50 border-yellow-300 text-yellow-700", emoji: "⭐", sub: "保持节奏", shock: false };
-    return { color: "bg-blue-50 border-blue-300 text-blue-700", emoji: "🌱", sub: "开始打卡", shock: false };
+    if (streak >= 30) return { color: "bg-purple-50 border-purple-300 text-purple-700", emoji: "flame", sub: "满月达成！", shock: false };
+    if (streak >= 14) return { color: "bg-orange-50 border-orange-300 text-orange-700", emoji: "flame", sub: "两周连胜！", shock: false };
+    if (streak >= 7) return { color: "bg-orange-50 border-orange-300 text-orange-600", emoji: "flame", sub: "一周连胜！", shock: false };
+    if (streak >= 3) return { color: "bg-yellow-50 border-yellow-300 text-yellow-700", emoji: "star", sub: "保持节奏", shock: false };
+    return { color: "bg-blue-50 border-blue-300 text-blue-700", emoji: "leaf", sub: "开始打卡", shock: false };
   })();
 
   const lowEnergy = todayEnergy !== null && todayEnergy <= 2;
@@ -218,7 +218,7 @@ export default function Home() {
       {/* 新用户引导（无任何学习计划时） */}
       {hasPlans === false && (
         <div className="mb-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-6 text-center">
-          <p className="text-lg font-semibold mb-2">👋 欢迎来到 devpath</p>
+          <p className="text-lg font-semibold mb-2">欢迎来到 devpath</p>
           <p className="mb-4 text-sm text-gray-600">告诉 AI 你想学什么，它帮你拆知识树、排计划、出面试题</p>
           <Link
             href="/learn"
@@ -241,7 +241,7 @@ export default function Home() {
         </Link>
         <Link href="/learn" className={`border rounded-lg p-3 text-center hover:shadow-md transition-shadow ${streakMeta.color}`}>
           <p className="text-2xl font-bold">
-            {streakMeta.emoji} {streak}
+            {streakMeta.emoji ? <Icon name={streakMeta.emoji as IconName} className="w-5 h-5 inline-block align-middle" /> : null} {streak}
           </p>
           <p className="text-xs">{streak === 0 ? "去打卡" : streakMeta.sub}</p>
         </Link>
@@ -251,7 +251,7 @@ export default function Home() {
       {streak === 0 && hasPlans && (
         <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-3">
           <p className="text-sm text-blue-800 dark:text-blue-200">
-            💡 完成今日第一个学习/复习任务即可自动打卡。点击上方「今日待学」开始吧！
+            <Icon name="lightbulb" className="w-4 h-4 inline-block align-middle" /> 完成今日第一个学习/复习任务即可自动打卡。点击上方「今日待学」开始吧！
           </p>
         </div>
       )}

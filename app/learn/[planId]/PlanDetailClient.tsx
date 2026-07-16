@@ -9,6 +9,7 @@ import { KEY_PREFIXES } from "@/lib/types";
 import type { LearningPlan, Question, ScheduleItem } from "@/lib/types";
 import { KnowledgeTree } from "@/components/KnowledgeTree";
 import { QuestionCard } from "@/components/QuestionCard";
+import { Icon } from "@/components/Icon";
 import { toggleQuestionInPlan, createFavoriteDeck, listFavoriteDecks, deleteFavoriteDeck } from "@/lib/favorite";
 import { savePlanSummary } from "@/lib/plan-summary";
 import { nowISO } from "@/lib/time";
@@ -325,14 +326,14 @@ export default function PlanDetailClient() {
               className="px-3 py-1.5 text-xs bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
               title="重新编辑提示词与计划参数，AI 重新生成"
             >
-              🔄 重新生成
+              <Icon name="refresh-cw" className="w-4 h-4 inline-block align-middle" /> 重新生成
             </button>
             <Link
               href={`/learn/${plan.id}/edit`}
               className="px-3 py-1.5 text-xs border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
               title="调整作息、优先级、纳入范围"
             >
-              ✏️ 调整计划
+              <Icon name="pen" className="w-4 h-4 inline-block align-middle" /> 调整计划
             </Link>
           </div>
         </div>
@@ -340,7 +341,7 @@ export default function PlanDetailClient() {
           onClick={handleDeckFavorite}
           className="mt-3 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200"
         >
-          {deckFavorited ? "⭐ 已收藏（点击取消）" : "☆ 收藏这份试题"}
+          {deckFavorited ? <><Icon name="star" className="w-3.5 h-3.5 inline-block" /> 已收藏（点击取消）</> : <><Icon name="star" className="w-3.5 h-3.5 inline-block" /> 收藏这份试题</>}
         </button>
       </div>
 
@@ -364,7 +365,7 @@ export default function PlanDetailClient() {
                     : "bg-white text-gray-600 border"
                 }`}
               >
-                {v === "all" ? "全部" : v === "big" ? "🏢 大厂" : "普通"}
+                {v === "all" ? "全部" : v === "big" ? <><Icon name="building" className="w-3 h-3 inline-block" /> 大厂</> : "普通"}
               </button>
             ))}
             <span className="text-xs text-gray-500 ml-2">难度:</span>
@@ -497,7 +498,7 @@ export default function PlanDetailClient() {
                         >
                           {nodeTitle}
                         </span>
-                        {item.completed && <span className="text-green-500">✓</span>}
+                        {item.completed && <span className="text-green-500"><Icon name="check" className="w-3.5 h-3.5 inline-block" /></span>}
                         <span className="text-gray-400">{item.estimatedMinutes}min</span>
                       </div>
                     );
@@ -521,13 +522,13 @@ export default function PlanDetailClient() {
           >
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold">🔄 重新生成计划</h2>
+                <h2 className="text-lg font-bold"><Icon name="refresh-cw" className="w-4 h-4 inline-block align-middle" /> 重新生成计划</h2>
                 <button
                   onClick={() => !regeneratingPlan && setShowRegenModal(false)}
                   className="text-gray-400 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
                   aria-label="关闭"
                 >
-                  ✕
+                  <Icon name="x" className="w-4 h-4 inline-block" />
                 </button>
               </div>
               <p className="text-xs text-gray-500 mb-4">
@@ -611,7 +612,7 @@ export default function PlanDetailClient() {
                         AI 生成中...
                       </>
                     ) : (
-                      <>🔄 重新生成</>
+                      <><Icon name="refresh-cw" className="w-4 h-4 inline-block align-middle" /> 重新生成</>
                     )}
                   </button>
                   <button

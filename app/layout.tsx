@@ -3,8 +3,8 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "devpath — AI 驱动的开发者成长 OS",
-  description: "告诉 AI 你想学什么，它给你拆知识树、排学习计划、生面试题、按遗忘曲线复习",
+  title: "devpath-ai — AI 驱动的开发者成长 OS",
+  description: "告诉 AI 你想学什么，它给你拆知识树、排学习计划、生面试题、按遗忘曲线复习、追踪能量与情绪",
   manifest: "/manifest.json",
 };
 

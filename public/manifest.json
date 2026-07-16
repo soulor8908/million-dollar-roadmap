@@ -1,7 +1,7 @@
 {
-  "name": "devpath - AI 驱动的开发者成长 OS",
-  "short_name": "devpath",
-  "description": "告诉 AI 你想学什么，它给你拆知识树、排学习计划、生面试题、按遗忘曲线复习",
+  "name": "devpath-ai - AI 驱动的开发者成长 OS",
+  "short_name": "devpath-ai",
+  "description": "告诉 AI 你想学什么，它给你拆知识树、排学习计划、生面试题、按遗忘曲线复习、追踪能量与情绪",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

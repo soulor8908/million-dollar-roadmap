@@ -1,5 +1,5 @@
 {
-  "name": "devpath",
+  "name": "devpath-ai",
   "buildCommand": "npm run build",
   "buildOutputDirectory": "out",
   "environmentVariables": {
@@ -9,7 +9,7 @@
   "kvNamespaces": [
     {
       "binding": "KV",
-      "name": "devpath-kv"
+      "name": "devpath-ai-kv"
     }
   ],
   "routes": [

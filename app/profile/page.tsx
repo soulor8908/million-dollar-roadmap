@@ -1115,12 +1115,12 @@ export default function ProfilePage() {
             <dt className="shrink-0 text-gray-500">GitHub 仓库</dt>
             <dd>
               <a
-                href="https://github.com/soulor8908/million-dollar-roadmap"
+                href="https://github.com/soulor8908/devpath-ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="break-all text-blue-600 hover:underline"
               >
-                soulor8908/million-dollar-roadmap
+                soulor8908/devpath-ai
               </a>
             </dd>
           </div>
@@ -1168,7 +1168,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between border-t pt-4 text-sm">
           <span className="text-gray-500">反馈渠道</span>
           <a
-            href="https://github.com/soulor8908/million-dollar-roadmap/issues"
+            href="https://github.com/soulor8908/devpath-ai/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"

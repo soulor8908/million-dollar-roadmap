@@ -1,7 +1,8 @@
 {
-  "name": "devpath",
+  "name": "devpath-ai",
   "version": "0.1.0",
   "private": true,
+  "description": "AI 驱动的开发者成长 OS — 知识拆解、学习计划、面试题生成、FSRS 复习、能量管理与情绪觉察",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

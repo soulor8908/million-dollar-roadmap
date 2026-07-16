@@ -17,6 +17,7 @@ import {
 } from "@/lib/ai/quality-tracker";
 import { PROMPTS } from "@/lib/ai/prompts";
 import type { AIScene } from "@/lib/types";
+import { Icon, type IconName } from "@/components/Icon";
 
 const SCENE_LABELS: Record<AIScene, string> = {
   knowledge_decompose: "知识树拆解",
@@ -125,15 +126,17 @@ export default function AIQualityPage() {
         ))}
         <button
           onClick={() => void load()}
-          className="ml-auto text-sm text-blue-500 hover:underline"
+          className="ml-auto text-sm text-blue-500 hover:underline inline-flex items-center gap-1"
         >
-          🔄 刷新
+          <Icon name="refresh-cw" className="w-4 h-4 inline-block align-middle" /> 刷新
         </button>
       </div>
 
       {!hasData ? (
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-          <div className="text-4xl mb-3">📊</div>
+          <div className="mb-3 flex justify-center">
+            <Icon name="chart" className="w-10 h-10 text-gray-400" />
+          </div>
           <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">
             还没有 AI 调用数据
           </p>
@@ -145,8 +148,8 @@ export default function AIQualityPage() {
         <>
           {/* 概览卡片 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="AI 调用" value={String(report.totalCalls)} icon="🤖" />
-            <StatCard label="用户反馈" value={String(report.totalFeedback)} icon="💬" />
+            <StatCard label="AI 调用" value={String(report.totalCalls)} icon="sparkles" />
+            <StatCard label="用户反馈" value={String(report.totalFeedback)} icon="message-circle" />
             <StatCard
               label="时间范围"
               value={
@@ -154,13 +157,13 @@ export default function AIQualityPage() {
                   ? `${report.period.from.slice(0, 10)} ~ ${report.period.to?.slice(0, 10) ?? ""}`
                   : "—"
               }
-              icon="📅"
+              icon="calendar"
               small
             />
             <StatCard
               label="场景数"
               value={String(report.scenes.length)}
-              icon="🎯"
+              icon="target"
             />
           </div>
 
@@ -318,13 +321,13 @@ function StatCard({
 }: {
   label: string;
   value: string;
-  icon: string;
+  icon: IconName;
   small?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
       <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
-        <span>{icon}</span>
+        <Icon name={icon} className="w-3.5 h-3.5" />
         <span>{label}</span>
       </div>
       <div className={`font-bold text-gray-800 dark:text-gray-100 ${small ? "text-xs" : "text-xl"}`}>

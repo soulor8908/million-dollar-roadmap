@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Heatmap } from "@/components/Heatmap";
 import { RadarChart } from "@/components/RadarChart";
+import { Icon } from "@/components/Icon";
 import type { PublicProfile, KnowledgeNode } from "@/lib/types";
 import type { PublicStats } from "@/lib/storage/kv";
 import { setItem as dbSet, getItem as dbGet } from "@/lib/storage/db";
@@ -124,9 +125,9 @@ export default function UserPageClient() {
         </div>
         <button
           onClick={follow}
-          className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+          className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 inline-flex items-center gap-1"
         >
-          🙏 关注 ta
+          <Icon name="heart" className="w-4 h-4 inline-block align-middle" /> 关注 ta
         </button>
         {followedMsg && (
           <span className="text-sm text-green-600">{followedMsg}</span>
@@ -186,9 +187,9 @@ export default function UserPageClient() {
           <p className="mb-2 text-sm text-gray-700">{data.planSnapshot.topic}</p>
           <button
             onClick={copyPlan}
-            className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+            className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50 inline-flex items-center gap-1"
           >
-            {copied ? "✓ 已复制到我的计划" : "📋 复制这个计划"}
+            {copied ? "✓ 已复制到我的计划" : (<><Icon name="copy" className="w-4 h-4 inline-block align-middle" /> 复制这个计划</>)}
           </button>
         </section>
       )}

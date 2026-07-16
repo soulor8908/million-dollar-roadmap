@@ -246,7 +246,7 @@ export default function EmotionPage() {
       {entries.length > 0 && (
         <div className="mb-6 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
           <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            📊 情绪分布（共 {entries.length} 条）
+            <Icon name="chart" className="w-4 h-4 inline-block align-middle" /> 情绪分布（共 {entries.length} 条）
           </h2>
           <div className="flex flex-wrap gap-2">
             {Object.entries(tagCounts)
@@ -305,9 +305,9 @@ export default function EmotionPage() {
                     </div>
                     {(entry.trigger || entry.impact || entry.coping) && (
                       <div className="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                        {entry.trigger && <p>📌 触发：{entry.trigger}</p>}
-                        {entry.impact && <p>💥 影响：{entry.impact}</p>}
-                        {entry.coping && <p>✅ 应对：{entry.coping}</p>}
+                        {entry.trigger && <p><Icon name="pin" className="w-4 h-4 inline-block align-middle" /> 触发：{entry.trigger}</p>}
+                        {entry.impact && <p><Icon name="zap" className="w-4 h-4 inline-block align-middle" /> 影响：{entry.impact}</p>}
+                        {entry.coping && <p><Icon name="check-circle" className="w-4 h-4 inline-block align-middle" /> 应对：{entry.coping}</p>}
                       </div>
                     )}
                   </div>
@@ -324,13 +324,13 @@ export default function EmotionPage() {
           href="/daily"
           className="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          📅 每日日志
+          <Icon name="calendar" className="w-4 h-4 inline-block align-middle" /> 每日日志
         </Link>
         <Link
           href="/"
           className="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          🏠 首页
+          <Icon name="home" className="w-4 h-4 inline-block align-middle" /> 首页
         </Link>
       </div>
     </div>

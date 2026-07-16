@@ -11,6 +11,7 @@ import {
   getUnresolvedMistakes,
   resolveMistake,
 } from "@/lib/mistake-book";
+import { Icon } from "@/components/Icon";
 
 /** 相对时间（"2小时前"） */
 function relativeTime(iso: string): string {
@@ -111,7 +112,7 @@ export default function MistakeBookClient() {
     <div className="min-h-screen p-4 max-w-3xl mx-auto pb-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">❌ 错题本</h1>
+        <h1 className="text-xl font-bold"><Icon name="x-circle" className="w-5 h-5 inline-block align-middle" /> 错题本</h1>
         <span className="text-sm text-gray-500">
           {unresolved.length} 道待攻克
         </span>
@@ -148,7 +149,9 @@ export default function MistakeBookClient() {
       {/* 未解决错题列表 */}
       {unresolved.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-5xl mb-3">🎉</div>
+          <div className="mb-3 flex justify-center">
+            <Icon name="party" className="w-12 h-12 text-gray-400" />
+          </div>
           <p className="text-gray-600 font-medium">还没有错题，继续保持！</p>
           <Link
             href="/review"
@@ -171,8 +174,8 @@ export default function MistakeBookClient() {
                   className="flex items-start gap-2 cursor-pointer"
                   onClick={() => setExpandedId(expanded ? null : m.id)}
                 >
-                  <span className="shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
-                    ❌ x {m.wrongCount}
+                  <span className="shrink-0 mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
+                    <Icon name="x-circle" className="w-3 h-3" /> x {m.wrongCount}
                   </span>
                   <p className={`flex-1 text-sm text-gray-800 ${expanded ? "" : "line-clamp-2"}`}>
                     {m.questionText}
@@ -231,8 +234,8 @@ export default function MistakeBookClient() {
                     className="border rounded-lg p-3 bg-gray-50 opacity-75"
                   >
                     <div className="flex items-start gap-2">
-                      <span className="shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-600">
-                        ✓ 已掌握
+                      <span className="shrink-0 mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-600">
+                        <Icon name="check" className="w-3 h-3" /> 已掌握
                       </span>
                       <p className="flex-1 text-sm text-gray-600 line-clamp-2">
                         {m.questionText}

@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { getItem, listKeys, listItems } from "@/lib/storage/db";
+import { getItem, listItems } from "@/lib/storage/db";
 import { KEY_PREFIXES } from "@/lib/types";
 import type {
   LearningPlan,
@@ -61,39 +61,30 @@ export default function Home() {
   const [showEmotionRecorder, setShowEmotionRecorder] = useState(false);
 
   const loadHomeData = useCallback(async () => {
-    const allKeys = await listKeys();
-    const strKeys = allKeys.filter((k): k is string => typeof k === "string");
+    // P3 性能优化：用 listItems<T>(prefix) 走 prefix 索引批量读取
+    // 旧版 listKeys() + 逐个 getItem 是 O(n) 全表 + n 次 get，新版是一次索引查询
 
     // 读所有卡片，计算今日待复习
-    const cardKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.CARD));
-    const cards: ReviewCard[] = [];
-    for (const k of cardKeys) {
-      const c = await getItem<ReviewCard>(k);
-      if (c) cards.push(c);
-    }
+    const cards = await listItems<ReviewCard>(KEY_PREFIXES.CARD);
     const due = getDueCards(cards);
     setDueCount(due.length);
 
     // 读所有 plan，找今日 schedule
-    const planKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.PLAN));
+    const plans = await listItems<LearningPlan>(KEY_PREFIXES.PLAN);
     let todayLearn = 0;
     const todayItems: Array<ScheduleItem & { planId: string; topic: string }> = [];
-    const loadedPlans: LearningPlan[] = [];
-    for (const k of planKeys) {
-      const plan = await getItem<LearningPlan>(k);
-      if (!plan) continue;
-      loadedPlans.push(plan);
+    for (const plan of plans) {
       const today = plan.schedule.filter((s) => s.day === 1 && !s.completed);
       for (const s of today) {
         todayItems.push({ ...s, planId: plan.id, topic: plan.topic });
       }
       todayLearn += today.filter((s) => s.type === "learn").length;
     }
-    if (loadedPlans.length > 0) {
-      loadedPlans.sort(
+    if (plans.length > 0) {
+      plans.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      setLatestPlan({ id: loadedPlans[0].id, topic: loadedPlans[0].topic });
+      setLatestPlan({ id: plans[0].id, topic: plans[0].topic });
       setHasPlans(true);
     } else {
       setHasPlans(false);
@@ -102,13 +93,7 @@ export default function Home() {
     setTodaySchedule(todayItems.slice(0, 5));
 
     // 读学习日志，算连续打卡
-    const logKeys = strKeys.filter((k) => k.startsWith(KEY_PREFIXES.LEARN_LOG));
-    const logs: LearnLog[] = [];
-    for (const k of logKeys) {
-      const log = await getItem<LearnLog>(k);
-      if (log) logs.push(log);
-    }
-
+    const logs = await listItems<LearnLog>(KEY_PREFIXES.LEARN_LOG);
     const logDates = new Set(logs.map((l) => l.date));
 
     let streakCount = 0;

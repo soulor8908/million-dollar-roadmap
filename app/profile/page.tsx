@@ -7,8 +7,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import type { PublicProfile } from "@/lib/types";
-import { getItem as dbGet, setItem as dbSet } from "@/lib/storage/db";
+import type { PublicProfile, LearnLog } from "@/lib/types";
+import { getItem as dbGet, setItem as dbSet, listItems } from "@/lib/storage/db";
+import { KEY_PREFIXES } from "@/lib/types";
+import { chinaDateNow, chinaDateShift } from "@/lib/time";
 import { apiFetch, getApiToken, setApiToken } from "@/lib/api-client";
 import { ShareCardButton } from "@/components/ShareCardButton";
 import { SyncStatus } from "@/components/SyncStatus";
@@ -114,6 +116,11 @@ export default function ProfilePage() {
   const [deckCount, setDeckCount] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
 
+  // P2.5 学习统计概览（dashboard Tab 移除后补全闭环）
+  const [streak, setStreak] = useState(0);
+  const [totalMinutes, setTotalMinutes] = useState(0);
+  const [weekMinutes, setWeekMinutes] = useState(0);
+
   // AI 模型配置
   const [modelConfigs, setModelConfigs] = useState<ModelConfig[]>([]);
   const [showModelForm, setShowModelForm] = useState(false);
@@ -155,6 +162,29 @@ export default function ProfilePage() {
       ]);
       setDeckCount(decks.length);
       setQuestionCount(questions.length);
+
+      // P2.5 加载学习统计概览：连续打卡 + 总时长 + 本周时长
+      const logs = await listItems<LearnLog>(KEY_PREFIXES.LEARN_LOG);
+      const total = logs.reduce((sum, l) => sum + (l.duration ?? 0), 0);
+      setTotalMinutes(total);
+      // 本周（最近 7 天）时长
+      let week = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = chinaDateShift(chinaDateNow(), -i);
+        week += logs
+          .filter((l) => l.date === d)
+          .reduce((s, l) => s + (l.duration ?? 0), 0);
+      }
+      setWeekMinutes(week);
+      // 连续打卡
+      const logDates = new Set(logs.map((l) => l.date));
+      let streakCount = 0;
+      let checkDate = chinaDateNow();
+      while (logDates.has(checkDate)) {
+        streakCount++;
+        checkDate = chinaDateShift(checkDate, -1);
+      }
+      setStreak(streakCount);
 
       // 加载 AI 模型配置
       const configs = await listModelConfigs();
@@ -448,6 +478,57 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <h1 className="text-2xl font-bold">我的</h1>
+
+      {/* 0. 学习统计概览（P2.5: dashboard Tab 移除后补全闭环） */}
+      <Section
+        icon="chart"
+        title="学习统计"
+        desc="连续打卡 · 累计时长 · 本周表现"
+      >
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-600 flex items-center justify-center gap-1">
+              {streak >= 3 && <Icon name="flame" className="w-4 h-4" />}
+              {streak}
+            </div>
+            <div className="text-xs text-gray-500">连续打卡</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {Math.floor(totalMinutes / 60)}
+              <span className="text-sm font-normal text-gray-400">h</span>
+            </div>
+            <div className="text-xs text-gray-500">累计学习</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{weekMinutes}</div>
+            <div className="text-xs text-gray-500">本周分钟</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Link
+            href="/stats"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-1"
+          >
+            <Icon name="calendar" className="w-3.5 h-3.5" />
+            热力图
+          </Link>
+          <Link
+            href="/stats"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-1"
+          >
+            <Icon name="target" className="w-3.5 h-3.5" />
+            雷达图
+          </Link>
+          <Link
+            href="/stats"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-1"
+          >
+            <Icon name="sparkles" className="w-3.5 h-3.5" />
+            AI 周报
+          </Link>
+        </div>
+      </Section>
 
       {/* 1. 我的收藏（置顶） */}
       <Section icon="star" title="我的收藏" desc="收藏的试题集与单题">

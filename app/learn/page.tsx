@@ -14,7 +14,7 @@ import Link from "next/link";
 import { setItem, delItem } from "@/lib/storage/db";
 import { aiFetch } from "@/lib/api-client";
 import { KEY_PREFIXES, type LearningPlan, type KnowledgeNode, type Question, type ScheduleItem, type PromptLibraryItem, type LearningPlanSummary } from "@/lib/types";
-import { PRESETS, type PresetMeta } from "@/lib/presets";
+import { PRESETS, type PresetMeta, matchPresetByTopic } from "@/lib/presets";
 import { MindMap } from "@/components/MindMap";
 import {
   listPrompts,
@@ -204,6 +204,27 @@ export default function LearnPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!topic.trim()) return;
+
+    // P2 AI 等待优化：优先匹配预设，立即展示骨架知识树，AI 异步优化
+    // 旧版：调 /api/learn 全屏 loading 30-90 秒
+    // 新版：匹配到预设 → openPreset 弹窗骨架秒开 → 用户点"重新生成"才异步调 AI
+    //       无匹配 → 回退到原 AI 全量生成流程
+    const matched = matchPresetByTopic(topic.trim());
+    if (matched) {
+      // 立即打开预设弹窗（零等待）
+      // 注意：这里用 topic 覆盖 preset.topic，让弹窗显示用户输入的主题
+      const customizedPreset: PresetMeta = {
+        ...matched,
+        topic: topic.trim(), // 保留用户原始输入作为主题
+      };
+      openPreset(customizedPreset);
+      // 提示用户可点"重新生成"用 AI 优化
+      setError("");
+      setLoading(false);
+      return;
+    }
+
+    // 无匹配预设 → 回退到 AI 全量生成
     setLoading(true);
     setError("");
     try {
@@ -292,6 +313,11 @@ export default function LearnPage() {
           主题：{regenerating ? presetData?.topic : topic}
         </p>
         <p className="text-xs text-gray-400 mt-4">预计 30-90 秒，请稍候</p>
+        {!regenerating && (
+          <p className="text-xs text-blue-500 mt-2 max-w-md text-center">
+            💡 等不及？下方可选预设知识库（秒开），AI 后台帮你优化
+          </p>
+        )}
       </div>
     );
   }

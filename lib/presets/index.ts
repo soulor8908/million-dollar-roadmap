@@ -71,3 +71,35 @@ export const PRESETS: PresetMeta[] = [
 export function getPresetById(id: string): PresetMeta | undefined {
   return PRESETS.find((p) => p.id === id);
 }
+
+/**
+ * P2 AI 等待优化：按主题关键词匹配最接近的预设
+ * 用于"输入主题 → 立即展示骨架知识树 → 右上角 AI 异步优化"流程
+ *
+ * 匹配规则：
+ * 1. 主题包含预设 name 或 tags 中任一关键词 → 返回该预设
+ * 2. 多个匹配 → 返回得分最高的（命中 tag 数多者胜）
+ * 3. 无匹配 → 返回 undefined（调用方回退到 AI 全量生成）
+ */
+export function matchPresetByTopic(topic: string): PresetMeta | undefined {
+  const t = topic.trim().toLowerCase();
+  if (!t) return undefined;
+
+  let best: { preset: PresetMeta; score: number } | null = null;
+  for (const p of PRESETS) {
+    let score = 0;
+    // name 命中得 3 分（强信号）
+    if (t.includes(p.name.toLowerCase())) score += 3;
+    // tags 命中每个得 2 分
+    for (const tag of p.tags) {
+      if (t.includes(tag.toLowerCase())) score += 2;
+    }
+    // topic 命中（预设主题通常更具体）得 1 分
+    if (t.includes(p.topic.toLowerCase().slice(0, 4))) score += 1;
+
+    if (score > 0 && (!best || score > best.score)) {
+      best = { preset: p, score };
+    }
+  }
+  return best?.preset;
+}

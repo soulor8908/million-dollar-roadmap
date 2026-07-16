@@ -19,7 +19,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { nanoid } from "nanoid";
 import {
   type EmotionTag,
@@ -74,6 +74,11 @@ export function EmotionRecorder({ onSaved, compact = false }: Props) {
   const [customCoping, setCustomCoping] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // P1.5 自动触发 AI 建议：选完标签 + 输入原因后 debounce 1s 自动调
+  // 避免用户多按一次"给我建议"按钮
+  const fetchRef = useRef<() => void>(() => {});
+  const lastFiredRef = useRef<string>(""); // 防止相同输入重复触发
 
   // 请求 AI 应对建议
   const fetchSuggestions = async () => {
@@ -130,6 +135,22 @@ export function EmotionRecorder({ onSaved, compact = false }: Props) {
       setLoading(false);
     }
   };
+
+  // 每次 render 更新 ref，让 useEffect 能拿到最新的 fetchSuggestions
+  fetchRef.current = fetchSuggestions;
+
+  useEffect(() => {
+    if (!tag) return;
+    // 原因长度过短不触发（避免刚开始输入就调 AI）
+    if (reason.trim().length < 2) return;
+    const key = `${tag}|${reason.trim()}`;
+    if (key === lastFiredRef.current) return; // 已触发过相同输入
+    const timer = setTimeout(() => {
+      lastFiredRef.current = key;
+      fetchRef.current();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [tag, reason]);
 
   // 切换选中的建议
   const toggleSuggestion = (s: string) => {
@@ -209,26 +230,26 @@ export function EmotionRecorder({ onSaved, compact = false }: Props) {
         />
       </div>
 
-      {/* Step 3: AI 应对建议 */}
+      {/* Step 3: AI 应对建议（P1.5: 选完标签+输入原因后自动触发） */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-500">3. AI 应对建议</p>
+          <p className="text-xs text-gray-500">
+            3. AI 应对建议
+            {loading && (
+              <span className="ml-2 text-blue-500 inline-flex items-center gap-1">
+                <span className="inline-block w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                自动生成中
+              </span>
+            )}
+          </p>
           <button
             onClick={fetchSuggestions}
             disabled={!tag || loading}
             className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            title="AI 会自动生成，也可手动重新生成"
           >
-            {loading ? (
-              <>
-                <span className="inline-block w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
-                生成中...
-              </>
-            ) : (
-              <>
-                <Icon name="sparkles" className="w-3.5 h-3.5 inline-block" />
-                {suggestions.length > 0 ? "重新生成" : "给我建议"}
-              </>
-            )}
+            <Icon name="sparkles" className="w-3.5 h-3.5 inline-block" />
+            {suggestions.length > 0 ? "重新生成" : "给我建议"}
           </button>
         </div>
 

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import type { ReviewCard, Rating } from "@/lib/types";
+import { Icon, type IconName } from "@/components/Icon";
 
-const RATINGS: { value: Rating; label: string; emoji: string; color: string }[] = [
-  { value: 1, label: "Again", emoji: "😕", color: "bg-red-500" },
-  { value: 2, label: "Hard", emoji: "😐", color: "bg-orange-500" },
-  { value: 3, label: "Good", emoji: "🙂", color: "bg-green-500" },
-  { value: 4, label: "Easy", emoji: "😎", color: "bg-blue-500" },
+const RATINGS: { value: Rating; label: string; icon: IconName; color: string }[] = [
+  { value: 1, label: "Again", icon: "frown", color: "bg-red-500" },
+  { value: 2, label: "Hard", icon: "meh", color: "bg-orange-500" },
+  { value: 3, label: "Good", icon: "smile", color: "bg-green-500" },
+  { value: 4, label: "Easy", icon: "smile", color: "bg-blue-500" },
 ];
 
 interface Props {
@@ -41,7 +42,7 @@ export function ReviewCardView({ card, onRate }: Props) {
                 onClick={() => onRate(r.value)}
                 className={`flex flex-col items-center py-2 ${r.color} text-white rounded-lg hover:opacity-90`}
               >
-                <span className="text-xl">{r.emoji}</span>
+                <span className="text-xl"><Icon name={r.icon} className="w-5 h-5 inline-block" /></span>
                 <span className="text-xs">{r.label}</span>
               </button>
             ))}

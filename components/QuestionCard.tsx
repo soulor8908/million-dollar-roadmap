@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Question } from "@/lib/types";
 import { AnswerContent, CodeBlock } from "@/components/CodeBlock";
 import { trackAIFeedback } from "@/lib/ai/quality-tracker";
+import { Icon } from "@/components/Icon";
 
 interface Props {
   question: Question;
@@ -50,7 +51,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
         >
           {question.bigTech && (
             <span className="inline-block px-1.5 py-0.5 mr-2 text-[10px] bg-amber-100 text-amber-700 rounded font-medium align-middle">
-              🏢 大厂
+              <Icon name="building" className="w-3 h-3 inline-block align-middle" /> 大厂
             </span>
           )}
           {question.question}
@@ -64,7 +65,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
             className={`text-lg ${question.favorited ? "text-yellow-500" : "text-gray-300"}`}
             aria-label="收藏"
           >
-            {question.favorited ? "⭐" : "☆"}
+            <Icon name="star" className="w-5 h-5" />
           </button>
         )}
       </div>
@@ -93,7 +94,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
                     className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors border border-blue-100"
                     title="点击进入 AI 聊天"
                   >
-                    💬 {fu}
+                    <Icon name="message-circle" className="w-3.5 h-3.5 inline-block align-middle" /> {fu}
                   </button>
                 ))}
               </div>
@@ -134,7 +135,7 @@ export function QuestionCard({ question, onFavoriteToggle, onRegenerate, regener
                 : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"
             } disabled:opacity-50`}
           >
-            {regenerating ? "生成中..." : isFailed ? "🔄 重新生成" : "🔄 换一题"}
+            {regenerating ? "生成中..." : (<><Icon name="refresh-cw" className="w-3.5 h-3.5 inline-block align-middle" /> {isFailed ? "重新生成" : "换一题"}</>)}
           </button>
         )}
       </div>

@@ -472,7 +472,7 @@ export function MindMap({
                   <text x={14} y={48} fontSize={10} fill={isSelected ? "#cbd5e1" : "#64748b"}>
                     {qCount}
                     {p.node.customOrder ? ` · #${p.node.customOrder}` : ""}
-                    {isBigTech ? ` · 🏢` : ""}
+                    {isBigTech ? ` · 大厂` : ""}
                   </text>
                 </g>
               );

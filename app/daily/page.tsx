@@ -10,6 +10,7 @@ import { getItem, setItem } from "@/lib/storage/db";
 import { KEY_PREFIXES, type DailyLog } from "@/lib/types";
 import { parseDailyLog, toggleChecklistItem, createEmptyLog, formatDailyLog } from "@/lib/daily";
 import { chinaDateNow } from "@/lib/time";
+import { Icon } from "@/components/Icon";
 
 export default function DailyPage() {
   const [date, setDate] = useState(chinaDateNow());
@@ -234,7 +235,7 @@ export default function DailyPage() {
         disabled={saving}
         className="w-full bg-blue-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-600 disabled:opacity-40 transition-colors"
       >
-        {saving ? "保存中..." : savedAt && Date.now() - savedAt < 3000 ? "✓ 已保存" : "保存日志"}
+        {saving ? "保存中..." : savedAt && Date.now() - savedAt < 3000 ? <span className="inline-flex items-center gap-1"><Icon name="check" className="w-4 h-4 inline-block" />已保存</span> : "保存日志"}
       </button>
     </div>
   );
